@@ -22,9 +22,161 @@
 const unsigned int wWidth = 1920;
 const unsigned int wHeight = 1080;
 
-unsigned int compileShader(GLenum type, const char* source);
-unsigned int createShader(const char* vsSource, const char* fsSource);
+struct Params {
+    float dt = 0;
+    bool wDown = false;
+    bool sDown = false;
+    bool aDown = false;
+    bool dDown = false;
 
+    float mouseDeltaX = 0;
+    float mouseDeltaY = 0;
+    float lastMouseX = 0;
+    float lastMouseY = 0;
+
+    glm::vec3 camPos = glm::vec3(0, 0, 15);
+};
+
+static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode) {
+    Params* params = (Params*)glfwGetWindowUserPointer(window);
+
+    if (key == GLFW_KEY_W && action == GLFW_PRESS)
+    {
+        params->wDown = true;
+    }
+    if (key == GLFW_KEY_W && action == GLFW_RELEASE)
+    {
+        params->wDown = false;
+    }
+    if (key == GLFW_KEY_A && action == GLFW_PRESS)
+    {
+        params->aDown = true;
+    }
+    if (key == GLFW_KEY_A && action == GLFW_RELEASE)
+    {
+        params->aDown = false;
+    }
+    if (key == GLFW_KEY_S && action == GLFW_PRESS)
+    {
+        params->sDown = true;
+    }
+    if (key == GLFW_KEY_S && action == GLFW_RELEASE)
+    {
+        params->sDown = false;
+    }
+    if (key == GLFW_KEY_D && action == GLFW_PRESS)
+    {
+        params->dDown = true;
+    }
+    if (key == GLFW_KEY_D && action == GLFW_RELEASE)
+    {
+        params->dDown = false;
+    }
+
+
+    bool IsDown = action == GLFW_PRESS || action == GLFW_REPEAT;
+    switch (key) {
+    case GLFW_KEY_ESCAPE: glfwSetWindowShouldClose(window, GLFW_TRUE); break;
+    }
+}
+
+static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
+    Params* params = (Params*)glfwGetWindowUserPointer(window);
+
+    params->mouseDeltaX = xPos - params->lastMouseX;
+    params->lastMouseX = xPos;
+
+    params->mouseDeltaY = yPos - params->lastMouseY;
+    params->lastMouseY = yPos;
+
+}
+
+static void HandleInput(Params* params) {
+    if (params->wDown || params->sDown || params->aDown || params->dDown) {
+        float orbitSpeed = 100 * params->dt; // Adjust the orbit speed as needed
+
+        // Calculate the orbiting angle based on key presses
+        float orbitAngleX = 0.0f;
+        float orbitAngleY = 0.0f;
+
+        if (params->wDown) {
+            orbitAngleX -= orbitSpeed/2;
+        }
+        if (params->sDown) {
+            orbitAngleX += orbitSpeed/2;
+        }
+        if (params->aDown) {
+            orbitAngleY -= orbitSpeed;
+        }
+        if (params->dDown) {
+            orbitAngleY += orbitSpeed;
+        }
+
+        glm::vec3 camFront = glm::normalize(glm::vec3(0) - params->camPos);
+        glm::vec3 right = glm::normalize(glm::cross(camFront, glm::vec3(0,1,0)));
+
+        // Construct the rotation matrices
+        glm::mat4 rotateX = glm::rotate(glm::mat4(1.0f), glm::radians(orbitAngleX), right);
+        glm::mat4 rotateY = glm::rotate(glm::mat4(1.0f), glm::radians(orbitAngleY), glm::vec3(0.0f, 1.0f, 0.0f));
+
+        // Apply the rotations to the camera position
+        glm::vec4 rotatedPosition = glm::vec4(params->camPos, 1.0f) * rotateX * rotateY;
+        params->camPos = glm::vec3(rotatedPosition);
+    }
+}
+
+static void DrawHud(Shader &hudShader, unsigned hudTex) {
+    //hud
+        // Bind your HUD shader program
+    hudShader.use();
+
+    // Define the vertices of a rectangle
+    float vertices[] = {
+       -1.0f,  1.0f, 0.0f,     0.0f, 0.0f, // Top-left vertex
+       -1.0f, -1.0f, 0.0f,     0.0f, 1.0f, // Bottom-left vertex
+        1.0f, -1.0f, 0.0f,     1.0f, 1.0f, // Bottom-right vertex
+        1.0f,  1.0f, 0.0f,     1.0f, 0.0f  // Top-right vertex
+    };
+
+    // Create and bind a vertex array object (VAO)
+    GLuint VAO;
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+    // Create a vertex buffer object (VBO) and copy the vertices data to it
+    GLuint VBO;
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    // Position attribute (location = 0)
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    // Texture coordinate attribute (location = 1)
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    // Create an element buffer object (EBO)
+    GLuint EBO;
+    glGenBuffers(1, &EBO);
+
+    // Draw the quad
+    glBindVertexArray(VAO);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, hudTex);
+    glUniform1i(glGetUniformLocation(hudShader.ID, "textureSampler"), 0);
+
+    // Draw the quad using GL_TRIANGLE_FAN since you have 4 vertices
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+    // Unbind the VAO, VBO, EBO, and texture
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
 
 int main()
 {
@@ -46,6 +198,8 @@ int main()
         return -2;
     }
     glfwMakeContextCurrent(window);
+    glfwSetKeyCallback(window, KeyCallback);
+    glfwSetCursorPosCallback(window, CursosPosCallback);
 
     if (glewInit() !=GLEW_OK)
     {
@@ -54,6 +208,9 @@ int main()
     }
 
     //START
+    Params params;
+    glfwSetWindowUserPointer(window, &params);
+
     std::vector<float> cubeVertices = {
         // X     Y     Z     NX    NY    NZ    U     V    FRONT SIDE
         -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // L D
@@ -114,11 +271,11 @@ int main()
     glm::mat4 view = glm::mat4(1.0f);
     view = glm::lookAt(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     phongShader.setMat4("uView", view);
+    phongShader.setVec3("uViewPos", 0.0, 0.0, 5.0);
 
     glm::mat4 projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
     phongShader.setMat4("uProjection", projectionP);
 
-    phongShader.setVec3("uViewPos", 0.0, 0.0, 5.0);
 
     phongShader.setVec3("uDirLight.Position", 0.0, 5, 0.0);
     phongShader.setVec3("uDirLight.Direction", 0.1, -5, 0.1);
@@ -168,7 +325,8 @@ int main()
     glm::mat4 model2 = glm::mat4(1.0f);
     glm::mat4 m(1.0f);
     float currentRot = 0;
-
+    float FrameStartTime = 0;
+    float FrameEndTime = 0;
     glClearColor(0.2, 0.2, 0.6, 1.0);
     glEnable(GL_DEPTH_TEST);
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -176,11 +334,24 @@ int main()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     while (!glfwWindowShouldClose(window))
     {
+        FrameStartTime = glfwGetTime();
+
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
             glfwSetWindowShouldClose(window, true);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         //Loop
+        phongShader.use();
+
+        HandleInput(&params);
+
+        //Camera
+        glm::mat4 view = glm::mat4(1.0f);
+        view = glm::lookAt(params.camPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        phongShader.setMat4("uView", view);
+        phongShader.setVec3("uViewPos", params.camPos);
+
+        //Scene
         currentRot += 0.5;
         if (currentRot >= 360) {
             currentRot = 0 + 360 - currentRot;
@@ -202,140 +373,18 @@ int main()
 
 
 
-        //hud
-        // Bind your HUD shader program
-        hudShader.use();
-
-        // Define the vertices of a rectangle
-        float vertices[] = {
-           -1.0f,  1.0f, 0.0f,     0.0f, 0.0f, // Top-left vertex
-           -1.0f, -1.0f, 0.0f,     0.0f, 1.0f, // Bottom-left vertex
-            1.0f, -1.0f, 0.0f,     1.0f, 1.0f, // Bottom-right vertex
-            1.0f,  1.0f, 0.0f,     1.0f, 0.0f  // Top-right vertex
-        };
-
-        // Create and bind a vertex array object (VAO)
-        GLuint VAO;
-        glGenVertexArrays(1, &VAO);
-        glBindVertexArray(VAO);
-
-        // Create a vertex buffer object (VBO) and copy the vertices data to it
-        GLuint VBO;
-        glGenBuffers(1, &VBO);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-        // Position attribute (location = 0)
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(0);
-
-        // Texture coordinate attribute (location = 1)
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-        glEnableVertexAttribArray(1);
-
-        // Create an element buffer object (EBO)
-        GLuint EBO;
-        glGenBuffers(1, &EBO);
-
-        // Draw the quad
-        glBindVertexArray(VAO);
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, hudTex);
-        glUniform1i(glGetUniformLocation(hudShader.ID, "textureSampler"), 0);
-
-        // Draw the quad using GL_TRIANGLE_FAN since you have 4 vertices
-        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
-        // Unbind the VAO, VBO, EBO, and texture
-        glBindVertexArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        // Switch back to your main rendering shader program
-        phongShader.use();
+        DrawHud(hudShader, hudTex);
 
         //end
         glfwSwapBuffers(window);
         glfwPollEvents();
+
+        FrameEndTime = glfwGetTime();
+        params.dt = FrameEndTime - FrameStartTime;
     }
 
     glfwTerminate();
     return 0;
-}
-
-unsigned int compileShader(GLenum type, const char* source)
-{
-    std::string content = "";
-    std::ifstream file(source);
-    std::stringstream ss;
-    if (file.is_open())
-    {
-        ss << file.rdbuf();
-        file.close();
-        std::cout << "Uspjesno procitao fajl sa putanje \"" << source << "\"!" << std::endl;
-    }
-    else {
-        ss << "";
-        std::cout << "Greska pri citanju fajla sa putanje \"" << source << "\"!" << std::endl;
-    }
-    std::string temp = ss.str();
-    const char* sourceCode = temp.c_str();
-
-    int shader = glCreateShader(type);
-
-    int success;
-    char infoLog[512];
-    glShaderSource(shader, 1, &sourceCode, NULL);
-    glCompileShader(shader);
-
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (success == GL_FALSE)
-    {
-        glGetShaderInfoLog(shader, 512, NULL, infoLog);
-        if (type == GL_VERTEX_SHADER)
-            printf("VERTEX");
-        else if (type == GL_FRAGMENT_SHADER)
-            printf("FRAGMENT");
-        printf(" sejder ima gresku! Greska: \n");
-        printf(infoLog);
-    }
-    return shader;
-}
-unsigned int createShader(const char* vsSource, const char* fsSource)
-{
-    unsigned int program;
-    unsigned int vertexShader;
-    unsigned int fragmentShader;
-
-    program = glCreateProgram();
-
-    vertexShader = compileShader(GL_VERTEX_SHADER, vsSource);
-    fragmentShader = compileShader(GL_FRAGMENT_SHADER, fsSource);
-
-    glAttachShader(program, vertexShader);
-    glAttachShader(program, fragmentShader);
-
-    glLinkProgram(program);
-    glValidateProgram(program);
-
-    int success;
-    char infoLog[512];
-    glGetProgramiv(program, GL_VALIDATE_STATUS, &success);
-    if (success == GL_FALSE)
-    {
-        glGetShaderInfoLog(program, 512, NULL, infoLog);
-        std::cout << "Objedinjeni sejder ima gresku! Greska: \n";
-        std::cout << infoLog << std::endl;
-    }
-
-    glDetachShader(program, vertexShader);
-    glDeleteShader(vertexShader);
-    glDetachShader(program, fragmentShader);
-    glDeleteShader(fragmentShader);
-
-    return program;
 }
 
 
