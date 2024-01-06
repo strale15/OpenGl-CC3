@@ -1,8 +1,8 @@
 #version 330 core
 #define NR_POINT_LIGHTS 1
-#define NR_SPOT_LIGHTS 1
+#define NR_SPOT_LIGHTS 2
 
-struct PositionalLight {
+struct PointLight {
 	vec3 Position;
 	vec3 Ka;
 	vec3 Kd;
@@ -31,7 +31,7 @@ struct Material {
 	float Shininess;
 };
 
-uniform PositionalLight uPointLights[NR_POINT_LIGHTS];
+uniform PointLight uPointLights[NR_POINT_LIGHTS];
 uniform DirectionalLight uSpotlights[NR_SPOT_LIGHTS];
 
 uniform DirectionalLight uDirLight;
@@ -114,7 +114,7 @@ void main() {
 		}
 	}
 
-	//vec3 FinalColor = DirColor + PtLightsColor + SptLightsColor;
-	vec3 FinalColor = DirColor;
+	vec3 FinalColor = DirColor + PtLightsColor + SptLightsColor;
+	//vec3 FinalColor = DirColor + SptLightsColor;
 	FragColor = vec4(FinalColor, 1.0f);
 }

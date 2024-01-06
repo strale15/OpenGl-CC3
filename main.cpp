@@ -19,8 +19,8 @@
 
 #include "GameObject.cpp"
 
-const unsigned int wWidth = 800;
-const unsigned int wHeight = 600;
+const unsigned int wWidth = 1920;
+const unsigned int wHeight = 1080;
 
 unsigned int compileShader(GLenum type, const char* source);
 unsigned int createShader(const char* vsSource, const char* fsSource);
@@ -119,15 +119,57 @@ int main()
 
     phongShader.setVec3("uDirLight.Position", 0.0, 5, 0.0);
     phongShader.setVec3("uDirLight.Direction", 0.1, -5, 0.1);
-    phongShader.setVec3("uDirLight.Ka", 0.5, 0.5, 0.5);
-    phongShader.setVec3("uDirLight.Kd", 1.0, 1.0, 1.0);
-    phongShader.setVec3("uDirLight.Ks", 1.0, 1.0, 1.0);
+    phongShader.setVec3("uDirLight.Ka", glm::vec3(255.0 / 255 / 10, 238.0 / 255 / 10, 204.0 / 255 / 10));
+    phongShader.setVec3("uDirLight.Kd", glm::vec3(255.0 / 255 / 10, 238.0 / 255 / 10, 204.0 / 255 / 10));
+    //phongShader.setVec3("uDirLight.Ka", glm::vec3(0.0,0.0,0.0));
+    //phongShader.setVec3("uDirLight.Kd", glm::vec3(0.0,0.0,0.0));
+    phongShader.setVec3("uDirLight.Ks", glm::vec3(1.0, 1.0, 1.0));
+
+    phongShader.setVec3("uSpotlights[0].Position", 0.0, 10.0, 0.0);
+    phongShader.setVec3("uSpotlights[0].Direction", 0.0, -1.0, 0.0);
+    phongShader.setVec3("uSpotlights[0].Ka", 0.0, 0.0, 0.0);
+    phongShader.setVec3("uSpotlights[0].Kd", glm::vec3(3.0f, 3.0f, 3.0f));
+    phongShader.setVec3("uSpotlights[0].Ks", glm::vec3(1.0));
+    phongShader.setFloat("uSpotlights[0].InnerCutOff", glm::cos(glm::radians(10.0f)));
+    phongShader.setFloat("uSpotlights[0].OuterCutOff", glm::cos(glm::radians(15.0f)));
+    phongShader.setFloat("uSpotlights[0].Kc", 1.0);
+    phongShader.setFloat("uSpotlights[0].Kl", 0.092f);
+    phongShader.setFloat("uSpotlights[0].Kq", 0.032f);
+
+    phongShader.setVec3("uSpotlights[1].Position", 0.0, 0.0, 5.0);
+    phongShader.setVec3("uSpotlights[1].Direction", 0.0, 0.0, 1.0);
+    phongShader.setVec3("uSpotlights[1].Ka", 0.0, 0.0, 0.0);
+    phongShader.setVec3("uSpotlights[1].Kd", glm::vec3(1.0f, 0.0f, 0.0f));
+    phongShader.setVec3("uSpotlights[1].Ks", glm::vec3(1.0));
+    phongShader.setFloat("uSpotlights[1].InnerCutOff", glm::cos(glm::radians(15.0f)));
+    phongShader.setFloat("uSpotlights[1].OuterCutOff", glm::cos(glm::radians(20.0f)));
+    phongShader.setFloat("uSpotlights[1].Kc", 1.0);
+    phongShader.setFloat("uSpotlights[1].Kl", 0.092f);
+    phongShader.setFloat("uSpotlights[1].Kq", 0.032f);
+
+    glm::vec3 kdVatra = glm::vec3(230.0 / 255 / 0.1, 92.0 / 255 / 0.1, 0.0f);
+    glm::vec3 kaVatra = glm::vec3(230.0 / 255 / 50, 92.0 / 255 / 50, 0.0f);
+    float klVatra = 1.5f;
+    float kcVatra = 1.0f;
+    float kqVatra = 0.272f;
+    phongShader.setVec3("uPointLights[0].Position", glm::vec3(0.0, -2.0, 0.0));
+    phongShader.setVec3("uPointLights[0].Ka", kaVatra);
+    phongShader.setVec3("uPointLights[0].Kd", kdVatra);
+    phongShader.setVec3("uPointLights[0].Ks", glm::vec3(1.0f));
+    phongShader.setFloat("uPointLights[0].Kc", kcVatra);
+    phongShader.setFloat("uPointLights[0].Kl", klVatra);
+    phongShader.setFloat("uPointLights[0].Kq", kqVatra);
 
 
     phongShader.setFloat("uMaterial.Shininess", 0.9 * 128); // Materijal: Rubin
 
-    unsigned texture = Model::TextureFromFile("res/kurac.png","");
+    unsigned texture = Model::textureFromFile("res/kurac.png","");
 
+    glm::mat4 model2 = glm::mat4(1.0f);
+    glm::mat4 m(1.0f);
+    float currentRot = 0;
+
+    glClearColor(0.2, 0.2, 0.6, 1.0);
     glEnable(GL_DEPTH_TEST);
     while (!glfwWindowShouldClose(window))
     {
@@ -136,10 +178,25 @@ int main()
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         //Loop
-        model = glm::rotate(model, glm::radians(0.4f), glm::vec3(0.5f, 1.0f, 0.5f));
-        phongShader.setMat4("uModel", model);
+        currentRot += 0.5;
+        if (currentRot >= 360) {
+            currentRot = 0 + 360 - currentRot;
+        }
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::rotate(m, glm::radians(currentRot), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.5));
+        phongShader.setMat4("uModel", m);
         simpleCube->Render(texture);
-        //lija.Draw(phongShader);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, -2.0, 0.0));
+        //m = glm::rotate(m, glm::radians(0.0f), glm::vec3(0.0, 0.0, 0.0));
+        m = glm::scale(m, glm::vec3(12.0, 0.5, 12.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(texture);
+
+        model2 = glm::rotate(model2, glm::radians(0.4f), glm::vec3(0.5f, 1.0f, 0.5f));
+        phongShader.setMat4("uModel", model2);
+        lija.Draw(phongShader);
         //
         glfwSwapBuffers(window);
         glfwPollEvents();
