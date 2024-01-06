@@ -34,6 +34,8 @@ struct Params {
     float lastMouseX = 0;
     float lastMouseY = 0;
 
+    float zoom = 100;
+
     glm::vec3 camPos = glm::vec3(0, 0, 15);
 };
 
@@ -80,6 +82,16 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
     }
 }
 
+void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
+    Params* params = (Params*)glfwGetWindowUserPointer(window);
+    // Adjust the zoom based on the vertical scroll amount
+    params->zoom -= static_cast<float>(yoffset * 3.0);
+
+    // Clamp the zoom value within a certain range (e.g., between 30 and 100)
+    params->zoom = glm::clamp(params->zoom, 20.0f, 100.0f);
+
+}
+
 static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
     Params* params = (Params*)glfwGetWindowUserPointer(window);
 
@@ -93,17 +105,21 @@ static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
 
 static void HandleInput(Params* params) {
     if (params->wDown || params->sDown || params->aDown || params->dDown) {
-        float orbitSpeed = 100 * params->dt; // Adjust the orbit speed as needed
 
-        // Calculate the orbiting angle based on key presses
+        glm::vec3 camFront = glm::normalize(glm::vec3(0) - params->camPos);
+        glm::vec3 right = glm::normalize(glm::cross(camFront, glm::vec3(0, 1, 0)));
+        float pitchAngle = glm::degrees(asin(camFront.y));
+
+
+        float orbitSpeed = 100 * params->dt; 
         float orbitAngleX = 0.0f;
         float orbitAngleY = 0.0f;
 
-        if (params->wDown) {
-            orbitAngleX -= orbitSpeed/2;
+        if (params->wDown && pitchAngle > -80) {
+            orbitAngleX += orbitSpeed / 2;
         }
-        if (params->sDown) {
-            orbitAngleX += orbitSpeed/2;
+        if (params->sDown && pitchAngle < 80) {
+            orbitAngleX -= orbitSpeed / 2;
         }
         if (params->aDown) {
             orbitAngleY -= orbitSpeed;
@@ -112,14 +128,10 @@ static void HandleInput(Params* params) {
             orbitAngleY += orbitSpeed;
         }
 
-        glm::vec3 camFront = glm::normalize(glm::vec3(0) - params->camPos);
-        glm::vec3 right = glm::normalize(glm::cross(camFront, glm::vec3(0,1,0)));
-
-        // Construct the rotation matrices
         glm::mat4 rotateX = glm::rotate(glm::mat4(1.0f), glm::radians(orbitAngleX), right);
+
         glm::mat4 rotateY = glm::rotate(glm::mat4(1.0f), glm::radians(orbitAngleY), glm::vec3(0.0f, 1.0f, 0.0f));
 
-        // Apply the rotations to the camera position
         glm::vec4 rotatedPosition = glm::vec4(params->camPos, 1.0f) * rotateX * rotateY;
         params->camPos = glm::vec3(rotatedPosition);
     }
@@ -200,6 +212,7 @@ int main()
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, KeyCallback);
     glfwSetCursorPosCallback(window, CursosPosCallback);
+    glfwSetScrollCallback(window, ScrollCallback);
 
     if (glewInit() !=GLEW_OK)
     {
@@ -273,7 +286,7 @@ int main()
     phongShader.setMat4("uView", view);
     phongShader.setVec3("uViewPos", 0.0, 0.0, 5.0);
 
-    glm::mat4 projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
+    glm::mat4 projectionP = glm::perspective(glm::radians(45.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
     phongShader.setMat4("uProjection", projectionP);
 
 
@@ -350,6 +363,9 @@ int main()
         view = glm::lookAt(params.camPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         phongShader.setMat4("uView", view);
         phongShader.setVec3("uViewPos", params.camPos);
+
+        glm::mat4 projectionP = glm::perspective(glm::radians(params.zoom), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
+        phongShader.setMat4("uProjection", projectionP);
 
         //Scene
         currentRot += 0.5;
