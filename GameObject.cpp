@@ -54,6 +54,17 @@ public:
 		glBindVertexArray(0);
 	}
 
+	void Render(unsigned const& texture) {
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture);
+
+		glBindVertexArray(VAO);
+		glDrawArrays(GL_TRIANGLES, 0, vCount);
+
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glBindVertexArray(0);
+	}
+
 	void Render() {
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLES, 0, vCount);

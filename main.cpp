@@ -119,12 +119,14 @@ int main()
 
     phongShader.setVec3("uDirLight.Position", 0.0, 5, 0.0);
     phongShader.setVec3("uDirLight.Direction", 0.1, -5, 0.1);
-    phongShader.setVec3("uDirLight.Ka", 1.0, 1.0, 1.0);
+    phongShader.setVec3("uDirLight.Ka", 0.5, 0.5, 0.5);
     phongShader.setVec3("uDirLight.Kd", 1.0, 1.0, 1.0);
     phongShader.setVec3("uDirLight.Ks", 1.0, 1.0, 1.0);
 
 
-    phongShader.setFloat("uMaterial.Shininess", 0.6 * 128); // Materijal: Rubin
+    phongShader.setFloat("uMaterial.Shininess", 0.9 * 128); // Materijal: Rubin
+
+    unsigned texture = Model::TextureFromFile("res/kurac.png","");
 
     glEnable(GL_DEPTH_TEST);
     while (!glfwWindowShouldClose(window))
@@ -136,7 +138,7 @@ int main()
         //Loop
         model = glm::rotate(model, glm::radians(0.4f), glm::vec3(0.5f, 1.0f, 0.5f));
         phongShader.setMat4("uModel", model);
-        simpleCube->Render();
+        simpleCube->Render(texture);
         //lija.Draw(phongShader);
         //
         glfwSwapBuffers(window);
