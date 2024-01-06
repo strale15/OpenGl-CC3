@@ -104,6 +104,9 @@ int main()
     Model lija("res/low-poly-fox.obj");
 
     Shader phongShader("phong.vert", "phong.frag");
+    Shader hudShader("hud.vert", "hud.frag");
+
+
     phongShader.use();
     glm::mat4 model = glm::mat4(1.0f);
     phongShader.setMat4("uModel", model);
@@ -154,6 +157,7 @@ int main()
     phongShader.setFloat("uPointLights[0].Kq", 0.272f);
 
     unsigned texture = Model::textureFromFile("res/kurac.png");
+    unsigned hudTex = Model::textureFromFile("res/hudTex.png");
     unsigned kockaDif = Model::textureFromFile("res/container_diffuse.png");
     unsigned kockaSpec = Model::textureFromFile("res/container_specular.png");
 
@@ -168,6 +172,8 @@ int main()
     glClearColor(0.2, 0.2, 0.6, 1.0);
     glEnable(GL_DEPTH_TEST);
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     while (!glfwWindowShouldClose(window))
     {
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -193,6 +199,62 @@ int main()
         model2 = glm::rotate(model2, glm::radians(0.4f), glm::vec3(0.5f, 1.0f, 0.5f));
         phongShader.setMat4("uModel", model2);
         lija.Draw(phongShader);
+
+
+
+        //hud
+        // Bind your HUD shader program
+        hudShader.use();
+
+        // Define the vertices of a rectangle
+        float vertices[] = {
+           -1.0f,  1.0f, 0.0f,     0.0f, 0.0f, // Top-left vertex
+           -1.0f, -1.0f, 0.0f,     0.0f, 1.0f, // Bottom-left vertex
+            1.0f, -1.0f, 0.0f,     1.0f, 1.0f, // Bottom-right vertex
+            1.0f,  1.0f, 0.0f,     1.0f, 0.0f  // Top-right vertex
+        };
+
+        // Create and bind a vertex array object (VAO)
+        GLuint VAO;
+        glGenVertexArrays(1, &VAO);
+        glBindVertexArray(VAO);
+
+        // Create a vertex buffer object (VBO) and copy the vertices data to it
+        GLuint VBO;
+        glGenBuffers(1, &VBO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+        // Position attribute (location = 0)
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+
+        // Texture coordinate attribute (location = 1)
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+
+        // Create an element buffer object (EBO)
+        GLuint EBO;
+        glGenBuffers(1, &EBO);
+
+        // Draw the quad
+        glBindVertexArray(VAO);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, hudTex);
+        glUniform1i(glGetUniformLocation(hudShader.ID, "textureSampler"), 0);
+
+        // Draw the quad using GL_TRIANGLE_FAN since you have 4 vertices
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+        // Unbind the VAO, VBO, EBO, and texture
+        glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        // Switch back to your main rendering shader program
+        phongShader.use();
 
         //end
         glfwSwapBuffers(window);
