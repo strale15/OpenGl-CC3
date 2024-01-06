@@ -48,10 +48,9 @@ public:
             meshes[i].Draw(shader);
     }
 
-    static unsigned int textureFromFile(const char* path, const string& directory)
+    static unsigned int textureFromFile(const char* path)
     {
         string filename = string(path);
-        //filename = directory + '/' + filename;
 
         unsigned int textureID;
         glGenTextures(1, &textureID);

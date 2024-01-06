@@ -53,8 +53,6 @@ void main() {
 
 	vec3 DirAmbientColor = uDirLight.Ka * vec3(texture(uMaterial.Kd, UV));
 	vec3 DirDiffuseColor = uDirLight.Kd * DirDiffuse * vec3(texture(uMaterial.Kd, UV));
-	//vec3 DirAmbientColor = uDirLight.Ka * vec3(1.0, 0.0, 0.0);
-	//vec3 DirDiffuseColor = uDirLight.Kd * DirDiffuse * vec3(1.0, 0.0, 0.0);
 
 
 	vec3 DirSpecularColor = uDirLight.Ks * DirSpecular * vec3(texture(uMaterial.Ks, UV));
@@ -115,6 +113,5 @@ void main() {
 	}
 
 	vec3 FinalColor = DirColor + PtLightsColor + SptLightsColor;
-	//vec3 FinalColor = DirColor + SptLightsColor;
 	FragColor = vec4(FinalColor, 1.0f);
 }
