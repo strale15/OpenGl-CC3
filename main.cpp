@@ -198,9 +198,9 @@ static void HandleInput(Params* params) {
 
     //Car
     params->velocity = glm::clamp(params->velocity, -20.f, 40.f);
-    cout << params->velocity << endl;
+    //cout << params->velocity << endl;
 
-    if (glm::abs(params->velocity) < 0.1) {
+    if (glm::abs(params->velocity) < 0.005) {
         params->velocity = 0;
     }
 
@@ -423,6 +423,11 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_SAMPLES, 16);
+    glEnable(GL_MULTISAMPLE);
+    glEnable(GL_DEPTH_CLAMP);
+    glEnable(GL_POLYGON_OFFSET_FILL);
+    glPolygonOffset(1.0f, 1.0f);
 
     GLFWwindow* window = glfwCreateWindow(wWidth, wHeight, "LearnOpenGL", NULL, NULL);
     if (window == NULL)
@@ -556,13 +561,13 @@ int main()
 
     phongShader.setVec3("uViewPos", 0.0, 0.0, 5.0);
 
-    /*phongShader.setVec3("uDirLight.Position", 0.0, 20, 0.0);
-    phongShader.setVec3("uDirLight.Direction", 0.1, -5, 0.1);
-    phongShader.setVec3("uDirLight.Ka", glm::vec3(0.5));
-    phongShader.setVec3("uDirLight.Kd", glm::vec3(0.5));
+    phongShader.setVec3("uDirLight.Position", 0.0, 200, 0.0);
+    phongShader.setVec3("uDirLight.Direction", 0.0, -1.0, 0.0);
+    phongShader.setVec3("uDirLight.Ka", glm::vec3(0.2));
+    phongShader.setVec3("uDirLight.Kd", glm::vec3(0.2));
     phongShader.setVec3("uDirLight.Ks", glm::vec3(10.f));
 
-    phongShader.setVec3("uSpotlights[0].Position", 0.0, 10.0, 0.0);
+    /*phongShader.setVec3("uSpotlights[0].Position", 0.0, 10.0, 0.0);
     phongShader.setVec3("uSpotlights[0].Direction", 0.0, -1.0, 0.0);
     phongShader.setVec3("uSpotlights[0].Ka", 0.0, 0.0, 0.0);
     phongShader.setVec3("uSpotlights[0].Kd", glm::vec3(3.0f, 3.0f, 3.0f));
@@ -602,7 +607,7 @@ int main()
 
     phongShader.setInt("uMaterial.Kd", 0);
     phongShader.setInt("uMaterial.Ks", 1);
-    phongShader.setFloat("uMaterial.Shininess", 0.5 * 128);
+    phongShader.setFloat("uMaterial.Shininess", 0.25 * 128);
 
     phongShader.setBool("uTransp", false);
 
@@ -629,7 +634,9 @@ int main()
             glfwSetWindowShouldClose(window, true);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glfwPollEvents();
         //Loop
+
         phongShader.use();
 
         //Camera
@@ -675,8 +682,8 @@ int main()
         if (!params.nightVision) {
             phongShader.setVec3("uDirLight.Position", 0.0, 20, 0.0);
             phongShader.setVec3("uDirLight.Direction", 0.1, -5, 0.1);
-            phongShader.setVec3("uDirLight.Ka", glm::vec3(0.2));
-            phongShader.setVec3("uDirLight.Kd", glm::vec3(0.3));
+            phongShader.setVec3("uDirLight.Ka", glm::vec3(0.1));
+            phongShader.setVec3("uDirLight.Kd", glm::vec3(0.1));
             phongShader.setVec3("uDirLight.Ks", glm::vec3(10.f));
         }
         else
@@ -691,7 +698,7 @@ int main()
 
         //Road
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, -1.0, 100.0));
-        m = glm::scale(m, glm::vec3(30.0, 1.0, 250.0*5.f));
+        m = glm::scale(m, glm::vec3(30.0, 1.0, 1250));
         phongShader.setMat4("uModel", m);
         simpleCube2->Render(&phongShader, asphalt);
 
@@ -723,32 +730,34 @@ int main()
 
         glm::vec3 lightInt = glm::vec3(0);
         glm::vec3 lightIntA = glm::vec3(0);
+        glm::vec3 lightIntS = glm::vec3(0);
         if (params.headlights) {
             lightInt = glm::vec3(3.0f, 3.0f, 3.0f);
             lightIntA = glm::vec3(0.5);
+            lightIntS = glm::vec3(60.0f);
         }
 
         phongShader.setVec3("uSpotlights[0].Position", headlight1Pos);
         phongShader.setVec3("uSpotlights[0].Direction", front);
         phongShader.setVec3("uSpotlights[0].Ka", lightIntA);
         phongShader.setVec3("uSpotlights[0].Kd", lightInt);
-        phongShader.setVec3("uSpotlights[0].Ks", glm::vec3(50.0f));
+        phongShader.setVec3("uSpotlights[0].Ks", lightIntS);
         phongShader.setFloat("uSpotlights[0].InnerCutOff", glm::cos(glm::radians(15.0f)));
         phongShader.setFloat("uSpotlights[0].OuterCutOff", glm::cos(glm::radians(25.0f)));
         phongShader.setFloat("uSpotlights[0].Kc", 1.0);
-        phongShader.setFloat("uSpotlights[0].Kl", 0.05f);
-        phongShader.setFloat("uSpotlights[0].Kq", 0.022f);
+        phongShader.setFloat("uSpotlights[0].Kl", 0.09);
+        phongShader.setFloat("uSpotlights[0].Kq", 0.0f);
 
         phongShader.setVec3("uSpotlights[1].Position", headlight2Pos);
         phongShader.setVec3("uSpotlights[1].Direction", front);
         phongShader.setVec3("uSpotlights[1].Ka", lightIntA);
         phongShader.setVec3("uSpotlights[1].Kd", lightInt);
-        phongShader.setVec3("uSpotlights[1].Ks", glm::vec3(50.0f));
+        phongShader.setVec3("uSpotlights[1].Ks", lightIntS);
         phongShader.setFloat("uSpotlights[1].InnerCutOff", glm::cos(glm::radians(15.0f)));
         phongShader.setFloat("uSpotlights[1].OuterCutOff", glm::cos(glm::radians(25.0f)));
         phongShader.setFloat("uSpotlights[1].Kc", 1.0);
-        phongShader.setFloat("uSpotlights[1].Kl", 0.05f);
-        phongShader.setFloat("uSpotlights[1].Kq", 0.022f);
+        phongShader.setFloat("uSpotlights[1].Kl", 0.09f);
+        phongShader.setFloat("uSpotlights[1].Kq", 0.0f);
 
         //CarSides
         m = glm::translate(glm::mat4(1.0), glm::vec3(params.carXOffset, 0.0, params.carZOffset));
@@ -837,9 +846,6 @@ int main()
         phongShader.setBool("uTransp", true);
         simpleCube->Render(&phongShader, 0.03, 0.1, 0.95);
         phongShader.setBool("uTransp", false);
-        /*model2 = glm::rotate(model2, glm::radians(0.4f), glm::vec3(0.5f, 1.0f, 0.5f));
-        phongShader.setMat4("uModel", model2);
-        lija.Draw(phongShader);*/
 
 
 
@@ -848,12 +854,10 @@ int main()
 
         //end
         glfwSwapBuffers(window);
-        glfwPollEvents();
-
+        glUseProgram(0);
         FrameEndTime = glfwGetTime();
         params.dt = FrameEndTime - FrameStartTime;
     }
-
     glfwTerminate();
     return 0;
 }
