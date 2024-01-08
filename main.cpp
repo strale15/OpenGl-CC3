@@ -29,10 +29,6 @@ double lastY;
 struct Params {
     float dt;
     bool test1 = false;
-    bool clouds = true;
-    bool cull = true;
-    bool dan = true;
-    bool bog = false;
 
     bool isCurosIn;
     double xPosC = 0.0;
@@ -114,6 +110,27 @@ static void DrawHud(Shader& hudShader, unsigned hudTex) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+static void DrawBuildings(Shader& shader, GameObject* building, unsigned buildingTex, unsigned buildingSpec) {
+    shader.use();
+    int numberOfBuildings = 10;
+    glm::mat4 m = glm::mat4(1.f);
+
+    for (int i = 0; i < numberOfBuildings; i++) {
+        float offset = 20.f * i;
+        m = glm::translate(glm::mat4(1.0), glm::vec3(20.0, 23.0, 0.0 + offset));
+        m = glm::rotate(m, glm::radians(0.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(10.0, 50.0, 10.0));
+        shader.setMat4("uModel", m);
+        building->Render(&shader, buildingTex, buildingSpec);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-20.0, 23.0, 0.0 + offset));
+        m = glm::rotate(m, glm::radians(0.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(10.0, 50.0, 10.0));
+        shader.setMat4("uModel", m);
+        building->Render(&shader, buildingTex, buildingSpec);
+    }
 }
 
 static void HandleInput(Params* params) {
@@ -214,30 +231,10 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
         std::cout << "glm::vec3(" << params->objPos.x << "," << params->objPos.y << "," << params->objPos.z << ")" << std::endl;
     }
 
-    if (key == GLFW_KEY_C && action == GLFW_PRESS)
-    {
-        params->clouds = !params->clouds;
-    }
-
-    if (key == GLFW_KEY_B && action == GLFW_PRESS)
-    {
-        params->bog = !params->bog;
-    }
-
-    if (key == GLFW_KEY_P && action == GLFW_PRESS)
-    {
-        params->dan = !params->dan;
-    }
-
     if (key == GLFW_KEY_R && action == GLFW_PRESS)
     {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         params->test1 = !params->test1;
-    }
-
-    if (key == GLFW_KEY_X && action == GLFW_PRESS)
-    {
-        params->cull = !params->cull;
     }
 
     if (key == GLFW_KEY_W && action == GLFW_PRESS)
@@ -293,6 +290,16 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
     {
         params->shiftDown = false;
     }
+
+    //CAR
+    /*if (key == GLFW_KEY_V) {
+        if (action == GLFW_PRESS) {
+            params->antennaSpinRight = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->antennaSpinRight = false;
+        }
+    }*/
 
 
 
@@ -377,8 +384,55 @@ int main()
     };
     GameObject* simpleCube = new GameObject(cubeVertices);
 
+    std::vector<float> cubeVertices2 = {
+        // X     Y     Z     NX    NY    NZ    U     V    FRONT SIDE
+        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 100.0f, // L D
+        0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 100.0f, 100.0f, // R D
+        -0.5f,  0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // L U
+        0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 100.0f, 100.0f, // R D
+        0.5f,  0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, // R U
+        -0.5f,  0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // L U
+        // LEFT SIDE
+        -0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // L D
+        -0.5f, -0.5f,  0.5f, -1.0f, 0.0f, 0.0f, 100.0f, 0.0f, // R D
+        -0.5f,  0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 100.0f, // L U
+        -0.5f, -0.5f,  0.5f, -1.0f, 0.0f, 0.0f, 100.0f, 0.0f, // R D
+        -0.5f,  0.5f,  0.5f, -1.0f, 0.0f, 0.0f, 100.0f, 100.0f, // R U
+        -0.5f,  0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 100.0f, // L U
+        // RIGHT SIDE
+        0.5f, -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // L D
+        0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 100.0f, 0.0f, // R D
+        0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 100.0f, // L U
+        0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 100.0f, 0.0f, // R D
+        0.5f,  0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 100.0f, 100.0f, // R U
+        0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 100.0f, // L U
+        // BOTTOM SIDE
+        -0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, // L D
+         0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 100.0f, 0.0f, // R D
+        -0.5f, -0.5f,  0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 100.0f, // L U
+         0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 100.0f, 0.0f, // R D
+         0.5f, -0.5f,  0.5f, 0.0f, -1.0f, 0.0f, 100.0f, 100.0f, // R U
+        -0.5f, -0.5f,  0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 100.0f, // L U
+        // TOP SIDE
+        -0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, // L D
+         0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 2.0f, 0.0f, // R D
+        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 2.0f * 8.333f, // L U
+         0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 2.0f, 0.0f, // R D
+         0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 2.0f, 2.0f * 8.333f, // R U
+        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 2.0f * 8.333f, // L U
+        // BACK SIDE
+        0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, // L D
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 100.0f, 0.0f, // R D
+         0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 100.0f, // L U
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 100.0f, 0.0f, // R D
+        -0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 100.0f, 100.0f, // R U
+         0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 100.0f, // L U
+    };
+    GameObject* simpleCube2 = new GameObject(cubeVertices2);
+
 
     Model lija("res/low-poly-fox.obj");
+    Model steeringWheelModel("res/Isuzu NKR Steering Wheels.obj");
 
     Shader phongShader("phong.vert", "phong.frag");
     Shader hudShader("hud.vert", "hud.frag");
@@ -397,11 +451,11 @@ int main()
 
     phongShader.setVec3("uViewPos", 0.0, 0.0, 5.0);
 
-    phongShader.setVec3("uDirLight.Position", 0.0, 5, 0.0);
+    phongShader.setVec3("uDirLight.Position", 0.0, 20, 0.0);
     phongShader.setVec3("uDirLight.Direction", 0.1, -5, 0.1);
-    phongShader.setVec3("uDirLight.Ka", glm::vec3(255.0 / 255 / 10, 238.0 / 255 / 10, 204.0 / 255 / 10));
-    phongShader.setVec3("uDirLight.Kd", glm::vec3(255.0 / 255 / 10, 238.0 / 255 / 10, 204.0 / 255 / 10));
-    phongShader.setVec3("uDirLight.Ks", glm::vec3(1.0, 1.0, 1.0));
+    phongShader.setVec3("uDirLight.Ka", glm::vec3(0.5));
+    phongShader.setVec3("uDirLight.Kd", glm::vec3(0.5));
+    phongShader.setVec3("uDirLight.Ks", glm::vec3(10.f));
 
     phongShader.setVec3("uSpotlights[0].Position", 0.0, 10.0, 0.0);
     phongShader.setVec3("uSpotlights[0].Direction", 0.0, -1.0, 0.0);
@@ -437,10 +491,15 @@ int main()
     unsigned hudTex = Model::textureFromFile("res/hudTex.png");
     unsigned kockaDif = Model::textureFromFile("res/container_diffuse.png");
     unsigned kockaSpec = Model::textureFromFile("res/container_specular.png");
+    unsigned buildingDif = Model::textureFromFile("res/zgrada.png");
+    unsigned buildingSpec = Model::textureFromFile("res/zgrada_spec.png");
+    unsigned asphalt = Model::textureFromFile("res/cracked-asphalt-texture.jpg");
 
     phongShader.setInt("uMaterial.Kd", 0);
     phongShader.setInt("uMaterial.Ks", 1);
     phongShader.setFloat("uMaterial.Shininess", 0.5 * 128);
+
+    phongShader.setBool("uTransp", false);
 
     Params params;
     glfwSetWindowUserPointer(window, &params);
@@ -453,8 +512,9 @@ int main()
 
     glClearColor(0.2, 0.2, 0.6, 1.0);
     glEnable(GL_DEPTH_TEST);
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glEnable(GL_BLEND);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     while (!glfwWindowShouldClose(window))
     {
@@ -469,24 +529,97 @@ int main()
 
         //Camera
         HandleInput(&params);
-        
+
         glm::mat4 view = glm::mat4(1.0f);
         view = glm::lookAt(params.position, params.position + params.cameraFront, params.cameraUp);
+        projectionP = glm::perspective(glm::radians(90.f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
         phongShader.setMat4("uView", view);
         phongShader.setVec3("uViewPos", params.position);
-
-        projectionP = glm::perspective(glm::radians(90.f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
-
         phongShader.setMat4("uProjection", projectionP);
 
-        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, -2.0, 0.0));
+
+        //
+       /* m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, -2.0, 0.0));
         m = glm::scale(m, glm::vec3(12.0, 0.5, 12.0));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(texture, kockaSpec);
+        simpleCube->Render(&phongShader, texture, kockaSpec);*/
 
-        model2 = glm::rotate(model2, glm::radians(0.4f), glm::vec3(0.5f, 1.0f, 0.5f));
+        //Road
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, -1.0, 100.0));
+        m = glm::scale(m, glm::vec3(30.0, 1.0, 250.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube2->Render(&phongShader, asphalt);
+
+        //Ground
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, -1.1, 120.0));
+        m = glm::scale(m, glm::vec3(300.0, 1.0, 300.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube2->Render(&phongShader, 0,1,0);
+
+        //CarBase
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 0.0));
+        m = glm::rotate(m, glm::radians(0.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(6.0, 1.0, 12.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 0, 0, 0);
+
+        //CarSides
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-2.5, 2.0, 0.0));
+        m = glm::rotate(m, glm::radians(0.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(1.0, 4.0, 9.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 0, 0, 0);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(2.5, 2.0, 0.0));
+        m = glm::rotate(m, glm::radians(0.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(1.0, 4.0, 9.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 0, 0, 0);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 2.0, -4.5));
+        m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::rotate(m, glm::radians(20.f), glm::vec3(0.0, 0.0, 1.0));
+        m = glm::scale(m, glm::vec3(1.0, 5.0, 6.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 0, 0, 0);
+
+        //CarTop
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 4.5, 0.0));
+        m = glm::rotate(m, glm::radians(0.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(6.0, 1.0, 10.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 0, 0, 0);
+
+        //Instrument
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.7, 4.0));
+        m = glm::rotate(m, glm::radians(0.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(4.0, 1.0, 0.2));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 0, 0);
+
+
+        //Steering wheel
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 1.2, 3.8));
+        m = glm::rotate(m, glm::radians(-80.f), glm::vec3(1.0, 0.0, 0.0));
+        m = glm::rotate(m, glm::radians(0.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.2));
+        phongShader.setMat4("uModel", m);
+        steeringWheelModel.Draw(phongShader);
+
+        //Building
+        DrawBuildings(phongShader, simpleCube, buildingDif, buildingSpec);
+
+        //Glass
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 2, 4.0));
+        m = glm::rotate(m, glm::radians(-30.f), glm::vec3(1.0, 0.0, 0.0));
+        m = glm::scale(m, glm::vec3(4.2, 6.0, 0.1));
+        phongShader.setMat4("uModel", m);
+        phongShader.setBool("uTransp", true);
+        simpleCube->Render(&phongShader, 0.03, 0.1, 0.95);
+        phongShader.setBool("uTransp", false);
+        /*model2 = glm::rotate(model2, glm::radians(0.4f), glm::vec3(0.5f, 1.0f, 0.5f));
         phongShader.setMat4("uModel", model2);
-        lija.Draw(phongShader);
+        lija.Draw(phongShader);*/
 
 
 
