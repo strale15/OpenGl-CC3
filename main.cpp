@@ -57,6 +57,21 @@ struct Params {
 
     bool spaceDown = false;
     bool shiftDown = false;
+
+    bool nightVision = false;
+    bool headlights = false;
+
+    bool forward = false;
+    bool backward = false;
+    bool left = false;
+    bool right = false;
+    bool rotLeft = false;
+    bool rotRight = false;
+
+    float velocity = 0;
+    float carZOffset = 0;
+    float carXOffset = 0;
+    float carRot = 0;
 };
 
 static void DrawHud(Shader& hudShader, unsigned hudTex) {
@@ -179,6 +194,45 @@ static void HandleInput(Params* params) {
         else
             params->objPos.y -= 0.5f * params->dt;
     }
+
+
+    //Car
+    params->velocity = glm::clamp(params->velocity, -20.f, 40.f);
+    cout << params->velocity << endl;
+
+    if (glm::abs(params->velocity) < 0.1) {
+        params->velocity = 0;
+    }
+
+    if (params->velocity > 0 && !params->forward) {
+        params->velocity -= 8 * params->dt;
+    }
+    else if (params->velocity < 0 && !params->backward) {
+        params->velocity += 8 * params->dt;
+    }
+
+    params->carZOffset += params->velocity * params->dt;
+
+
+    if (params->forward) {
+        params->velocity += 10 * params->dt;
+    }
+    if (params->backward) {
+        params->velocity -= 10 * params->dt;
+    }
+    if (params->left) {
+        params->carXOffset += 0.5 * glm::abs(params->velocity) * params->dt;
+    }
+    if (params->right) {
+        params->carXOffset -= 0.5 * glm::abs(params->velocity) * params->dt;
+    }
+    if (params->rotLeft) {
+        params->carRot += 50 * params->dt;
+    }
+    if (params->rotRight) {
+        params->carRot -= 50 * params->dt;
+    }
+    params->carRot = glm::clamp(params->carRot, -60.f, 60.f);
 }
 
 static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
@@ -292,16 +346,66 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
     }
 
     //CAR
-    /*if (key == GLFW_KEY_V) {
+    if (key == GLFW_KEY_UP) {
         if (action == GLFW_PRESS) {
-            params->antennaSpinRight = true;
+            params->forward = true;
         }
         else if (action == GLFW_RELEASE) {
-            params->antennaSpinRight = false;
+            params->forward = false;
         }
-    }*/
+    }
 
+    if (key == GLFW_KEY_DOWN) {
+        if (action == GLFW_PRESS) {
+            params->backward = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->backward = false;
+        }
+    }
 
+    if (key == GLFW_KEY_LEFT) {
+        if (action == GLFW_PRESS) {
+            params->left = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->left = false;
+        }
+    }
+    if (key == GLFW_KEY_RIGHT) {
+        if (action == GLFW_PRESS) {
+            params->right = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->right = false;
+        }
+    }
+    if (key == GLFW_KEY_Q) {
+        if (action == GLFW_PRESS) {
+            params->rotLeft = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->rotLeft = false;
+        }
+    }
+    if (key == GLFW_KEY_E) {
+        if (action == GLFW_PRESS) {
+            params->rotRight = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->rotRight = false;
+        }
+    }
+    if (key == GLFW_KEY_R) {
+        if (action == GLFW_PRESS) {
+            params->nightVision = true;
+        }
+    }
+    if (key == GLFW_KEY_F) {
+        if (action == GLFW_PRESS) {
+            params->headlights = true;
+        }
+    }
 
     bool IsDown = action == GLFW_PRESS || action == GLFW_REPEAT;
     switch (key) {
@@ -328,6 +432,7 @@ int main()
         glfwTerminate();
         return -2;
     }
+    glfwSetWindowPos(window, 300, 100);
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, KeyCallback);
     glfwSetCursorPosCallback(window, CursosPosCallback);
@@ -531,7 +636,7 @@ int main()
         HandleInput(&params);
 
         glm::mat4 view = glm::mat4(1.0f);
-        view = glm::lookAt(params.position, params.position + params.cameraFront, params.cameraUp);
+        view = glm::lookAt(glm::vec3(0.0 + params.carXOffset, 2.3, 1.0 + params.carZOffset), glm::vec3(0.0 + params.carXOffset, 2.3, 1.0 + params.carZOffset) + params.cameraFront, params.cameraUp);
         projectionP = glm::perspective(glm::radians(90.f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
         phongShader.setMat4("uView", view);
         phongShader.setVec3("uViewPos", params.position);
@@ -557,26 +662,43 @@ int main()
         simpleCube2->Render(&phongShader, 0,1,0);
 
         //CarBase
-        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 0.0));
-        m = glm::rotate(m, glm::radians(0.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(glm::mat4(1.0), glm::vec3(params.carXOffset, 0.0, params.carZOffset));
+        m = glm::rotate(m, glm::radians(params.carRot), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, glm::vec3(-params.carXOffset, 0.0, -params.carZOffset));
+
+        m = glm::translate(m, glm::vec3(0.0 , 0.0, 0.0));
+        m = glm::translate(m, glm::vec3(params.carXOffset, 0.0, params.carZOffset));
         m = glm::scale(m, glm::vec3(6.0, 1.0, 12.0));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, 0, 0, 0);
 
         //CarSides
-        m = glm::translate(glm::mat4(1.0), glm::vec3(-2.5, 2.0, 0.0));
-        m = glm::rotate(m, glm::radians(0.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(glm::mat4(1.0), glm::vec3(params.carXOffset, 0.0, params.carZOffset));
+        m = glm::rotate(m, glm::radians(params.carRot), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, glm::vec3(-params.carXOffset, 0.0, -params.carZOffset));
+
+        m = glm::translate(m, glm::vec3(-2.5, 2.0, 0.0));
+        m = glm::translate(m, glm::vec3(params.carXOffset, 0.0, params.carZOffset));
         m = glm::scale(m, glm::vec3(1.0, 4.0, 9.0));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, 0, 0, 0);
 
-        m = glm::translate(glm::mat4(1.0), glm::vec3(2.5, 2.0, 0.0));
-        m = glm::rotate(m, glm::radians(0.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(glm::mat4(1.0), glm::vec3(params.carXOffset, 0.0, params.carZOffset));
+        m = glm::rotate(m, glm::radians(params.carRot), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, glm::vec3(-params.carXOffset, 0.0, -params.carZOffset));
+
+        m = glm::translate(m, glm::vec3(2.5, 2.0, 0.0));
+        m = glm::translate(m, glm::vec3(params.carXOffset, 0.0, params.carZOffset));
         m = glm::scale(m, glm::vec3(1.0, 4.0, 9.0));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, 0, 0, 0);
 
-        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 2.0, -4.5));
+        m = glm::translate(glm::mat4(1.0), glm::vec3(params.carXOffset, 0.0, params.carZOffset));
+        m = glm::rotate(m, glm::radians(params.carRot), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, glm::vec3(-params.carXOffset, 0.0, -params.carZOffset));
+
+        m = glm::translate(m, glm::vec3(0.0, 2.0, -4.5));
+        m = glm::translate(m, glm::vec3(params.carXOffset, 0.0, params.carZOffset));
         m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::rotate(m, glm::radians(20.f), glm::vec3(0.0, 0.0, 1.0));
         m = glm::scale(m, glm::vec3(1.0, 5.0, 6.0));
@@ -584,22 +706,35 @@ int main()
         simpleCube->Render(&phongShader, 0, 0, 0);
 
         //CarTop
-        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 4.5, 0.0));
-        m = glm::rotate(m, glm::radians(0.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(glm::mat4(1.0), glm::vec3(params.carXOffset, 0.0, params.carZOffset));
+        m = glm::rotate(m, glm::radians(params.carRot), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, glm::vec3(-params.carXOffset, 0.0, -params.carZOffset));
+
+        m = glm::translate(m, glm::vec3(0.0, 4.5, 0.0));
+        m = glm::translate(m, glm::vec3(params.carXOffset, 0.0, params.carZOffset));
         m = glm::scale(m, glm::vec3(6.0, 1.0, 10.0));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, 0, 0, 0);
 
         //Instrument
-        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.7, 4.0));
-        m = glm::rotate(m, glm::radians(0.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(glm::mat4(1.0), glm::vec3(params.carXOffset, 0.0, params.carZOffset));
+        m = glm::rotate(m, glm::radians(params.carRot), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, glm::vec3(-params.carXOffset, 0.0, -params.carZOffset));
+
+        m = glm::translate(m, glm::vec3(0.0, 0.7, 4.0));
+        m = glm::translate(m, glm::vec3(params.carXOffset, 0.0, params.carZOffset));
         m = glm::scale(m, glm::vec3(4.0, 1.0, 0.2));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, 1, 0, 0);
 
 
         //Steering wheel
-        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 1.2, 3.8));
+        m = glm::translate(glm::mat4(1.0), glm::vec3(params.carXOffset, 0.0, params.carZOffset));
+        m = glm::rotate(m, glm::radians(params.carRot), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, glm::vec3(-params.carXOffset, 0.0, -params.carZOffset));
+
+        m = glm::translate(m, glm::vec3(0.0, 1.2, 3.8));
+        m = glm::translate(m, glm::vec3(params.carXOffset, 0.0, params.carZOffset));
         m = glm::rotate(m, glm::radians(-80.f), glm::vec3(1.0, 0.0, 0.0));
         m = glm::rotate(m, glm::radians(0.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(0.2));
@@ -610,7 +745,12 @@ int main()
         DrawBuildings(phongShader, simpleCube, buildingDif, buildingSpec);
 
         //Glass
-        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 2, 4.0));
+        m = glm::translate(glm::mat4(1.0), glm::vec3(params.carXOffset, 0.0, params.carZOffset));
+        m = glm::rotate(m, glm::radians(params.carRot), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, glm::vec3(-params.carXOffset, 0.0, -params.carZOffset));
+
+        m = glm::translate(m, glm::vec3(0.0, 2, 4.0));
+        m = glm::translate(m, glm::vec3(params.carXOffset, 0.0, params.carZOffset));
         m = glm::rotate(m, glm::radians(-30.f), glm::vec3(1.0, 0.0, 0.0));
         m = glm::scale(m, glm::vec3(4.2, 6.0, 0.1));
         phongShader.setMat4("uModel", m);
