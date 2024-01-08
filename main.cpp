@@ -129,7 +129,7 @@ static void DrawHud(Shader& hudShader, unsigned hudTex) {
 
 static void DrawBuildings(Shader& shader, GameObject* building, unsigned buildingTex, unsigned buildingSpec) {
     shader.use();
-    int numberOfBuildings = 10;
+    int numberOfBuildings = 10*5;
     glm::mat4 m = glm::mat4(1.f);
 
     for (int i = 0; i < numberOfBuildings; i++) {
@@ -232,7 +232,7 @@ static void HandleInput(Params* params) {
     if (params->rotRight) {
         params->carRot -= 50 * params->dt;
     }
-    params->carRot = glm::clamp(params->carRot, -60.f, 60.f);
+    params->carRot = glm::clamp(params->carRot, -720.f, 720.f);
 }
 
 static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
@@ -285,9 +285,8 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
         std::cout << "glm::vec3(" << params->objPos.x << "," << params->objPos.y << "," << params->objPos.z << ")" << std::endl;
     }
 
-    if (key == GLFW_KEY_R && action == GLFW_PRESS)
+    if (key == GLFW_KEY_L && action == GLFW_PRESS)
     {
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         params->test1 = !params->test1;
     }
 
@@ -398,12 +397,12 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
     }
     if (key == GLFW_KEY_R) {
         if (action == GLFW_PRESS) {
-            params->nightVision = true;
+            params->nightVision = !params->nightVision;
         }
     }
     if (key == GLFW_KEY_F) {
         if (action == GLFW_PRESS) {
-            params->headlights = true;
+            params->headlights = !params->headlights;
         }
     }
 
@@ -436,6 +435,7 @@ int main()
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, KeyCallback);
     glfwSetCursorPosCallback(window, CursosPosCallback);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     if (glewInit() !=GLEW_OK)
     {
@@ -521,10 +521,10 @@ int main()
         // TOP SIDE
         -0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, // L D
          0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 2.0f, 0.0f, // R D
-        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 2.0f * 8.333f, // L U
+        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 2.0f * (250 * 5.f) / 30, // L U
          0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 2.0f, 0.0f, // R D
-         0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 2.0f, 2.0f * 8.333f, // R U
-        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 2.0f * 8.333f, // L U
+         0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 2.0f, 2.0f * (250 * 5.f)/ 30, // R U
+        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 2.0f * (250 * 5.f) / 30, // L U
         // BACK SIDE
         0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, // L D
         -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 100.0f, 0.0f, // R D
@@ -551,12 +551,12 @@ int main()
     view = glm::lookAt(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     phongShader.setMat4("uView", view);
 
-    glm::mat4 projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
+    glm::mat4 projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 200.0f);
     phongShader.setMat4("uProjection", projectionP);
 
     phongShader.setVec3("uViewPos", 0.0, 0.0, 5.0);
 
-    phongShader.setVec3("uDirLight.Position", 0.0, 20, 0.0);
+    /*phongShader.setVec3("uDirLight.Position", 0.0, 20, 0.0);
     phongShader.setVec3("uDirLight.Direction", 0.1, -5, 0.1);
     phongShader.setVec3("uDirLight.Ka", glm::vec3(0.5));
     phongShader.setVec3("uDirLight.Kd", glm::vec3(0.5));
@@ -582,9 +582,9 @@ int main()
     phongShader.setFloat("uSpotlights[1].OuterCutOff", glm::cos(glm::radians(20.0f)));
     phongShader.setFloat("uSpotlights[1].Kc", 1.0);
     phongShader.setFloat("uSpotlights[1].Kl", 0.092f);
-    phongShader.setFloat("uSpotlights[1].Kq", 0.032f);
+    phongShader.setFloat("uSpotlights[1].Kq", 0.032f);*/
 
-    phongShader.setVec3("uPointLights[0].Position", glm::vec3(0.0, -2.0, 0.0));
+    phongShader.setVec3("uPointLights[0].Position", glm::vec3(-500));
     phongShader.setVec3("uPointLights[0].Ka", glm::vec3(230.0 / 255 / 0.1, 92.0 / 255 / 0.1, 0.0f));
     phongShader.setVec3("uPointLights[0].Kd", glm::vec3(230.0 / 255 / 50, 92.0 / 255 / 50, 0.0f));
     phongShader.setVec3("uPointLights[0].Ks", glm::vec3(1.0f));
@@ -617,9 +617,9 @@ int main()
 
     glClearColor(0.2, 0.2, 0.6, 1.0);
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
+    glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     while (!glfwWindowShouldClose(window))
     {
@@ -635,12 +635,34 @@ int main()
         //Camera
         HandleInput(&params);
 
-        glm::mat4 view = glm::mat4(1.0f);
-        view = glm::lookAt(glm::vec3(0.0 + params.carXOffset, 2.3, 1.0 + params.carZOffset), glm::vec3(0.0 + params.carXOffset, 2.3, 1.0 + params.carZOffset) + params.cameraFront, params.cameraUp);
-        projectionP = glm::perspective(glm::radians(90.f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
+        float radius = 1.0f;
+        float angle = glm::radians(90-params.carRot);
+
+        float cameraX = params.carXOffset + radius * cos(angle);
+        float cameraZ = params.carZOffset + radius * sin(angle);
+
+        // Update camera front vector
+        glm::vec3 front;
+        front.x = cos(glm::radians(90 - params.carRot));
+        front.y = 0.0f;
+        front.z = sin(glm::radians(90 - params.carRot));
+        front = glm::normalize(front);
+
+        glm::mat4 view = glm::lookAt(glm::vec3(cameraX, 2.3, cameraZ),
+            glm::vec3(cameraX, 2.3, cameraZ) + front,
+            params.cameraUp);
+
         phongShader.setMat4("uView", view);
-        phongShader.setVec3("uViewPos", params.position);
+        phongShader.setVec3("uViewPos", glm::vec3(cameraX, 2.3, cameraZ));
         phongShader.setMat4("uProjection", projectionP);
+
+
+        /*view = glm::lookAt(params.position,
+            params.position + params.cameraFront,
+            params.cameraUp);
+
+        phongShader.setMat4("uView", view);
+        phongShader.setVec3("uViewPos", params.position);*/
 
 
         //
@@ -649,15 +671,33 @@ int main()
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, texture, kockaSpec);*/
 
+        //NightVision / Normal vision
+        if (!params.nightVision) {
+            phongShader.setVec3("uDirLight.Position", 0.0, 20, 0.0);
+            phongShader.setVec3("uDirLight.Direction", 0.1, -5, 0.1);
+            phongShader.setVec3("uDirLight.Ka", glm::vec3(0.2));
+            phongShader.setVec3("uDirLight.Kd", glm::vec3(0.3));
+            phongShader.setVec3("uDirLight.Ks", glm::vec3(10.f));
+        }
+        else
+        {
+            phongShader.setVec3("uDirLight.Position", 0.0, 20, 0.0);
+            phongShader.setVec3("uDirLight.Direction", 0.1, -5, 0.1);
+            phongShader.setVec3("uDirLight.Ka", glm::vec3(0,0.5,0));
+            phongShader.setVec3("uDirLight.Kd", glm::vec3(0, 0.6, 0));
+            phongShader.setVec3("uDirLight.Ks", glm::vec3(10.f));
+        }
+        
+
         //Road
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, -1.0, 100.0));
-        m = glm::scale(m, glm::vec3(30.0, 1.0, 250.0));
+        m = glm::scale(m, glm::vec3(30.0, 1.0, 250.0*5.f));
         phongShader.setMat4("uModel", m);
         simpleCube2->Render(&phongShader, asphalt);
 
         //Ground
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, -1.1, 120.0));
-        m = glm::scale(m, glm::vec3(300.0, 1.0, 300.0));
+        m = glm::scale(m, glm::vec3(300.0, 1.0, 300.0*5.));
         phongShader.setMat4("uModel", m);
         simpleCube2->Render(&phongShader, 0,1,0);
 
@@ -670,16 +710,55 @@ int main()
         m = glm::translate(m, glm::vec3(params.carXOffset, 0.0, params.carZOffset));
         m = glm::scale(m, glm::vec3(6.0, 1.0, 12.0));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 0, 0);
+        simpleCube->Render(&phongShader, 0.1, 0.1, 0.1);
+
+        glm::vec3 frontSidePosition = glm::vec3(m[3]) + front*6.f;
+
+        glm::vec3 arbitraryVector(0.0f, 1.0f, 0.0f);
+        glm::vec3 rightVector = glm::cross(front, arbitraryVector);
+        rightVector = glm::normalize(rightVector);
+
+        glm::vec3 headlight1Pos = frontSidePosition + rightVector * 2.6f;
+        glm::vec3 headlight2Pos = frontSidePosition - rightVector * 2.6f;
+
+        glm::vec3 lightInt = glm::vec3(0);
+        glm::vec3 lightIntA = glm::vec3(0);
+        if (params.headlights) {
+            lightInt = glm::vec3(3.0f, 3.0f, 3.0f);
+            lightIntA = glm::vec3(0.5);
+        }
+
+        phongShader.setVec3("uSpotlights[0].Position", headlight1Pos);
+        phongShader.setVec3("uSpotlights[0].Direction", front);
+        phongShader.setVec3("uSpotlights[0].Ka", lightIntA);
+        phongShader.setVec3("uSpotlights[0].Kd", lightInt);
+        phongShader.setVec3("uSpotlights[0].Ks", glm::vec3(50.0f));
+        phongShader.setFloat("uSpotlights[0].InnerCutOff", glm::cos(glm::radians(15.0f)));
+        phongShader.setFloat("uSpotlights[0].OuterCutOff", glm::cos(glm::radians(25.0f)));
+        phongShader.setFloat("uSpotlights[0].Kc", 1.0);
+        phongShader.setFloat("uSpotlights[0].Kl", 0.05f);
+        phongShader.setFloat("uSpotlights[0].Kq", 0.022f);
+
+        phongShader.setVec3("uSpotlights[1].Position", headlight2Pos);
+        phongShader.setVec3("uSpotlights[1].Direction", front);
+        phongShader.setVec3("uSpotlights[1].Ka", lightIntA);
+        phongShader.setVec3("uSpotlights[1].Kd", lightInt);
+        phongShader.setVec3("uSpotlights[1].Ks", glm::vec3(50.0f));
+        phongShader.setFloat("uSpotlights[1].InnerCutOff", glm::cos(glm::radians(15.0f)));
+        phongShader.setFloat("uSpotlights[1].OuterCutOff", glm::cos(glm::radians(25.0f)));
+        phongShader.setFloat("uSpotlights[1].Kc", 1.0);
+        phongShader.setFloat("uSpotlights[1].Kl", 0.05f);
+        phongShader.setFloat("uSpotlights[1].Kq", 0.022f);
 
         //CarSides
         m = glm::translate(glm::mat4(1.0), glm::vec3(params.carXOffset, 0.0, params.carZOffset));
         m = glm::rotate(m, glm::radians(params.carRot), glm::vec3(0.0, 1.0, 0.0));
         m = glm::translate(m, glm::vec3(-params.carXOffset, 0.0, -params.carZOffset));
 
-        m = glm::translate(m, glm::vec3(-2.5, 2.0, 0.0));
+        m = glm::translate(m, glm::vec3(-2.5, 1.5, 1.5));
         m = glm::translate(m, glm::vec3(params.carXOffset, 0.0, params.carZOffset));
-        m = glm::scale(m, glm::vec3(1.0, 4.0, 9.0));
+        m = glm::rotate(m, glm::radians(-30.f), glm::vec3(1.0, 0.0, 0.0));
+        m = glm::scale(m, glm::vec3(1.0, 5.0, 5.0));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, 0, 0, 0);
 
@@ -687,9 +766,10 @@ int main()
         m = glm::rotate(m, glm::radians(params.carRot), glm::vec3(0.0, 1.0, 0.0));
         m = glm::translate(m, glm::vec3(-params.carXOffset, 0.0, -params.carZOffset));
 
-        m = glm::translate(m, glm::vec3(2.5, 2.0, 0.0));
+        m = glm::translate(m, glm::vec3(2.5, 1.5, 1.5));
         m = glm::translate(m, glm::vec3(params.carXOffset, 0.0, params.carZOffset));
-        m = glm::scale(m, glm::vec3(1.0, 4.0, 9.0));
+        m = glm::rotate(m, glm::radians(-30.f), glm::vec3(1.0, 0.0, 0.0));
+        m = glm::scale(m, glm::vec3(1.0, 5.0, 5.0));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, 0, 0, 0);
 
@@ -710,9 +790,9 @@ int main()
         m = glm::rotate(m, glm::radians(params.carRot), glm::vec3(0.0, 1.0, 0.0));
         m = glm::translate(m, glm::vec3(-params.carXOffset, 0.0, -params.carZOffset));
 
-        m = glm::translate(m, glm::vec3(0.0, 4.5, 0.0));
+        m = glm::translate(m, glm::vec3(0.0, 4.5, -1.0));
         m = glm::translate(m, glm::vec3(params.carXOffset, 0.0, params.carZOffset));
-        m = glm::scale(m, glm::vec3(6.0, 1.0, 10.0));
+        m = glm::scale(m, glm::vec3(6.0, 1.0, 8.0));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, 0, 0, 0);
 
