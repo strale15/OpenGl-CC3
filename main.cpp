@@ -540,12 +540,25 @@ int main()
     };
     GameObject* simpleCube2 = new GameObject(cubeVertices2);
 
+    std::vector<float> vertices = {
+        // Positions      // UVs
+        0.0f, 0.0f, 0.0f, 0.0f, 0.0f,  // Vertex 1
+        1.0f, 0.0f, 0.0f, 1.0f, 0.0f,  // Vertex 2
+        1.0f, 1.0f, 0.0f, 1.0f, 1.0f,  // Vertex 3
+
+        0.0f, 0.0f, 0.0f, 0.0f, 0.0f,  // Vertex 1 (Repeated)
+        1.0f, 1.0f, 0.0f, 1.0f, 1.0f,  // Vertex 3 (Repeated)
+        0.0f, 1.0f, 0.0f, 0.0f, 1.0f   // Vertex 4
+    };
+    GameObject* dKita = new GameObject(vertices, 0);
+
 
     Model lija("res/low-poly-fox.obj");
     Model steeringWheelModel("res/Isuzu NKR Steering Wheels.obj");
 
     Shader phongShader("phong.vert", "phong.frag");
     Shader hudShader("hud.vert", "hud.frag");
+    Shader dShader("2dSahder.vert", "2dShader.frag");
 
 
     phongShader.use();
@@ -664,14 +677,27 @@ int main()
         phongShader.setMat4("uProjection", projectionP);
 
 
-        /*view = glm::lookAt(params.position,
+        view = glm::lookAt(params.position,
             params.position + params.cameraFront,
             params.cameraUp);
 
         phongShader.setMat4("uView", view);
-        phongShader.setVec3("uViewPos", params.position);*/
+        phongShader.setVec3("uViewPos", params.position);
 
+        //2D
+        dShader.use();
+        dShader.setMat4("uView", view);
+        dShader.setMat4("uProjection", projectionP);
 
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.7, 5.0));
+        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::rotate(m, glm::radians(-30.f), glm::vec3(1.0, 0.0, 0.0));
+        m = glm::scale(m, glm::vec3(1.0,1.0,1.0));
+        dShader.setMat4("uModel", m);
+        dKita->Render(&dShader, kockaDif);
+        //------------
+
+        phongShader.use();
         //
        /* m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, -2.0, 0.0));
         m = glm::scale(m, glm::vec3(12.0, 0.5, 12.0));
@@ -682,8 +708,8 @@ int main()
         if (!params.nightVision) {
             phongShader.setVec3("uDirLight.Position", 0.0, 20, 0.0);
             phongShader.setVec3("uDirLight.Direction", 0.1, -5, 0.1);
-            phongShader.setVec3("uDirLight.Ka", glm::vec3(0.1));
-            phongShader.setVec3("uDirLight.Kd", glm::vec3(0.1));
+            phongShader.setVec3("uDirLight.Ka", glm::vec3(0.5));
+            phongShader.setVec3("uDirLight.Kd", glm::vec3(0.5));
             phongShader.setVec3("uDirLight.Ks", glm::vec3(10.f));
         }
         else
