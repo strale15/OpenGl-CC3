@@ -19,6 +19,8 @@
 
 #include "GameObject.cpp"
 
+#include <Windows.h>
+
 const unsigned int wWidth = 1920;
 const unsigned int wHeight = 1080;
 
@@ -28,27 +30,20 @@ double lastY;
 
 struct Params {
     float dt;
-    bool test1 = true;
+    bool isFps = true;
 
-    bool isCurosIn;
+    bool isCurosIn = true;
     double xPosC = 0.0;
     double yPosC = 0.0;
 
-    double frontX;
-    double frontY;
-    double frontZ;
-    glm::vec3 cameraFront = glm::vec3(0.0, -0.5, 0.866025);
+    glm::vec3 cameraFront = glm::vec3(0.0, 0.0, 1.0);
     glm::vec3 cameraUp = glm::vec3(0.0, 1.0, 0.0);
 
-    glm::vec3 position = glm::vec3(0.0, 3.0, 0.0);
-    glm::vec3 objPos = glm::vec3(0.0, 1.0, 0.0);
+    glm::vec3 position = glm::vec3(0.0, 0.0, -1.0);
+    glm::vec3 objPos = glm::vec3(0.0, 0.0, 0.0);
 
     double camYaw = 90;
-    double camPitch = -30;
-
-    float camX;
-    float camY;
-    float camZ;
+    double camPitch = 0;
 
     bool wDown = false;
     bool sDown = false;
@@ -57,25 +52,6 @@ struct Params {
 
     bool spaceDown = false;
     bool shiftDown = false;
-
-    bool nightVision = false;
-    bool headlights = false;
-
-    bool forward = false;
-    bool backward = false;
-    bool left = false;
-    bool right = false;
-    bool rotLeft = false;
-    bool rotRight = false;
-
-    bool engineBroken = false;
-    bool bateryBroken = false;
-
-    float velocity = 0;
-    glm::vec3 carOffset = glm::vec3(0);
-    glm::vec3 carForward = glm::vec3(0);
-    float carXOffset = 0;
-    float carRot = 0;
 };
 
 static void DrawHud(Shader& hudShader, unsigned hudTex) {
@@ -134,14 +110,14 @@ static void DrawHud(Shader& hudShader, unsigned hudTex) {
 static void HandleInput(Params* params) {
     if (params->wDown)
     {
-        if (params->test1)
+        if (params->isFps)
             params->position += 7.2f * params->cameraFront * params->dt;
         else
             params->objPos.z += 0.5f * params->dt;
     }
     if (params->sDown)
     {
-        if (params->test1)
+        if (params->isFps)
             params->position -= 7.2f * params->cameraFront * params->dt;
         else
             params->objPos.z -= 0.5f * params->dt;
@@ -150,7 +126,7 @@ static void HandleInput(Params* params) {
     {
 
         glm::vec3 strafe = glm::cross(params->cameraFront, params->cameraUp);
-        if (params->test1)
+        if (params->isFps)
             params->position -= 7.2f * strafe * params->dt;
         else
             params->objPos.x += 0.5f * params->dt;
@@ -158,77 +134,25 @@ static void HandleInput(Params* params) {
     if (params->dDown)
     {
         glm::vec3 strafe = glm::cross(params->cameraFront, params->cameraUp);
-        if (params->test1)
+        if (params->isFps)
             params->position += 7.2f * strafe * params->dt;
         else
             params->objPos.x -= 0.5f * params->dt;
     }
     if (params->spaceDown)
     {
-        if (params->test1)
+        if (params->isFps)
             params->position.y += 4.2 * params->dt;
         else
             params->objPos.y += 0.5f * params->dt;
     }
     if (params->shiftDown)
     {
-        if (params->test1)
+        if (params->isFps)
             params->position.y -= 4.1 * params->dt;
         else
             params->objPos.y -= 0.5f * params->dt;
     }
-
-
-    //Car
-    params->velocity = glm::clamp(params->velocity, -20.f, 60.f);
-    //cout << params->velocity << endl;
-
-    if (glm::abs(params->velocity) < 0.005) {
-        params->velocity = 0;
-    }
-
-    if (params->velocity > 0 && !params->forward) {
-        params->velocity -= 8 * params->dt;
-    }
-    else if (params->velocity < 0 && !params->backward) {
-        params->velocity += 8 * params->dt;
-    }
-
-    if (params->forward) {
-        params->velocity += 10 * params->dt;
-    }
-    if (params->backward) {
-        params->velocity -= 10 * params->dt;
-    }
-    if (params->left) {
-        glm::vec3 left = glm::cross(glm::vec3(0, 1, 0), params->carForward);
-        left = glm::normalize(left);
-
-        params->carOffset += 0.5f * left * glm::abs(params->velocity) * params->dt;
-        params->carOffset += 0.2f * params->carForward * params->velocity * params->dt;
-    }
-    else if (params->right) {
-        glm::vec3 right = -glm::cross(glm::vec3(0, 1, 0), params->carForward);
-        right = glm::normalize(right);
-
-        params->carOffset += 0.5f * right * glm::abs(params->velocity) * params->dt;
-        params->carOffset += 0.2f * params->carForward * params->velocity * params->dt;
-    }
-    else {
-        params->carOffset += params->carForward * params->velocity * params->dt;
-    }
-
-    params->carOffset.z = glm::clamp(params->carOffset.z, -1000.f, 1000.f);
-    params->carOffset.x = glm::clamp(params->carOffset.x, -25.f, 25.f);
-
-    if (params->rotLeft) {
-        params->carRot += 120 * params->dt;
-    }
-    if (params->rotRight) {
-        params->carRot -= 120 * params->dt;
-    }
-
-    params->carRot = glm::clamp(params->carRot, -720.f, 720.f);
 }
 
 static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
@@ -275,15 +199,14 @@ static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
 
 static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode) {
     Params* params = (Params*)glfwGetWindowUserPointer(window);
-    if (key == GLFW_KEY_O && action == GLFW_PRESS)
+    if (key == GLFW_KEY_E && action == GLFW_PRESS)
     {
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         std::cout << "glm::vec3(" << params->objPos.x << "," << params->objPos.y << "," << params->objPos.z << ")" << std::endl;
     }
 
-    if (key == GLFW_KEY_L && action == GLFW_PRESS)
+    if (key == GLFW_KEY_R && action == GLFW_PRESS)
     {
-        params->test1 = !params->test1;
+        params->isFps = !params->isFps;
     }
 
     if (key == GLFW_KEY_W && action == GLFW_PRESS)
@@ -339,87 +262,13 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
     {
         params->shiftDown = false;
     }
-
-    //CAR
-    if (key == GLFW_KEY_UP) {
-        if (action == GLFW_PRESS) {
-            params->forward = true;
-        }
-        else if (action == GLFW_RELEASE) {
-            params->forward = false;
-        }
-    }
-
-    if (key == GLFW_KEY_DOWN) {
-        if (action == GLFW_PRESS) {
-            params->backward = true;
-        }
-        else if (action == GLFW_RELEASE) {
-            params->backward = false;
-        }
-    }
-
-    if (key == GLFW_KEY_LEFT) {
-        if (action == GLFW_PRESS) {
-            params->left = true;
-        }
-        else if (action == GLFW_RELEASE) {
-            params->left = false;
-        }
-    }
-    if (key == GLFW_KEY_RIGHT) {
-        if (action == GLFW_PRESS) {
-            params->right = true;
-        }
-        else if (action == GLFW_RELEASE) {
-            params->right = false;
-        }
-    }
-    if (key == GLFW_KEY_Q) {
-        if (action == GLFW_PRESS) {
-            params->rotLeft = true;
-        }
-        else if (action == GLFW_RELEASE) {
-            params->rotLeft = false;
-        }
-    }
-    if (key == GLFW_KEY_E) {
-        if (action == GLFW_PRESS) {
-            params->rotRight = true;
-        }
-        else if (action == GLFW_RELEASE) {
-            params->rotRight = false;
-        }
-    }
-    if (key == GLFW_KEY_R) {
-        if (action == GLFW_PRESS) {
-            params->nightVision = !params->nightVision;
-        }
-    }
-    if (key == GLFW_KEY_F) {
-        if (action == GLFW_PRESS) {
-            params->headlights = !params->headlights;
-        }
-    }
-    if (key == GLFW_KEY_C) {
-        if (action == GLFW_PRESS) {
-            params->engineBroken = !params->engineBroken;
-        }
-    }
-    if (key == GLFW_KEY_B) {
-        if (action == GLFW_PRESS) {
-            params->bateryBroken = !params->bateryBroken;
-        }
-    }
-
-    bool IsDown = action == GLFW_PRESS || action == GLFW_REPEAT;
-    switch (key) {
-    case GLFW_KEY_ESCAPE: glfwSetWindowShouldClose(window, GLFW_TRUE); break;
-    }
 }
 
 int main()
 {
+    HWND console = GetConsoleWindow();
+    SetWindowPos(console, 0, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+
     if(!glfwInit())
     {
         std::cout << "GLFW fail!\n" << std::endl;
@@ -437,10 +286,13 @@ int main()
         glfwTerminate();
         return -2;
     }
+
+    glfwSetWindowPos(window, 300, 120);
     glfwMakeContextCurrent(window);
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, KeyCallback);
     glfwSetCursorPosCallback(window, CursosPosCallback);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     if (glewInit() !=GLEW_OK)
     {
@@ -451,12 +303,12 @@ int main()
     //START
     std::vector<float> cubeVertices = {
         // X     Y     Z     NX    NY    NZ    U     V    FRONT SIDE
-        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // L D
-         0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, // R D
-        -0.5f,  0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, // L U
-         0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, // R D
-         0.5f,  0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // R U
-        -0.5f,  0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, // L U
+        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, // L D
+        0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // R D
+        -0.5f,  0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // L U
+        0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // R D
+        0.5f,  0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, // R U
+        -0.5f,  0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // L U
         // LEFT SIDE
         -0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // L D
         -0.5f, -0.5f,  0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, // R D
@@ -495,25 +347,16 @@ int main()
     };
     GameObject* simpleCube = new GameObject(cubeVertices);
 
-
     Model lija("res/low-poly-fox.obj");
 
     Shader phongShader("phong.vert", "phong.frag");
     Shader hudShader("hud.vert", "hud.frag");
 
-
     phongShader.use();
-    glm::mat4 model = glm::mat4(1.0f);
-    phongShader.setMat4("uModel", model);
 
-    glm::mat4 view = glm::mat4(1.0f);
-    view = glm::lookAt(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    phongShader.setMat4("uView", view);
-
+    glm::mat4 view;
     glm::mat4 projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
     phongShader.setMat4("uProjection", projectionP);
-
-    phongShader.setVec3("uViewPos", 0.0, 0.0, 5.0);
 
     phongShader.setVec3("uDirLight.Position", 0.0, 5, 0.0);
     phongShader.setVec3("uDirLight.Direction", 0.1, -5, 0.1);
@@ -551,7 +394,6 @@ int main()
     phongShader.setFloat("uPointLights[0].Kl", 1.0f);
     phongShader.setFloat("uPointLights[0].Kq", 0.272f);
 
-    unsigned texture = Model::textureFromFile("res/kurac.png");
     unsigned hudTex = Model::textureFromFile("res/hudTex.png");
     unsigned kockaDif = Model::textureFromFile("res/container_diffuse.png");
     unsigned kockaSpec = Model::textureFromFile("res/container_specular.png");
@@ -571,7 +413,6 @@ int main()
 
     glClearColor(0.2, 0.2, 0.6, 1.0);
     glEnable(GL_DEPTH_TEST);
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     while (!glfwWindowShouldClose(window))
@@ -581,34 +422,30 @@ int main()
             glfwSetWindowShouldClose(window, true);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
         //Loop
         phongShader.use();
         HandleInput(&params);
 
+        //Camera
         view = glm::lookAt(params.position,params.position + params.cameraFront,params.cameraUp);
 
         phongShader.setMat4("uView", view);
         phongShader.setVec3("uViewPos", params.position);
 
-
-        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, -2.0, 0.0));
-        m = glm::scale(m, glm::vec3(12.0, 0.5, 12.0));
-        phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, texture, kockaSpec);
-
-
-
-        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, -2.0, 0.0));
+        //SCENE
+        //------------------------------------------------------------------------------------------------------------
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 0.0));
         m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
-        m = glm::scale(m, glm::vec3(0.02, 0.2, 1.0));
+        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 0, 1);
+        simpleCube->Render(&phongShader, 0, 1, 1);
+        //------------------------------------------------------------------------------------------------------------
 
-        //hud
+        //HUD
         DrawHud(hudShader, hudTex);
         phongShader.use();
 
-        //end
         glfwSwapBuffers(window);
         glfwPollEvents();
 
@@ -618,79 +455,6 @@ int main()
 
     glfwTerminate();
     return 0;
-}
-
-unsigned int compileShader(GLenum type, const char* source)
-{
-    std::string content = "";
-    std::ifstream file(source);
-    std::stringstream ss;
-    if (file.is_open())
-    {
-        ss << file.rdbuf();
-        file.close();
-        std::cout << "Uspjesno procitao fajl sa putanje \"" << source << "\"!" << std::endl;
-    }
-    else {
-        ss << "";
-        std::cout << "Greska pri citanju fajla sa putanje \"" << source << "\"!" << std::endl;
-    }
-    std::string temp = ss.str();
-    const char* sourceCode = temp.c_str();
-
-    int shader = glCreateShader(type);
-
-    int success;
-    char infoLog[512];
-    glShaderSource(shader, 1, &sourceCode, NULL);
-    glCompileShader(shader);
-
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (success == GL_FALSE)
-    {
-        glGetShaderInfoLog(shader, 512, NULL, infoLog);
-        if (type == GL_VERTEX_SHADER)
-            printf("VERTEX");
-        else if (type == GL_FRAGMENT_SHADER)
-            printf("FRAGMENT");
-        printf(" sejder ima gresku! Greska: \n");
-        printf(infoLog);
-    }
-    return shader;
-}
-unsigned int createShader(const char* vsSource, const char* fsSource)
-{
-    unsigned int program;
-    unsigned int vertexShader;
-    unsigned int fragmentShader;
-
-    program = glCreateProgram();
-
-    vertexShader = compileShader(GL_VERTEX_SHADER, vsSource);
-    fragmentShader = compileShader(GL_FRAGMENT_SHADER, fsSource);
-
-    glAttachShader(program, vertexShader);
-    glAttachShader(program, fragmentShader);
-
-    glLinkProgram(program);
-    glValidateProgram(program);
-
-    int success;
-    char infoLog[512];
-    glGetProgramiv(program, GL_VALIDATE_STATUS, &success);
-    if (success == GL_FALSE)
-    {
-        glGetShaderInfoLog(program, 512, NULL, infoLog);
-        std::cout << "Objedinjeni sejder ima gresku! Greska: \n";
-        std::cout << infoLog << std::endl;
-    }
-
-    glDetachShader(program, vertexShader);
-    glDeleteShader(vertexShader);
-    glDetachShader(program, fragmentShader);
-    glDeleteShader(fragmentShader);
-
-    return program;
 }
 
 
