@@ -697,6 +697,7 @@ int main()
         front.z = sin(glm::radians(90 - params.carRot));
         front = glm::normalize(front);
 
+
         params.carForward = front;
 
         glm::mat4 view = glm::lookAt(glm::vec3(cameraX, 2.3, cameraZ),
