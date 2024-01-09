@@ -9,8 +9,7 @@ in vec2 UV;
 out vec4 FragColor;
 
 void main() {
-    vec3 MaterialColor = isColor ? uColor : vec3(texture(uTex, UV));
+    vec4 MaterialColor = isColor ? vec4(uColor, 1.0f) : texture(uTex, UV);
 
-    FragColor = vec4(MaterialColor, 1.0f);
-    //FragColor = vec4(1,0,0,1);
+    FragColor = MaterialColor;
 }

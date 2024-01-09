@@ -68,6 +68,9 @@ struct Params {
     bool rotLeft = false;
     bool rotRight = false;
 
+    bool engineBroken = false;
+    bool bateryBroken = false;
+
     float velocity = 0;
     glm::vec3 carOffset = glm::vec3(0);
     glm::vec3 carForward = glm::vec3(0);
@@ -130,18 +133,18 @@ static void DrawHud(Shader& hudShader, unsigned hudTex) {
 
 static void DrawBuildings(Shader& shader, GameObject* building, unsigned buildingTex, unsigned buildingSpec) {
     shader.use();
-    int numberOfBuildings = 2000/30;
+    int numberOfBuildings = 2000/20;
     glm::mat4 m = glm::mat4(1.f);
 
     for (int i = 0; i < numberOfBuildings; i++) {
         float offset = 20.f * i;
-        m = glm::translate(glm::mat4(1.0), glm::vec3(30.0, 23.0, -1000.0 + offset));
+        m = glm::translate(glm::mat4(1.0), glm::vec3(40.0, 23.0, -1000.0 + offset));
         m = glm::rotate(m, glm::radians(0.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(10.0, 50.0, 10.0));
         shader.setMat4("uModel", m);
         building->Render(&shader, buildingTex, buildingSpec);
 
-        m = glm::translate(glm::mat4(1.0), glm::vec3(-30.0, 23.0, -1000.0 + offset));
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-40.0, 23.0, -1000.0 + offset));
         m = glm::rotate(m, glm::radians(0.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(10.0, 50.0, 10.0));
         shader.setMat4("uModel", m);
@@ -199,7 +202,7 @@ static void HandleInput(Params* params) {
 
     //Car
     params->velocity = glm::clamp(params->velocity, -20.f, 60.f);
-    cout << params->velocity << endl;
+    //cout << params->velocity << endl;
 
     if (glm::abs(params->velocity) < 0.005) {
         params->velocity = 0;
@@ -223,16 +226,21 @@ static void HandleInput(Params* params) {
         left = glm::normalize(left);
 
         params->carOffset += 0.5f * left * glm::abs(params->velocity) * params->dt;
+        params->carOffset += 0.2f * params->carForward * params->velocity * params->dt;
     }
     else if (params->right) {
         glm::vec3 right = -glm::cross(glm::vec3(0, 1, 0), params->carForward);
         right = glm::normalize(right);
 
         params->carOffset += 0.5f * right * glm::abs(params->velocity) * params->dt;
+        params->carOffset += 0.2f * params->carForward * params->velocity * params->dt;
     }
     else {
         params->carOffset += params->carForward * params->velocity * params->dt;
     }
+
+    params->carOffset.z = glm::clamp(params->carOffset.z, -1000.f, 1000.f);
+    params->carOffset.x = glm::clamp(params->carOffset.x, -25.f, 25.f);
 
     if (params->rotLeft) {
         params->carRot += 120 * params->dt;
@@ -414,6 +422,16 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
             params->headlights = !params->headlights;
         }
     }
+    if (key == GLFW_KEY_C) {
+        if (action == GLFW_PRESS) {
+            params->engineBroken = !params->engineBroken;
+        }
+    }
+    if (key == GLFW_KEY_B) {
+        if (action == GLFW_PRESS) {
+            params->bateryBroken = !params->bateryBroken;
+        }
+    }
 
     bool IsDown = action == GLFW_PRESS || action == GLFW_REPEAT;
     switch (key) {
@@ -536,10 +554,10 @@ int main()
         // TOP SIDE
         -0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, // L D
          0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 2.0f, 0.0f, // R D
-        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 2.0f * (2000) / 50, // L U
+        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 2.0f * (2000) / 70, // L U
          0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 2.0f, 0.0f, // R D
-         0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 2.0f, 2.0f * (2000)/ 50, // R U
-        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 2.0f * (2000) / 50, // L U
+         0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 2.0f, 2.0f * (2000)/ 70, // R U
+        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 2.0f * (2000) / 70, // L U
         // BACK SIDE
         0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, // L D
         -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 100.0f, 0.0f, // R D
@@ -552,15 +570,15 @@ int main()
 
     std::vector<float> vertices = {
         // Positions      // UVs
-        0.0f, 0.0f, 0.0f, 0.0f, 0.0f,  // Vertex 1
-        1.0f, 0.0f, 0.0f, 1.0f, 0.0f,  // Vertex 2
-        1.0f, 1.0f, 0.0f, 1.0f, 1.0f,  // Vertex 3
+        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,  // Vertex 1
+        0.5f, -0.5f, 0.0f, 1.0f, 1.0f,  // Vertex 2
+        0.5f, 0.5f, 0.0f, 1.0f, 0.0f,  // Vertex 3
 
-        0.0f, 0.0f, 0.0f, 0.0f, 0.0f,  // Vertex 1 (Repeated)
-        1.0f, 1.0f, 0.0f, 1.0f, 1.0f,  // Vertex 3 (Repeated)
-        0.0f, 1.0f, 0.0f, 0.0f, 1.0f   // Vertex 4
+        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,  // Vertex 1 (Repeated)
+        0.5f, 0.5f, 0.0f, 1.0f, 0.0f,  // Vertex 3 (Repeated)
+        -0.5f, 0.5f, 0.0f, 0.0f, 0.0f   // Vertex 4
     };
-    GameObject* dKita = new GameObject(vertices, 0);
+    GameObject* rectangle = new GameObject(vertices, 0);
 
 
     Model lija("res/low-poly-fox.obj");
@@ -612,13 +630,13 @@ int main()
     phongShader.setFloat("uSpotlights[1].Kl", 0.092f);
     phongShader.setFloat("uSpotlights[1].Kq", 0.032f);*/
 
-    phongShader.setVec3("uPointLights[0].Position", glm::vec3(-500));
+    /*phongShader.setVec3("uPointLights[0].Position", glm::vec3(-500));
     phongShader.setVec3("uPointLights[0].Ka", glm::vec3(230.0 / 255 / 0.1, 92.0 / 255 / 0.1, 0.0f));
     phongShader.setVec3("uPointLights[0].Kd", glm::vec3(230.0 / 255 / 50, 92.0 / 255 / 50, 0.0f));
     phongShader.setVec3("uPointLights[0].Ks", glm::vec3(1.0f));
     phongShader.setFloat("uPointLights[0].Kc", 1.5f);
     phongShader.setFloat("uPointLights[0].Kl", 1.0f);
-    phongShader.setFloat("uPointLights[0].Kq", 0.272f);
+    phongShader.setFloat("uPointLights[0].Kq", 0.272f);*/
 
     unsigned texture = Model::textureFromFile("res/kurac.png");
     unsigned hudTex = Model::textureFromFile("res/hudTex.png");
@@ -627,6 +645,7 @@ int main()
     unsigned buildingDif = Model::textureFromFile("res/zgrada.png");
     unsigned buildingSpec = Model::textureFromFile("res/zgrada_spec.png");
     unsigned asphalt = Model::textureFromFile("res/cracked-asphalt-texture.jpg");
+    unsigned tachometer = Model::textureFromFile("res/speedometer.png");
 
     phongShader.setInt("uMaterial.Kd", 0);
     phongShader.setInt("uMaterial.Ks", 1);
@@ -688,7 +707,7 @@ int main()
         phongShader.setVec3("uViewPos", glm::vec3(cameraX, 2.3, cameraZ));
         phongShader.setMat4("uProjection", projectionP);
 
-
+        //FPS
         /*view = glm::lookAt(params.position,
             params.position + params.cameraFront,
             params.cameraUp);
@@ -697,31 +716,108 @@ int main()
         phongShader.setVec3("uViewPos", params.position);*/
 
         //2D Instruemtns
+        //glm::vec3(1.0, 0.85, 3.89)
         dShader.use();
         dShader.setMat4("uView", view);
         dShader.setMat4("uProjection", projectionP);
 
-        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.7, 5.0));
+        
+
+        //TachmoIndicator
+        float rotation = (300 * glm::abs(params.velocity) / 60.0);
+
+        m = glm::translate(glm::mat4(1.0), params.carOffset);
+        m = glm::rotate(m, glm::radians(params.carRot), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, -params.carOffset);
+
+        m = glm::translate(m, glm::vec3(0.8, 0.85, 3.88) + params.carOffset);
+        m = glm::rotate(m, glm::radians(30.f + rotation), glm::vec3(0.0, 0.0, 1.0));
+        m = glm::translate(m, -glm::vec3(0.8, 0.85, 3.88) - params.carOffset);
+
+        m = glm::translate(m, glm::vec3(0.8, 0.77, 3.88));
+        m = glm::translate(m, params.carOffset);
         m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
-        m = glm::rotate(m, glm::radians(-30.f), glm::vec3(1.0, 0.0, 0.0));
-        m = glm::scale(m, glm::vec3(1.0,1.0,1.0));
+        m = glm::scale(m, glm::vec3(0.02, 0.2, 1.0));
         dShader.setMat4("uModel", m);
-        dKita->Render(&dShader, kockaDif);
+        rectangle->Render(&dShader, 0,0,1);
+
+        //EngineLight
+        m = glm::translate(glm::mat4(1.0), params.carOffset);
+        m = glm::rotate(m, glm::radians(params.carRot), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, -params.carOffset);
+
+        m = glm::translate(m, glm::vec3(-0.8, 0.85, 3.89));
+        m = glm::translate(m, params.carOffset);
+        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.2));
+        dShader.setMat4("uModel", m);
+        rectangle->Render(&dShader, 1,1,0);
+
+        glm::vec3 engineLightPosition = glm::vec3(m[3]);
+
+        phongShader.use();
+        if (!params.engineBroken) {
+            glm::vec3 zeroVec = glm::vec3(0.0f);
+            phongShader.setVec3("uPointLights[0].Ka", zeroVec);
+            phongShader.setVec3("uPointLights[0].Kd", zeroVec);
+            phongShader.setVec3("uPointLights[0].Ks", zeroVec);
+        }
+        else
+        {
+            phongShader.setVec3("uPointLights[0].Ka", glm::vec3(0.1, 0.1, 0));
+            phongShader.setVec3("uPointLights[0].Kd", glm::vec3(4, 4, 0));
+            phongShader.setVec3("uPointLights[0].Ks", glm::vec3(1.0f,1,0));
+        }
+        phongShader.setVec3("uPointLights[0].Position", engineLightPosition);
+        phongShader.setFloat("uPointLights[0].Kc", 0.5f);
+        phongShader.setFloat("uPointLights[0].Kl", 0.2f);
+        phongShader.setFloat("uPointLights[0].Kq", 10.0f);
+        dShader.use();
+
+        //BatteryLight
+        m = glm::translate(glm::mat4(1.0), params.carOffset);
+        m = glm::rotate(m, glm::radians(params.carRot), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, -params.carOffset);
+
+        m = glm::translate(m, glm::vec3(-1.1, 0.85, 3.89));
+        m = glm::translate(m, params.carOffset);
+        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.2));
+        dShader.setMat4("uModel", m);
+        rectangle->Render(&dShader, 1, 0, 0);
+
+        glm::vec3 batteryLightPosition = glm::vec3(m[3]);
+
+        phongShader.use();
+        if (!params.bateryBroken) {
+            glm::vec3 zeroVec = glm::vec3(0.0f);
+            phongShader.setVec3("uPointLights[1].Ka", zeroVec);
+            phongShader.setVec3("uPointLights[1].Kd", zeroVec);
+            phongShader.setVec3("uPointLights[1].Ks", zeroVec);
+        }
+        else
+        {
+            phongShader.setVec3("uPointLights[1].Ka", glm::vec3(0.1, 0, 0));
+            phongShader.setVec3("uPointLights[1].Kd", glm::vec3(4, 0, 0));
+            phongShader.setVec3("uPointLights[1].Ks", glm::vec3(1.0f,0,0));
+        }
+        phongShader.setVec3("uPointLights[1].Position", batteryLightPosition);
+        phongShader.setFloat("uPointLights[1].Kc", 0.5f);
+        phongShader.setFloat("uPointLights[1].Kl", 0.2f);
+        phongShader.setFloat("uPointLights[1].Kq", 10.0f);
+        dShader.use();
+
+
         //------------
 
         phongShader.use();
-        //
-       /* m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, -2.0, 0.0));
-        m = glm::scale(m, glm::vec3(12.0, 0.5, 12.0));
-        phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, texture, kockaSpec);*/
 
         //NightVision / Normal vision
         if (!params.nightVision) {
             phongShader.setVec3("uDirLight.Position", 0.0, 20, 0.0);
             phongShader.setVec3("uDirLight.Direction", 0.1, -5, 0.1);
-            phongShader.setVec3("uDirLight.Ka", glm::vec3(0.5));
-            phongShader.setVec3("uDirLight.Kd", glm::vec3(0.5));
+            phongShader.setVec3("uDirLight.Ka", glm::vec3(0.2));
+            phongShader.setVec3("uDirLight.Kd", glm::vec3(0.2));
             phongShader.setVec3("uDirLight.Ks", glm::vec3(10.f));
         }
         else
@@ -736,9 +832,9 @@ int main()
 
         //Road
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, -1.0, 0.0));
-        m = glm::scale(m, glm::vec3(50.0, 1.0, 2000));
+        m = glm::scale(m, glm::vec3(70.0, 1.0, 2000));
         phongShader.setMat4("uModel", m);
-        simpleCube2->Render(&phongShader, asphalt);
+        simpleCube2->Render(&phongShader, asphalt, asphalt);
 
         //Ground
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, -1.1, 120.0));
@@ -852,7 +948,7 @@ int main()
         m = glm::translate(m, params.carOffset);
         m = glm::scale(m, glm::vec3(4.0, 1.0, 0.2));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 1, 0, 0);
+        simpleCube->Render(&phongShader, 0.42, 0.42, 0.42);
 
 
         //Steering wheel
@@ -889,6 +985,19 @@ int main()
 
         //hud
         DrawHud(hudShader, hudTex);
+
+        //Tachometar
+        dShader.use();
+        m = glm::translate(glm::mat4(1.0), params.carOffset);
+        m = glm::rotate(m, glm::radians(params.carRot), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, -params.carOffset);
+
+        m = glm::translate(m, glm::vec3(0.8, 0.85, 3.89));
+        m = glm::translate(m, params.carOffset);
+        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.4));
+        dShader.setMat4("uModel", m);
+        rectangle->Render(&dShader, tachometer);
 
         //end
         glfwSwapBuffers(window);
