@@ -585,33 +585,24 @@ int main()
         phongShader.use();
         HandleInput(&params);
 
-        view = glm::lookAt(params.position,
-            params.position + params.cameraFront,
-            params.cameraUp);
+        view = glm::lookAt(params.position,params.position + params.cameraFront,params.cameraUp);
 
         phongShader.setMat4("uView", view);
         phongShader.setVec3("uViewPos", params.position);
 
-        currentRot += 0.5;
-        if (currentRot >= 360) {
-            currentRot = 0 + 360 - currentRot;
-        }
-        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 4.0));
-        m = glm::rotate(m, glm::radians(currentRot), glm::vec3(0.5, 1.0, 0.0));
-        m = glm::scale(m, glm::vec3(0.5));
-        phongShader.setMat4("uModel", m);
-        simpleCube->Render(kockaDif, kockaSpec);
 
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, -2.0, 0.0));
         m = glm::scale(m, glm::vec3(12.0, 0.5, 12.0));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(texture, kockaSpec);
-
-        model2 = glm::rotate(model2, glm::radians(0.4f), glm::vec3(0.5f, 1.0f, 0.5f));
-        phongShader.setMat4("uModel", model2);
-        lija.Draw(phongShader);
+        simpleCube->Render(&phongShader, texture, kockaSpec);
 
 
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, -2.0, 0.0));
+        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.02, 0.2, 1.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 0, 0, 1);
 
         //hud
         DrawHud(hudShader, hudTex);

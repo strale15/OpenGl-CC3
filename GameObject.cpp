@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <GL/glew.h>
+#include "shader.hpp"
 
 class GameObject {
 private:
@@ -38,7 +39,9 @@ public:
 		glDeleteVertexArrays(1, &VAO);
 	}
 
-	void Render(unsigned const& texture, unsigned const& specularMap) {
+	void Render(Shader* shader, unsigned const& texture, unsigned const& specularMap) {
+		shader->setBool("isColor", false);
+
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture);
 
@@ -54,7 +57,9 @@ public:
 		glBindVertexArray(0);
 	}
 
-	void Render(unsigned const& texture) {
+	void Render(Shader* shader, unsigned const& texture) {
+		shader->setBool("isColor", false);
+
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture);
 
@@ -62,6 +67,16 @@ public:
 		glDrawArrays(GL_TRIANGLES, 0, vCount);
 
 		glBindTexture(GL_TEXTURE_2D, 0);
+		glBindVertexArray(0);
+	}
+
+	void Render(Shader* shader, float r, float g, float b) {
+		shader->setBool("isColor", true);
+		shader->setVec3("uColor", glm::vec3(r, g, b));
+
+		glBindVertexArray(VAO);
+		glDrawArrays(GL_TRIANGLES, 0, vCount);
+
 		glBindVertexArray(0);
 	}
 
