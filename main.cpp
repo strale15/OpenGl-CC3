@@ -351,6 +351,7 @@ int main()
 
     Shader phongShader("phong.vert", "phong.frag");
     Shader hudShader("hud.vert", "hud.frag");
+    Shader twoD("twoD.vert", "twoD.frag");
 
     phongShader.use();
 
