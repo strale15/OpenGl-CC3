@@ -24,6 +24,12 @@
 const unsigned int wWidth = 1920;
 const unsigned int wHeight = 1080;
 
+unsigned hudTex;
+unsigned kockaDif;
+unsigned kockaSpec;
+GameObject* simpleCube;
+Model lija;
+
 bool firstMouse = true;
 double lastX;
 double lastY;
@@ -52,6 +58,22 @@ struct Params {
 
     bool spaceDown = false;
     bool shiftDown = false;
+
+    bool gasDown = false;
+    bool breakeDown = false;
+    float velocity = 0;
+    int gear = 0;
+    bool reverse = false;
+
+    bool headlights = false;
+    bool longLights = false;
+
+    bool turnLeft = false;
+    bool turnRight = false;
+    float rotation = 0;
+
+    glm::vec3 forward = glm::vec3(0, 0, 1);
+    glm::vec3 offset = glm::vec3(0);
 };
 
 static void DrawHud(Shader& hudShader, unsigned hudTex) {
@@ -107,6 +129,98 @@ static void DrawHud(Shader& hudShader, unsigned hudTex) {
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+static void DrawScene(Shader& shader, Params &params, bool isBack = false) {
+    glm::mat4 m = glm::mat4(1.0f);
+
+    //test
+    m = glm::translate(glm::mat4(1.0), glm::vec3(-10.0, 0.0, 0.0));
+    m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+    m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+    shader.setMat4("uModel", m);
+    simpleCube->Render(&shader, 0, 1, 1);
+
+    //Road
+    m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, -1.0, 0.0));
+    m = glm::scale(m, glm::vec3(500,1.0,500));
+    shader.setMat4("uModel", m);
+    simpleCube->Render(&shader, 0, 1, 1);
+
+    //Car
+    //Base
+    m = glm::translate(glm::mat4(1.0), params.offset);
+    m = glm::rotate(m, glm::radians(params.rotation), glm::vec3(0.0, 1.0, 0.0));
+    m = glm::translate(m, -params.offset);
+    m = glm::translate(m, params.offset);
+
+    m = glm::translate(m, glm::vec3(0.0, 0.0, 0.0));
+    m = glm::scale(m, glm::vec3(6.0, 1.0, 10.0));
+    shader.setMat4("uModel", m);
+    simpleCube->Render(&shader, 0, 1, 1);
+
+    params.forward = glm::normalize(m[2]);
+
+    //Side
+    m = glm::translate(glm::mat4(1.0), params.offset);
+    m = glm::rotate(m, glm::radians(params.rotation), glm::vec3(0.0, 1.0, 0.0));
+    m = glm::translate(m, -params.offset);
+    m = glm::translate(m, params.offset);
+
+    m = glm::translate(m, glm::vec3(3.0, 0.0, 0.0));
+    m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.0, 0.0, 1.0));
+    m = glm::scale(m, glm::vec3(3.0, 1.0, 10.0));
+    shader.setMat4("uModel", m);
+    simpleCube->Render(&shader, 0, 1, 1);
+
+    m = glm::translate(glm::mat4(1.0), params.offset);
+    m = glm::rotate(m, glm::radians(params.rotation), glm::vec3(0.0, 1.0, 0.0));
+    m = glm::translate(m, -params.offset);
+    m = glm::translate(m, params.offset);
+
+    m = glm::translate(m, glm::vec3(-3.0, 0.0, 0.0));
+    m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.0, 0.0, 1.0));
+    m = glm::scale(m, glm::vec3(3.0, 1.0, 10.0));
+    shader.setMat4("uModel", m);
+    simpleCube->Render(&shader, 0, 1, 1);
+
+    m = glm::translate(glm::mat4(1.0), params.offset);
+    m = glm::rotate(m, glm::radians(params.rotation), glm::vec3(0.0, 1.0, 0.0));
+    m = glm::translate(m, -params.offset);
+    m = glm::translate(m, params.offset);
+
+    m = glm::translate(m, glm::vec3(0.0, 0.0, -4.5));
+    m = glm::scale(m, glm::vec3(6.0, 3.0, 1.0));
+    shader.setMat4("uModel", m);
+    simpleCube->Render(&shader, 0, 1, 1);
+
+    //Inst
+    m = glm::translate(glm::mat4(1.0), params.offset);
+    m = glm::rotate(m, glm::radians(params.rotation), glm::vec3(0.0, 1.0, 0.0));
+    m = glm::translate(m, -params.offset);
+    m = glm::translate(m, params.offset);
+
+    m = glm::translate(m, glm::vec3(0.0, 0.0, 4.0));
+    m = glm::scale(m, glm::vec3(5.0, 3.0, 2.0));
+    shader.setMat4("uModel", m);
+    simpleCube->Render(&shader, 1, 1, 1);
+
+    //Glass
+    if (!isBack) {
+        m = glm::translate(glm::mat4(1.0), params.offset);
+        m = glm::rotate(m, glm::radians(params.rotation), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, -params.offset);
+        m = glm::translate(m, params.offset);
+
+        m = glm::translate(m, glm::vec3(0.0, 3.0, 4.0));
+        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::rotate(m, glm::radians(30.f), glm::vec3(1.0, 0.0, 0.0));
+        m = glm::scale(m, glm::vec3(6.0, 5.0, 0.1));
+        shader.setMat4("uModel", m);
+        shader.setBool("uTransp", true);
+        simpleCube->Render(&shader, 0, 0, 1);
+        shader.setBool("uTransp", false);
+    }
+}
+
 static void HandleInput(Params* params) {
     if (params->wDown)
     {
@@ -153,6 +267,69 @@ static void HandleInput(Params* params) {
         else
             params->objPos.y -= 0.5f * params->dt;
     }
+
+
+    //CAR
+    //Handle gears here
+    if (params->velocity > 80) {
+        params->gear = 5;
+    }
+    else if (params->velocity > 60 && params->velocity <= 80) {
+        params->gear = 4;
+    }
+    else if (params->velocity > 40 && params->velocity <= 60) {
+        params->gear = 3;
+    }
+    else if (params->velocity > 20 && params->velocity <= 40) {
+        params->gear = 2;
+    }
+    else if (params->velocity >= 0 && params->velocity <= 20) {
+        params->gear = 1;
+    }
+
+    if (params->gasDown) {
+        int reverse = 1;
+        if (params->reverse) {
+            reverse = -1;
+        }
+
+        params->velocity += 5 * params->dt * reverse * (6 - params->gear)/2;
+    }
+    else {
+        float damp = 2;
+        if (params->breakeDown) {
+            damp = 10;
+        }
+
+        if (glm::abs(params->velocity) < 0.05) {
+            params->velocity = 0;
+            params->gear = 0;
+        }
+
+
+        if (params->velocity > 0) {
+            params->velocity -= 6 * damp * params->dt;
+        }
+        else if (params->velocity < 0) {
+            params->velocity += 6 * damp * params->dt;
+        }
+
+    }
+
+    if (glm::abs(params->velocity) > 0) {
+        if (params->turnLeft) {
+            params->rotation += 100 * params->dt;
+        }
+        else if (params->turnRight) {
+            params->rotation -= 100 * params->dt;
+        }
+    }
+    params->velocity = glm::clamp(params->velocity, -20.f, 100.f);
+
+    params->offset += params->forward * params->velocity * params->dt;
+
+    //cout << params->velocity << " g: " << params->gear << " R: " << params->rotation << endl;
+
 }
 
 static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
@@ -262,6 +439,55 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
     {
         params->shiftDown = false;
     }
+
+    //CAR
+    if (key == GLFW_KEY_UP) {
+        if (action == GLFW_PRESS) {
+            params->gasDown = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->gasDown = false;
+        }
+    }
+    if (key == GLFW_KEY_DOWN) {
+        if (action == GLFW_PRESS) {
+            params->breakeDown = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->breakeDown = false;
+        }
+    }
+    if (key == GLFW_KEY_LEFT) {
+        if (action == GLFW_PRESS) {
+            params->turnLeft = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->turnLeft = false;
+        }
+    }
+    if (key == GLFW_KEY_RIGHT) {
+        if (action == GLFW_PRESS) {
+            params->turnRight = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->turnRight = false;
+        }
+    }
+    if (key == GLFW_KEY_F) {
+        if (action == GLFW_PRESS) {
+            params->headlights = !params->headlights;
+        }
+    }
+    if (key == GLFW_KEY_G) {
+        if (action == GLFW_PRESS) {
+            params->longLights = !params->longLights;
+        }
+    }
+    if (key == GLFW_KEY_H) {
+        if (action == GLFW_PRESS) {
+            params->reverse = !params->reverse;
+        }
+    }
 }
 
 int main()
@@ -345,9 +571,9 @@ int main()
         -0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f, // R U
          0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, // L U
     };
-    GameObject* simpleCube = new GameObject(cubeVertices);
+    simpleCube = new GameObject(cubeVertices);
 
-    Model lija("res/low-poly-fox.obj");
+    lija = Model("res/low-poly-fox.obj");
 
     Shader phongShader("phong.vert", "phong.frag");
     Shader hudShader("hud.vert", "hud.frag");
@@ -395,9 +621,9 @@ int main()
     phongShader.setFloat("uPointLights[0].Kl", 1.0f);
     phongShader.setFloat("uPointLights[0].Kq", 0.272f);
 
-    unsigned hudTex = Model::textureFromFile("res/hudTex.png");
-    unsigned kockaDif = Model::textureFromFile("res/container_diffuse.png");
-    unsigned kockaSpec = Model::textureFromFile("res/container_specular.png");
+    hudTex = Model::textureFromFile("res/hudTex.png");
+    kockaDif = Model::textureFromFile("res/container_diffuse.png");
+    kockaSpec = Model::textureFromFile("res/container_specular.png");
 
     phongShader.setInt("uMaterial.Kd", 0);
     phongShader.setInt("uMaterial.Ks", 1);
@@ -416,12 +642,14 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_SCISSOR_TEST);
     while (!glfwWindowShouldClose(window))
     {
         FrameStartTime = glfwGetTime();
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
             glfwSetWindowShouldClose(window, true);
 
+        glScissor(0, 0, wWidth, wHeight);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         //Loop
@@ -429,19 +657,28 @@ int main()
         HandleInput(&params);
 
         //Camera
-        view = glm::lookAt(params.position,params.position + params.cameraFront,params.cameraUp);
+        //view = glm::lookAt(params.position,params.position + params.cameraFront,params.cameraUp);
+        //glScissor(0, 0, wWidth, wHeight);
+        glViewport(0, 0, wWidth, wHeight);
+        glm::vec3 camPos = glm::vec3(0, 3, 0) + params.offset;
+        view = glm::lookAt(camPos, camPos + params.forward, glm::vec3(0,1,0));
 
         phongShader.setMat4("uView", view);
-        phongShader.setVec3("uViewPos", params.position);
+        phongShader.setVec3("uViewPos", camPos);
 
-        //SCENE
-        //------------------------------------------------------------------------------------------------------------
-        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 0.0));
-        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
-        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
-        phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 1, 1);
-        //------------------------------------------------------------------------------------------------------------
+        DrawScene(phongShader, params);
+
+
+        //glScissor(0, 0, 500, 500);
+        
+        glScissor(0, 0, wWidth / 5, wHeight / 5);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glViewport(0, 0, wWidth/5, wHeight/5);
+        camPos = glm::vec3(0, 3, 0) + params.offset;
+        view = glm::lookAt(camPos, camPos - params.forward, glm::vec3(0, 1, 0));
+        phongShader.setMat4("uView", view);
+        phongShader.setVec3("uViewPos", camPos);
+        DrawScene(phongShader, params);
 
         //HUD
         DrawHud(hudShader, hudTex);

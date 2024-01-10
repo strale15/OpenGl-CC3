@@ -117,7 +117,7 @@ void main() {
     vec3 FinalColor = DirColor + PtLightsColor + SptLightsColor;
     float alpha = 1.0f;
     if(uTransp) {
-        alpha = 0.4f;
+        alpha = 0.3f;
     }
     FragColor = vec4(FinalColor, alpha);
 }
