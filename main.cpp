@@ -29,9 +29,11 @@ unsigned kockaDif;
 unsigned kockaSpec;
 unsigned asphaltD;
 unsigned asphaltS;
+unsigned speedTex;
 
 GameObject* simpleCube;
 GameObject* simpleCube2;
+GameObject* rectangle;
 Model lija;
 
 bool firstMouse = true;
@@ -76,6 +78,8 @@ struct Params {
     bool turnLeft = false;
     bool turnRight = false;
     float rotation = 0;
+
+    float fuel = 100;
 
     glm::vec3 forward = glm::vec3(0, 0, 1);
     glm::vec3 offset = glm::vec3(0);
@@ -379,6 +383,10 @@ static void HandleInput(Params* params) {
 
     params->offset += params->forward * params->velocity * params->dt;
 
+    if (params->velocity > 0) {
+        params->fuel -= 3 * params->dt;
+    }
+
     //cout << params->velocity << " g: " << params->gear << " R: " << params->rotation << endl;
 
 }
@@ -676,6 +684,18 @@ int main()
     };
     simpleCube2 = new GameObject(cubeVertices2);
 
+    std::vector<float> vertices = {
+        // Positions      // UVs
+        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,  // Vertex 1
+        0.5f, -0.5f, 0.0f, 1.0f, 1.0f,  // Vertex 2
+        0.5f, 0.5f, 0.0f, 1.0f, 0.0f,  // Vertex 3
+
+        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,  // Vertex 1 (Repeated)
+        0.5f, 0.5f, 0.0f, 1.0f, 0.0f,  // Vertex 3 (Repeated)
+        -0.5f, 0.5f, 0.0f, 0.0f, 0.0f   // Vertex 4
+    };
+    rectangle = new GameObject(vertices, true);
+
     lija = Model("res/low-poly-fox.obj");
 
     Shader phongShader("phong.vert", "phong.frag");
@@ -707,6 +727,7 @@ int main()
     kockaSpec = Model::textureFromFile("res/container_specular.png");
     asphaltD = Model::textureFromFile("res/aspd.png");
     asphaltS = Model::textureFromFile("res/aspc.png");
+    speedTex = Model::textureFromFile("res/speed.png");
 
     phongShader.setInt("uMaterial.Kd", 0);
     phongShader.setInt("uMaterial.Ks", 1);
@@ -758,9 +779,101 @@ int main()
 
         DrawScene(phongShader, params);
 
+        //Instrument
+        twoD.use();
+        twoD.setMat4("uView", view);
+        twoD.setMat4("uProjection", projectionP);
 
-        //glScissor(0, 0, 500, 500);
-        
+        //SpeedMeter
+        m = glm::translate(glm::mat4(1.0), params.offset);
+        m = glm::rotate(m, glm::radians(params.rotation), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, -params.offset);
+        m = glm::translate(m, params.offset);
+
+        m = glm::translate(m, glm::vec3(1.5, 1.0, 2.98));
+        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(1.0*1.9, 1.0, 1.0));
+        twoD.setMat4("uModel", m);
+        rectangle->Render(&twoD, speedTex);
+
+        //Indicator
+        float rotation = (180 * glm::abs(params.velocity) / 100.0);
+
+        m = glm::translate(glm::mat4(1.0), params.offset);
+        m = glm::rotate(m, glm::radians(params.rotation), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, -params.offset);
+
+        m = glm::translate(m, glm::vec3(1.5, 0.55, 2.97) + params.offset);
+        m = glm::rotate(m, glm::radians(-90 + rotation), glm::vec3(0.0, 0.0, 1.0));
+        m = glm::translate(m, -glm::vec3(1.5, 0.55, 2.97) - params.offset);
+
+        m = glm::translate(m, params.offset);
+
+        m = glm::translate(m, glm::vec3(1.5, 0.85, 2.97));
+        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.05, 0.6, 1.0));
+        twoD.setMat4("uModel", m);
+        if (rotation > 55) {
+            rectangle->Render(&twoD, 1, 0, 0);
+        }
+        else {
+            rectangle->Render(&twoD, 0,0,1);
+        }
+
+        //Fuel
+        float scale = 0.89 * params.fuel / 100.0;
+        scale += 0.01;
+        float yoffset = (0.9 - scale) / 2;
+
+        m = glm::translate(glm::mat4(1.0), params.offset);
+        m = glm::rotate(m, glm::radians(params.rotation), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, -params.offset);
+        m = glm::translate(m, params.offset);
+
+        m = glm::translate(m, glm::vec3(-2.1, 1.0 - yoffset, 2.98));
+        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.3, scale, 1.0));
+        twoD.setMat4("uModel", m);
+        rectangle->Render(&twoD, 0,1,0);
+
+        //Gear
+        m = glm::translate(glm::mat4(1.0), params.offset);
+        m = glm::rotate(m, glm::radians(params.rotation), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, -params.offset);
+        m = glm::translate(m, params.offset);
+
+        m = glm::translate(m, glm::vec3(-1.4, 1.0, 2.98));
+        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.3, 0.3, 1.0));
+        twoD.setMat4("uModel", m);
+        rectangle->Render(&twoD, 0, 0, 1);
+
+        //Turn signal
+        m = glm::translate(glm::mat4(1.0), params.offset);
+        m = glm::rotate(m, glm::radians(params.rotation), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, -params.offset);
+        m = glm::translate(m, params.offset);
+
+        m = glm::translate(m, glm::vec3(-0.5, 1.0, 2.98));
+        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.3, 0.3, 1.0));
+        twoD.setMat4("uModel", m);
+        rectangle->Render(&twoD, 0, 1, 0);
+
+        //Turn signal 2
+        m = glm::translate(glm::mat4(1.0), params.offset);
+        m = glm::rotate(m, glm::radians(params.rotation), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, -params.offset);
+        m = glm::translate(m, params.offset);
+
+        m = glm::translate(m, glm::vec3(0.3, 1.0, 2.98));
+        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.3, 0.3, 1.0));
+        twoD.setMat4("uModel", m);
+        rectangle->Render(&twoD, 0, 1, 0);
+
+        phongShader.use();
+        //Mirror
         glScissor(0, 0, wWidth / 5, wHeight / 5);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glViewport(0, 0, wWidth/5, wHeight/5);
