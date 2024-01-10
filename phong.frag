@@ -1,6 +1,6 @@
 #version 330 core
 #define NR_POINT_LIGHTS 1
-#define NR_SPOT_LIGHTS 1
+#define NR_SPOT_LIGHTS 2
 
 struct PointLight {
     vec3 Position;
@@ -104,7 +104,6 @@ void main() {
         float Theta = dot(SpotlightVector, normalize(-uSpotlights[i].Direction));
         float Epsilon = uSpotlights[i].InnerCutOff - uSpotlights[i].OuterCutOff;
         float SpotIntensity = clamp((Theta - uSpotlights[i].OuterCutOff) / Epsilon, 0.0f, 1.0f);
-        vec3 SpotColor = SpotIntensity * SpotAttenuation * (SpotAmbientColor + SpotDiffuseColor + SpotSpecularColor);
 
         if (first) {
             SptLightsColor = SpotIntensity * SpotAttenuation * (SpotAmbientColor + SpotDiffuseColor + SpotSpecularColor);
