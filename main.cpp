@@ -27,7 +27,11 @@ const unsigned int wHeight = 1080;
 unsigned hudTex;
 unsigned kockaDif;
 unsigned kockaSpec;
+unsigned asphaltD;
+unsigned asphaltS;
+
 GameObject* simpleCube;
+GameObject* simpleCube2;
 Model lija;
 
 bool firstMouse = true;
@@ -37,6 +41,7 @@ double lastY;
 struct Params {
     float dt;
     bool isFps = true;
+    bool freeCam = true;
 
     bool isCurosIn = true;
     double xPosC = 0.0;
@@ -143,7 +148,7 @@ static void DrawScene(Shader& shader, Params &params, bool isBack = false) {
     m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, -1.0, 0.0));
     m = glm::scale(m, glm::vec3(500,1.0,500));
     shader.setMat4("uModel", m);
-    simpleCube->Render(&shader, 1, 1, 1);
+    simpleCube2->Render(&shader, asphaltD, kockaSpec);
 
     //Car
     //Base
@@ -205,21 +210,19 @@ static void DrawScene(Shader& shader, Params &params, bool isBack = false) {
     simpleCube->Render(&shader, 1, 1, 1);
 
     //Glass
-    if (!isBack) {
-        m = glm::translate(glm::mat4(1.0), params.offset);
-        m = glm::rotate(m, glm::radians(params.rotation), glm::vec3(0.0, 1.0, 0.0));
-        m = glm::translate(m, -params.offset);
-        m = glm::translate(m, params.offset);
+    m = glm::translate(glm::mat4(1.0), params.offset);
+    m = glm::rotate(m, glm::radians(params.rotation), glm::vec3(0.0, 1.0, 0.0));
+    m = glm::translate(m, -params.offset);
+    m = glm::translate(m, params.offset);
 
-        m = glm::translate(m, glm::vec3(0.0, 3.0, 4.0));
-        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
-        m = glm::rotate(m, glm::radians(30.f), glm::vec3(1.0, 0.0, 0.0));
-        m = glm::scale(m, glm::vec3(6.0, 5.0, 0.1));
-        shader.setMat4("uModel", m);
-        shader.setBool("uTransp", true);
-        simpleCube->Render(&shader, 0, 0, 1);
-        shader.setBool("uTransp", false);
-    }
+    m = glm::translate(m, glm::vec3(0.0, 3.0, 3.7));
+    m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+    m = glm::rotate(m, glm::radians(30.f), glm::vec3(1.0, 0.0, 0.0));
+    m = glm::scale(m, glm::vec3(6.0, 5.0, 0.1));
+    shader.setMat4("uModel", m);
+    shader.setBool("uTransp", true);
+    simpleCube->Render(&shader, 0, 0, 1);
+    shader.setBool("uTransp", false);
 
     //Lights
     glm::vec3 zeroVec = glm::vec3(0);
@@ -228,30 +231,43 @@ static void DrawScene(Shader& shader, Params &params, bool isBack = false) {
     glm::vec3 light1Pos = carFrontPos + params.forward * 5.f + right * 3.f;
     glm::vec3 light2Pos = carFrontPos + params.forward * 5.f - right * 3.f;
 
+    glm::vec3 lightIntA = zeroVec;
+    glm::vec3 lightIntD = zeroVec;
+    glm::vec3 lightIntS = zeroVec;
     if (params.headlights) {
+        if (params.longLights) {
+            lightIntA = zeroVec;
+            lightIntD = glm::vec3(12);
+            lightIntS = glm::vec3(30.0);
+        }
+        else {
+            lightIntA = zeroVec;
+            lightIntD = glm::vec3(5);
+            lightIntS = glm::vec3(30.0);
+        }
     }
 
     shader.setVec3("uSpotlights[0].Position", light1Pos);
     shader.setVec3("uSpotlights[0].Direction", params.forward);
-    shader.setVec3("uSpotlights[0].Ka", 0.0, 0.0, 0.0);
-    shader.setVec3("uSpotlights[0].Kd", glm::vec3(0.0f, 0.0f, 10.0f));
-    shader.setVec3("uSpotlights[0].Ks", glm::vec3(1.0));
+    shader.setVec3("uSpotlights[0].Ka", lightIntA);
+    shader.setVec3("uSpotlights[0].Kd", lightIntD);
+    shader.setVec3("uSpotlights[0].Ks", lightIntS);
     shader.setFloat("uSpotlights[0].InnerCutOff", glm::cos(glm::radians(25.0f)));
     shader.setFloat("uSpotlights[0].OuterCutOff", glm::cos(glm::radians(35.0f)));
-    shader.setFloat("uSpotlights[0].Kc", 1.0);
+    shader.setFloat("uSpotlights[0].Kc", 0.2);
     shader.setFloat("uSpotlights[0].Kl", 0.092f);
-    shader.setFloat("uSpotlights[0].Kq", 0.032f);
+    shader.setFloat("uSpotlights[0].Kq", 0.0032f);
 
     shader.setVec3("uSpotlights[1].Position", light2Pos);
     shader.setVec3("uSpotlights[1].Direction", params.forward);
-    shader.setVec3("uSpotlights[1].Ka", 0.0, 0.0, 0.0);
-    shader.setVec3("uSpotlights[1].Kd", 10,10,0);
-    shader.setVec3("uSpotlights[1].Ks", glm::vec3(1.0));
+    shader.setVec3("uSpotlights[1].Ka", lightIntA);
+    shader.setVec3("uSpotlights[1].Kd", lightIntD);
+    shader.setVec3("uSpotlights[1].Ks", lightIntS);
     shader.setFloat("uSpotlights[1].InnerCutOff", glm::cos(glm::radians(25.0f)));
     shader.setFloat("uSpotlights[1].OuterCutOff", glm::cos(glm::radians(35.0f)));
-    shader.setFloat("uSpotlights[1].Kc", 1.0);
+    shader.setFloat("uSpotlights[1].Kc", 0.2);
     shader.setFloat("uSpotlights[1].Kl", 0.092f);
-    shader.setFloat("uSpotlights[1].Kq", 0.032f);
+    shader.setFloat("uSpotlights[1].Kq", 0.0032f);
 
 
 }
@@ -419,6 +435,11 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
     if (key == GLFW_KEY_R && action == GLFW_PRESS)
     {
         params->isFps = !params->isFps;
+    }
+
+    if (key == GLFW_KEY_P && action == GLFW_PRESS)
+    {
+        params->freeCam = !params->freeCam;
     }
 
     if (key == GLFW_KEY_W && action == GLFW_PRESS)
@@ -608,6 +629,53 @@ int main()
     };
     simpleCube = new GameObject(cubeVertices);
 
+    float tiling = 100.f;
+    std::vector<float> cubeVertices2 = {
+        // X     Y     Z     NX    NY    NZ    U     V    FRONT SIDE
+        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, tiling, // L D
+        0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, tiling, tiling, // R D
+        -0.5f,  0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // L U
+        0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, tiling, tiling, // R D
+        0.5f,  0.5f, 0.5f, 0.0f, 0.0f, 1.0f, tiling, 0.0f, // R U
+        -0.5f,  0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // L U
+        // LEFT SIDE
+        -0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // L D
+        -0.5f, -0.5f,  0.5f, -1.0f, 0.0f, 0.0f, tiling, 0.0f, // R D
+        -0.5f,  0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, tiling, // L U
+        -0.5f, -0.5f,  0.5f, -1.0f, 0.0f, 0.0f, tiling, 0.0f, // R D
+        -0.5f,  0.5f,  0.5f, -1.0f, 0.0f, 0.0f, tiling, tiling, // R U
+        -0.5f,  0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, tiling, // L U
+        // RIGHT SIDE
+        0.5f, -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // L D
+        0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, tiling, 0.0f, // R D
+        0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 0.0f, tiling, // L U
+        0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, tiling, 0.0f, // R D
+        0.5f,  0.5f, -0.5f, 1.0f, 0.0f, 0.0f, tiling, tiling, // R U
+        0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 0.0f, tiling, // L U
+        // BOTTOM SIDE
+        -0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, // L D
+         0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, tiling, 0.0f, // R D
+        -0.5f, -0.5f,  0.5f, 0.0f, -1.0f, 0.0f, 0.0f, tiling, // L U
+         0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, tiling, 0.0f, // R D
+         0.5f, -0.5f,  0.5f, 0.0f, -1.0f, 0.0f, tiling, tiling, // R U
+        -0.5f, -0.5f,  0.5f, 0.0f, -1.0f, 0.0f, 0.0f, tiling, // L U
+        // TOP SIDE
+        -0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, // L D
+         0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f, tiling, 0.0f, // R D
+        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, tiling, // L U
+         0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f, tiling, 0.0f, // R D
+         0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, tiling, tiling, // R U
+        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, tiling, // L U
+        // BACK SIDE
+        0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, // L D
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, tiling, 0.0f, // R D
+         0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, tiling, // L U
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,tiling, 0.0f, // R D
+        -0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f, tiling, tiling, // R U
+         0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f,tiling, // L U
+    };
+    simpleCube2 = new GameObject(cubeVertices2);
+
     lija = Model("res/low-poly-fox.obj");
 
     Shader phongShader("phong.vert", "phong.frag");
@@ -620,35 +688,13 @@ int main()
     glm::mat4 projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
     phongShader.setMat4("uProjection", projectionP);
 
-    phongShader.setVec3("uDirLight.Position", 0.0, 5, 0.0);
-    phongShader.setVec3("uDirLight.Direction", 0, -5, 0);
+    phongShader.setVec3("uDirLight.Position", 0.0, 10, 0.0);
+    phongShader.setVec3("uDirLight.Direction", 1, -1, 0);
     phongShader.setVec3("uDirLight.Ka", glm::vec3(0.3));
-    phongShader.setVec3("uDirLight.Kd", glm::vec3(0.3));
-    phongShader.setVec3("uDirLight.Ks", glm::vec3(1.0, 1.0, 1.0));
+    phongShader.setVec3("uDirLight.Kd", glm::vec3(0.4));
+    phongShader.setVec3("uDirLight.Ks", glm::vec3(1));
 
-    /*phongShader.setVec3("uSpotlights[0].Position", 0.0, 10.0, 0.0);
-    phongShader.setVec3("uSpotlights[0].Direction", 0.0, -1.0, 0.0);
-    phongShader.setVec3("uSpotlights[0].Ka", 0.0, 0.0, 0.0);
-    phongShader.setVec3("uSpotlights[0].Kd", glm::vec3(3.0f, 3.0f, 3.0f));
-    phongShader.setVec3("uSpotlights[0].Ks", glm::vec3(1.0));
-    phongShader.setFloat("uSpotlights[0].InnerCutOff", glm::cos(glm::radians(10.0f)));
-    phongShader.setFloat("uSpotlights[0].OuterCutOff", glm::cos(glm::radians(15.0f)));
-    phongShader.setFloat("uSpotlights[0].Kc", 1.0);
-    phongShader.setFloat("uSpotlights[0].Kl", 0.092f);
-    phongShader.setFloat("uSpotlights[0].Kq", 0.032f);
-
-    phongShader.setVec3("uSpotlights[1].Position", 0.0, 0.0, 6.0);
-    phongShader.setVec3("uSpotlights[1].Direction", 0.0, 0.0, -1.0);
-    phongShader.setVec3("uSpotlights[1].Ka", 0.0, 0.0, 0.0);
-    phongShader.setVec3("uSpotlights[1].Kd", glm::vec3(1.0f, 1.0f, 1.0f));
-    phongShader.setVec3("uSpotlights[1].Ks", glm::vec3(1.0));
-    phongShader.setFloat("uSpotlights[1].InnerCutOff", glm::cos(glm::radians(15.0f)));
-    phongShader.setFloat("uSpotlights[1].OuterCutOff", glm::cos(glm::radians(20.0f)));
-    phongShader.setFloat("uSpotlights[1].Kc", 1.0);
-    phongShader.setFloat("uSpotlights[1].Kl", 0.092f);
-    phongShader.setFloat("uSpotlights[1].Kq", 0.032f);*/
-
-    phongShader.setVec3("uPointLights[0].Position", glm::vec3(-99999));
+    phongShader.setVec3("uPointLights[0].Position", glm::vec3(-1000));
     phongShader.setVec3("uPointLights[0].Ka", glm::vec3(0.2));
     phongShader.setVec3("uPointLights[0].Kd", glm::vec3(0.2));
     phongShader.setVec3("uPointLights[0].Ks", glm::vec3(1.0f));
@@ -659,6 +705,8 @@ int main()
     hudTex = Model::textureFromFile("res/hudTex.png");
     kockaDif = Model::textureFromFile("res/container_diffuse.png");
     kockaSpec = Model::textureFromFile("res/container_specular.png");
+    asphaltD = Model::textureFromFile("res/aspd.png");
+    asphaltS = Model::textureFromFile("res/aspc.png");
 
     phongShader.setInt("uMaterial.Kd", 0);
     phongShader.setInt("uMaterial.Ks", 1);
@@ -678,6 +726,9 @@ int main()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_SCISSOR_TEST);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+
     while (!glfwWindowShouldClose(window))
     {
         FrameStartTime = glfwGetTime();
@@ -694,11 +745,16 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glViewport(0, 0, wWidth, wHeight);
         glm::vec3 camPos = glm::vec3(0, 3, 0) + params.offset;
-        view = glm::lookAt(params.position,params.position + params.cameraFront,params.cameraUp);
-        //view = glm::lookAt(camPos, camPos + params.forward, glm::vec3(0,1,0));
 
+        if (params.freeCam) {
+            view = glm::lookAt(params.position,params.position + params.cameraFront,params.cameraUp);
+            phongShader.setVec3("uViewPos", params.position);
+        }
+        else {
+            view = glm::lookAt(camPos, camPos + params.forward, glm::vec3(0, 1, 0));
+            phongShader.setVec3("uViewPos", camPos);
+        }
         phongShader.setMat4("uView", view);
-        phongShader.setVec3("uViewPos", camPos);
 
         DrawScene(phongShader, params);
 
@@ -709,8 +765,8 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glViewport(0, 0, wWidth/5, wHeight/5);
         camPos = glm::vec3(0, 3, 0) + params.offset;
-        //view = glm::lookAt(camPos, camPos - params.forward, glm::vec3(0, 1, 0));
-        view = glm::lookAt(params.position, params.position + params.cameraFront, params.cameraUp);
+        view = glm::lookAt(camPos, camPos - params.forward, glm::vec3(0, 1, 0));
+        //view = glm::lookAt(params.position, params.position + params.cameraFront, params.cameraUp);
         phongShader.setMat4("uView", view);
         phongShader.setVec3("uViewPos", camPos);
         DrawScene(phongShader, params);
