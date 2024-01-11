@@ -76,6 +76,27 @@ public:
 		glBindVertexArray(0);
 	}
 
+	void Render(Shader* shader, unsigned const& texture, unsigned const& specularMap, unsigned const& emmisionMap, bool emm) {
+		shader->setBool("isColor", false);
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture);
+
+		if (specularMap != NULL) {
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, specularMap);
+		}
+
+	    glActiveTexture(GL_TEXTURE2);
+	    glBindTexture(GL_TEXTURE_2D, emmisionMap);
+
+		glBindVertexArray(VAO);
+		glDrawArrays(GL_TRIANGLES, 0, vCount);
+
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glBindVertexArray(0);
+	}
+
 	void Render(Shader* shader, unsigned const& texture) {
 		shader->setBool("isColor", false);
 

@@ -83,60 +83,10 @@ struct Params {
 	int activeCamera = 0;
 
 	bool isTransp = false;
+
+	bool isWireFrame = false;
+	bool isLit = true;
 };
-
-static void DrawHud(Shader& hudShader, unsigned hudTex) {
-	//hud
-		// Bind your HUD shader program
-	hudShader.use();
-
-	// Define the vertices of a rectangle
-	float vertices[] = {
-	   -1.0f,  1.0f, 0.0f,     0.0f, 0.0f, // Top-left vertex
-	   -1.0f, -1.0f, 0.0f,     0.0f, 1.0f, // Bottom-left vertex
-		1.0f, -1.0f, 0.0f,     1.0f, 1.0f, // Bottom-right vertex
-		1.0f,  1.0f, 0.0f,     1.0f, 0.0f  // Top-right vertex
-	};
-
-	// Create and bind a vertex array object (VAO)
-	GLuint VAO;
-	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
-
-	// Create a vertex buffer object (VBO) and copy the vertices data to it
-	GLuint VBO;
-	glGenBuffers(1, &VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	// Position attribute (location = 0)
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	// Texture coordinate attribute (location = 1)
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-
-	// Create an element buffer object (EBO)
-	GLuint EBO;
-	glGenBuffers(1, &EBO);
-
-	// Draw the quad
-	glBindVertexArray(VAO);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, hudTex);
-	glUniform1i(glGetUniformLocation(hudShader.ID, "textureSampler"), 0);
-
-	// Draw the quad using GL_TRIANGLE_FAN since you have 4 vertices
-	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
-	// Unbind the VAO, VBO, EBO, and texture
-	glBindVertexArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-	glBindTexture(GL_TEXTURE_2D, 0);
-}
 
 static void HandleInput(Params* params) {
 	if (params->wDown)
@@ -231,7 +181,13 @@ static void HandleInput(Params* params) {
 		}
 	}
 
-
+	if (params->isWireFrame) {
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	}
+	else
+	{
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	}
 }
 
 static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
@@ -365,6 +321,16 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
 	if (key == GLFW_KEY_B) {
 		if (action == GLFW_PRESS) {
 			params->isTransp = !params->isTransp;
+		}
+	}
+	if (key == GLFW_KEY_K) {
+		if (action == GLFW_PRESS) {
+			params->isWireFrame = !params->isWireFrame;
+		}
+	}
+	if (key == GLFW_KEY_L) {
+		if (action == GLFW_PRESS) {
+			params->isLit = !params->isLit;
 		}
 	}
 
@@ -593,11 +559,9 @@ int main()
 	};
 	GameObject* rectangle = new GameObject(vertices, true);
 
-	Model lija("res/low-poly-fox.obj");
 	Model carModel("res/1377 Car.obj");
 
 	Shader phongShader("phong.vert", "phong.frag");
-	Shader hudShader("hud.vert", "hud.frag");
 	Shader twoD("twoD.vert", "twoD.frag");
 
 	phongShader.use();
@@ -612,28 +576,6 @@ int main()
 	phongShader.setVec3("uDirLight.Kd", glm::vec3(0.0));
 	phongShader.setVec3("uDirLight.Ks", glm::vec3(0.0));
 
-	phongShader.setVec3("uSpotlights[0].Position", glm::vec3(-999));
-	phongShader.setVec3("uSpotlights[0].Direction", 0.0, -1.0, 0.0);
-	phongShader.setVec3("uSpotlights[0].Ka", 0.0, 0.0, 0.0);
-	phongShader.setVec3("uSpotlights[0].Kd", glm::vec3(3.0f, 3.0f, 3.0f));
-	phongShader.setVec3("uSpotlights[0].Ks", glm::vec3(1.0));
-	phongShader.setFloat("uSpotlights[0].InnerCutOff", glm::cos(glm::radians(10.0f)));
-	phongShader.setFloat("uSpotlights[0].OuterCutOff", glm::cos(glm::radians(15.0f)));
-	phongShader.setFloat("uSpotlights[0].Kc", 1.0);
-	phongShader.setFloat("uSpotlights[0].Kl", 0.092f);
-	phongShader.setFloat("uSpotlights[0].Kq", 0.032f);
-
-	phongShader.setVec3("uSpotlights[1].Position", 0.0, 0.0, 6.0);
-	phongShader.setVec3("uSpotlights[1].Direction", 0.0, 0.0, -1.0);
-	phongShader.setVec3("uSpotlights[1].Ka", 0.0, 0.0, 0.0);
-	phongShader.setVec3("uSpotlights[1].Kd", glm::vec3(1.0f, 1.0f, 1.0f));
-	phongShader.setVec3("uSpotlights[1].Ks", glm::vec3(1.0));
-	phongShader.setFloat("uSpotlights[1].InnerCutOff", glm::cos(glm::radians(15.0f)));
-	phongShader.setFloat("uSpotlights[1].OuterCutOff", glm::cos(glm::radians(20.0f)));
-	phongShader.setFloat("uSpotlights[1].Kc", 1.0);
-	phongShader.setFloat("uSpotlights[1].Kl", 0.092f);
-	phongShader.setFloat("uSpotlights[1].Kq", 0.032f);
-
 	unsigned hudTex = Model::textureFromFile("res/hudTex.png");
 	unsigned kockaDif = Model::textureFromFile("res/container_diffuse.png");
 	unsigned kockaSpec = Model::textureFromFile("res/container_specular.png");
@@ -641,9 +583,11 @@ int main()
 	unsigned betonSpec = Model::textureFromFile("res/betonSpec.png");
 	unsigned betonDifPod = Model::textureFromFile("res/betonDifPod.png");
 	unsigned betonSpecPod = Model::textureFromFile("res/betonSpecPod.png");
+	unsigned betonEmm = Model::textureFromFile("res/betonEmm.png");
 
 	phongShader.setInt("uMaterial.Kd", 0);
 	phongShader.setInt("uMaterial.Ks", 1);
+	phongShader.setInt("uMaterial.Ke", 2);
 	phongShader.setFloat("uMaterial.Shininess", 0.5 * 128);
 
 	glm::mat4 model2 = glm::mat4(1.0f);
@@ -672,6 +616,8 @@ int main()
 			glfwSetWindowShouldClose(window, true);
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		phongShader.setBool("isLit", params.isLit);
 
 		//Loop
 		phongShader.use();
@@ -722,22 +668,22 @@ int main()
 		phongShader.setVec3("uSpotlights[0].Ka", 0.0, 0.0, 0.0);
 		phongShader.setVec3("uSpotlights[0].Kd", glm::vec3(3));
 		phongShader.setVec3("uSpotlights[0].Ks", glm::vec3(10.0));
-		phongShader.setFloat("uSpotlights[0].InnerCutOff", glm::cos(glm::radians(25.0f)));
-		phongShader.setFloat("uSpotlights[0].OuterCutOff", glm::cos(glm::radians(30.0f)));
+		phongShader.setFloat("uSpotlights[0].InnerCutOff", glm::cos(glm::radians(15.0f)));
+		phongShader.setFloat("uSpotlights[0].OuterCutOff", glm::cos(glm::radians(25.0f)));
 		phongShader.setFloat("uSpotlights[0].Kc", 1.0);
 		phongShader.setFloat("uSpotlights[0].Kl", 0.092f);
-		phongShader.setFloat("uSpotlights[0].Kq", 0.032f);
+		phongShader.setFloat("uSpotlights[0].Kq", 0.0032f);
 
 		phongShader.setVec3("uSpotlights[1].Position", camPos2);
 		phongShader.setVec3("uSpotlights[1].Direction", front2);
 		phongShader.setVec3("uSpotlights[1].Ka", 0.0, 0.0, 0.0);
 		phongShader.setVec3("uSpotlights[1].Kd", glm::vec3(3));
 		phongShader.setVec3("uSpotlights[1].Ks", glm::vec3(10));
-		phongShader.setFloat("uSpotlights[1].InnerCutOff", glm::cos(glm::radians(25.0f)));
-		phongShader.setFloat("uSpotlights[1].OuterCutOff", glm::cos(glm::radians(30.0f)));
+		phongShader.setFloat("uSpotlights[1].InnerCutOff", glm::cos(glm::radians(15.0f)));
+		phongShader.setFloat("uSpotlights[1].OuterCutOff", glm::cos(glm::radians(25.0f)));
 		phongShader.setFloat("uSpotlights[1].Kc", 1.0);
 		phongShader.setFloat("uSpotlights[1].Kl", 0.092f);
-		phongShader.setFloat("uSpotlights[1].Kq", 0.032f);
+		phongShader.setFloat("uSpotlights[1].Kq", 0.0032f);
 
 		if (params.activeCamera == 0) {
 			view = glm::lookAt(camPos1, camPos1 + front1, glm::vec3(0, 1, 0));
@@ -811,19 +757,22 @@ int main()
 
 		//Zidovi
 		m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, -4.5, -12.5));
-		m = glm::scale(m, glm::vec3(25.0, 25.0, 1.0));
+		m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 0.0, 1.0));
+		m = glm::scale(m, glm::vec3(25.0, 25.0, -1.0));
 		phongShader.setMat4("uModel", m);
-		simpleCube->Render(&phongShader, betonDif, betonSpec);
+		simpleCube->Render(&phongShader, betonDif, betonSpec, betonEmm, true);
 
 		m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, -4.5, 12.5));
-		m = glm::scale(m, glm::vec3(25.0, 25.0, 1.0));
+		m = glm::rotate(m, glm::radians(180.f), glm::vec3(1.0, 0.0, 0.0));
+		m = glm::scale(m, glm::vec3(25.0, 25.0, -1.0));
 		phongShader.setMat4("uModel", m);
 		simpleCube->Render(&phongShader, betonDif, betonSpec);
 
 		m = glm::translate(glm::mat4(1.0), glm::vec3(-12.5, -4.5, 0.0));
-		m = glm::scale(m, glm::vec3(1.0, 25.0, 25.0));
+		m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 0.0, 1.0));
+		m = glm::scale(m, glm::vec3(-1.0, 25.0, 25.0));
 		phongShader.setMat4("uModel", m);
-		simpleCube->Render(&phongShader, betonDif, betonSpec);
+		simpleCube->Render(&phongShader, betonDif, betonSpec, betonEmm, true);
 
 		//Plafon
 		if (params.activeCamera != 3) {
@@ -979,7 +928,7 @@ int main()
 		m = glm::scale(m, glm::vec3(2.0, 2.0, 0.15));
 		phongShader.setBool("uTransp", true);
 		phongShader.setMat4("uModel", m);
-		simpleCube->Render(&phongShader, 1, 0, 0);
+		simpleCube->Render(&phongShader, 0.43, 0.45, 0.45);
 		phongShader.setBool("uTransp", false);
 
 
@@ -1150,7 +1099,7 @@ int main()
 		//------------------------------------------------------------------------------------------------------------
 
 		//HUD
-		DrawHud(hudShader, hudTex);
+		//DrawHud(hudShader, hudTex);
 		phongShader.use();
 
 		glfwSwapBuffers(window);

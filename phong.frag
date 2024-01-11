@@ -28,6 +28,7 @@ struct DirectionalLight {
 struct Material {
     sampler2D Kd;
     sampler2D Ks;
+    sampler2D Ke;
     float Shininess;
 };
 
@@ -40,6 +41,7 @@ uniform vec3 uViewPos;
 uniform bool isColor;
 uniform vec3 uColor;
 uniform bool uTransp;
+uniform bool isLit;
 
 in vec2 UV;
 in vec3 vWorldSpaceFragment;
@@ -114,10 +116,21 @@ void main() {
         }
     }
 
-    vec3 FinalColor = DirColor + PtLightsColor + SptLightsColor;
+    vec3 emission = vec3(0,0,0);
+    if(!isColor) {
+        emission = texture(uMaterial.Ke, UV).rgb;
+        emission /= 1.3;
+    }
+
+    vec3 FinalColor = DirColor + PtLightsColor + SptLightsColor + emission;
     float alpha = 1.0f;
     if(uTransp) {
         alpha = 0.4f;
     }
-    FragColor = vec4(FinalColor, alpha);
+
+    if(isLit) {
+        FragColor = vec4(FinalColor, alpha);
+    } else {
+        FragColor = vec4(MaterialColor, alpha);
+    }
 }
