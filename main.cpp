@@ -66,12 +66,12 @@ struct Params {
 	bool spot5Taken = false;
 	bool spot6Taken = false;
 
-	float spot1Time = 0;
-	float spot2Time = 0;
-	float spot3Time = 0;
-	float spot4Time = 0;
-	float spot5Time = 0;
-	float spot6Time = 0;
+	float spot1Time = 20;
+	float spot2Time = 20;
+	float spot3Time = 20;
+	float spot4Time = 20;
+	float spot5Time = 20;
+	float spot6Time = 20;
 
 	glm::vec3 spot1Color = glm::vec3(0);
 	glm::vec3 spot2Color = glm::vec3(0);
@@ -81,6 +81,8 @@ struct Params {
 	glm::vec3 spot6Color = glm::vec3(0);
 
 	int activeCamera = 0;
+
+	bool isTransp = false;
 };
 
 static void DrawHud(Shader& hudShader, unsigned hudTex) {
@@ -190,42 +192,42 @@ static void HandleInput(Params* params) {
 		params->spot1Time += params->dt;
 		if (params->spot1Time >= time) {
 			params->spot1Taken = false;
-			params->spot2Time = 0;
+			params->spot2Time = 20;
 		}
 	}
 	if (params->spot2Taken) {
 		params->spot2Time += params->dt;
 		if (params->spot2Time >= time) {
 			params->spot2Taken = false;
-			params->spot2Time = 0;
+			params->spot2Time = 20;
 		}
 	}
 	if (params->spot3Taken) {
 		params->spot3Time += params->dt;
 		if (params->spot3Time >= time) {
 			params->spot3Taken = false;
-			params->spot3Time = 0;
+			params->spot3Time = 20;
 		}
 	}
 	if (params->spot4Taken) {
 		params->spot4Time += params->dt;
 		if (params->spot4Time >= time) {
 			params->spot4Taken = false;
-			params->spot4Time = 0;
+			params->spot4Time = 20;
 		}
 	}
 	if (params->spot5Taken) {
 		params->spot5Time += params->dt;
 		if (params->spot5Time >= time) {
 			params->spot5Taken = false;
-			params->spot5Time = 0;
+			params->spot5Time = 20;
 		}
 	}
 	if (params->spot6Taken) {
 		params->spot6Time += params->dt;
 		if (params->spot6Time >= time) {
 			params->spot6Taken = false;
-			params->spot6Time = 0;
+			params->spot6Time = 20;
 		}
 	}
 
@@ -360,6 +362,11 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
 			params->activeCamera = (params->activeCamera + 1) % 4;
 		}
 	}
+	if (key == GLFW_KEY_B) {
+		if (action == GLFW_PRESS) {
+			params->isTransp = !params->isTransp;
+		}
+	}
 
 	if (key == GLFW_KEY_1 && action == GLFW_PRESS && mode == GLFW_MOD_ALT) {
 		if (!params->spot1Taken) {
@@ -440,22 +447,53 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
 	}
 
 	if (key == GLFW_KEY_1 && action == GLFW_PRESS && mode == GLFW_MOD_SHIFT) {
-		params->spot1Time = 0;
+		if(params->spot1Taken)
+			params->spot1Time = 0;
 	}
 	if (key == GLFW_KEY_2 && action == GLFW_PRESS && mode == GLFW_MOD_SHIFT) {
+		if (params->spot2Taken)
 		params->spot2Time = 0;
 	}
 	if (key == GLFW_KEY_3 && action == GLFW_PRESS && mode == GLFW_MOD_SHIFT) {
+		if (params->spot3Taken)
 		params->spot3Time = 0;
 	}
 	if (key == GLFW_KEY_4 && action == GLFW_PRESS && mode == GLFW_MOD_SHIFT) {
+		if (params->spot4Taken)
 		params->spot4Time = 0;
 	}
 	if (key == GLFW_KEY_5 && action == GLFW_PRESS && mode == GLFW_MOD_SHIFT) {
+		if (params->spot5Taken)
 		params->spot5Time = 0;
 	}
 	if (key == GLFW_KEY_6 && action == GLFW_PRESS && mode == GLFW_MOD_SHIFT) {
+		if (params->spot6Taken)
 		params->spot6Time = 0;
+	}
+
+	if (key == GLFW_KEY_1 && action == GLFW_PRESS && mode == GLFW_MOD_CONTROL) {
+		params->spot1Time = 20;
+		params->spot1Taken = false;
+	}
+	if (key == GLFW_KEY_2 && action == GLFW_PRESS && mode == GLFW_MOD_CONTROL) {
+		params->spot2Time = 20;
+		params->spot2Taken = false;
+	}
+	if (key == GLFW_KEY_3 && action == GLFW_PRESS && mode == GLFW_MOD_CONTROL) {
+		params->spot3Time = 20;
+		params->spot3Taken = false;
+	}
+	if (key == GLFW_KEY_4 && action == GLFW_PRESS && mode == GLFW_MOD_CONTROL) {
+		params->spot4Time = 20;
+		params->spot4Taken = false;
+	}
+	if (key == GLFW_KEY_5 && action == GLFW_PRESS && mode == GLFW_MOD_CONTROL) {
+		params->spot5Time = 20;
+		params->spot5Taken = false;
+	}
+	if (key == GLFW_KEY_6 && action == GLFW_PRESS && mode == GLFW_MOD_CONTROL) {
+		params->spot6Time = 20;
+		params->spot6Taken = false;
 	}
 }
 
@@ -543,7 +581,20 @@ int main()
 	};
 	GameObject* simpleCube = new GameObject(cubeVertices);
 
+	std::vector<float> vertices = {
+		// Positions      // UVs
+		-0.5f, -0.5f, 0.0f, 0.0f, 1.0f,  // Vertex 1
+		0.5f, -0.5f, 0.0f, 1.0f, 1.0f,  // Vertex 2
+		0.5f, 0.5f, 0.0f, 1.0f, 0.0f,  // Vertex 3
+
+		-0.5f, -0.5f, 0.0f, 0.0f, 1.0f,  // Vertex 1 (Repeated)
+		0.5f, 0.5f, 0.0f, 1.0f, 0.0f,  // Vertex 3 (Repeated)
+		-0.5f, 0.5f, 0.0f, 0.0f, 0.0f   // Vertex 4
+	};
+	GameObject* rectangle = new GameObject(vertices, true);
+
 	Model lija("res/low-poly-fox.obj");
+	Model carModel("res/1377 Car.obj");
 
 	Shader phongShader("phong.vert", "phong.frag");
 	Shader hudShader("hud.vert", "hud.frag");
@@ -557,9 +608,9 @@ int main()
 
 	phongShader.setVec3("uDirLight.Position", 0.0, 5, 0.0);
 	phongShader.setVec3("uDirLight.Direction", 0.1, -5, 0.1);
-	phongShader.setVec3("uDirLight.Ka", glm::vec3(0.2));
-	phongShader.setVec3("uDirLight.Kd", glm::vec3(0.3));
-	phongShader.setVec3("uDirLight.Ks", glm::vec3(1.0));
+	phongShader.setVec3("uDirLight.Ka", glm::vec3(0.0));
+	phongShader.setVec3("uDirLight.Kd", glm::vec3(0.0));
+	phongShader.setVec3("uDirLight.Ks", glm::vec3(0.0));
 
 	phongShader.setVec3("uSpotlights[0].Position", glm::vec3(-999));
 	phongShader.setVec3("uSpotlights[0].Direction", 0.0, -1.0, 0.0);
@@ -602,12 +653,15 @@ int main()
 	float FrameEndTime = 0;
 	float rampRot = 0;
 	float isRampUp = false;
-	float yaw = 0;
+	float yaw1 = 0;
+	float yaw2 = 0;
+	bool cam1Rot = false;
+	bool cam2Rot = false;
 
 	Params params;
 	glfwSetWindowUserPointer(window, &params);
 
-	glClearColor(0.2, 0.2, 0.6, 1.0);
+	glClearColor(0.0, 0.0, 0.0, 1.0);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -624,54 +678,88 @@ int main()
 		HandleInput(&params);
 
 		//Camera
+		if (yaw1 >= 90) {
+			cam1Rot = false;
+		}
+		else if(yaw1 <= 0)
+		{
+			cam1Rot = true;
+		}
+
+		if (!cam1Rot) {
+			yaw1 -= 20*params.dt;
+		}
+		else
+		{
+			yaw1 += 20*params.dt;
+		}
+
+		//Cam 1
+		glm::vec3 front1;
+		glm::vec3 camPos1 = glm::vec3(-11.5, 7.3, -11.5);
+		float angle1 = glm::radians(-30.f);
+
+		front1.x = cos(glm::radians(yaw1)) * cos(angle1);
+		front1.y = sin(angle1);
+		front1.z = sin(glm::radians(yaw1)) * cos(angle1);
+
+		front1 = glm::normalize(front1);
+
+		//Cam 2
+		glm::vec3 front2;
+		glm::vec3 camPos2 = glm::vec3(11.5, 7.3, 11.5);
+		float angle2 = glm::radians(-30.f);
+
+		front2.x = cos(glm::radians(-180+yaw1)) * cos(angle2);
+		front2.y = sin(angle2);
+		front2.z = sin(glm::radians(-180+yaw1)) * cos(angle2);
+
+		front2 = glm::normalize(front2);
+
+		//Spotlights
+		phongShader.setVec3("uSpotlights[0].Position", camPos1);
+		phongShader.setVec3("uSpotlights[0].Direction", front1);
+		phongShader.setVec3("uSpotlights[0].Ka", 0.0, 0.0, 0.0);
+		phongShader.setVec3("uSpotlights[0].Kd", glm::vec3(3));
+		phongShader.setVec3("uSpotlights[0].Ks", glm::vec3(10.0));
+		phongShader.setFloat("uSpotlights[0].InnerCutOff", glm::cos(glm::radians(25.0f)));
+		phongShader.setFloat("uSpotlights[0].OuterCutOff", glm::cos(glm::radians(30.0f)));
+		phongShader.setFloat("uSpotlights[0].Kc", 1.0);
+		phongShader.setFloat("uSpotlights[0].Kl", 0.092f);
+		phongShader.setFloat("uSpotlights[0].Kq", 0.032f);
+
+		phongShader.setVec3("uSpotlights[1].Position", camPos2);
+		phongShader.setVec3("uSpotlights[1].Direction", front2);
+		phongShader.setVec3("uSpotlights[1].Ka", 0.0, 0.0, 0.0);
+		phongShader.setVec3("uSpotlights[1].Kd", glm::vec3(3));
+		phongShader.setVec3("uSpotlights[1].Ks", glm::vec3(10));
+		phongShader.setFloat("uSpotlights[1].InnerCutOff", glm::cos(glm::radians(25.0f)));
+		phongShader.setFloat("uSpotlights[1].OuterCutOff", glm::cos(glm::radians(30.0f)));
+		phongShader.setFloat("uSpotlights[1].Kc", 1.0);
+		phongShader.setFloat("uSpotlights[1].Kl", 0.092f);
+		phongShader.setFloat("uSpotlights[1].Kq", 0.032f);
 
 		if (params.activeCamera == 0) {
-			glm::vec3 front;
-			yaw = params.camYaw;
-			glm::vec3 camPos = glm::vec3(-11.5, 7.3, -11.5);
-			float dotProduct = glm::dot(glm::normalize(camPos), glm::vec3(0));
-			float angle = glm::acos(dotProduct);
-			angle = glm::radians(-30.f);
-
-			front.x = cos(glm::radians(yaw)) * cos(angle);
-			front.y = sin(angle);
-			front.z = sin(glm::radians(yaw)) * cos(angle);
-
-			front = glm::normalize(front);
-
-			view = glm::lookAt(camPos, camPos + front, glm::vec3(0, 1, 0));
+			view = glm::lookAt(camPos1, camPos1 + front1, glm::vec3(0, 1, 0));
 
 			projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
 			phongShader.setMat4("uProjection", projectionP);
+			phongShader.setVec3("uViewPos", camPos1);
 		}
 		else if (params.activeCamera == 1)
 		{
-			glm::vec3 front;
-			yaw = params.camYaw;
-			glm::vec3 camPos = glm::vec3(11.5, 7.3, 11.5);
-			float dotProduct = glm::dot(glm::normalize(camPos), glm::vec3(0));
-			float angle = glm::acos(dotProduct);
-			angle = glm::radians(-30.f);
-
-			front.x = cos(glm::radians(yaw)) * cos(angle);
-			front.y = sin(angle);
-			front.z = sin(glm::radians(yaw)) * cos(angle);
-
-			front = glm::normalize(front);
-
-			view = glm::lookAt(camPos, camPos + front, glm::vec3(0, 1, 0));
+			view = glm::lookAt(camPos2, camPos2 + front2, glm::vec3(0, 1, 0));
 
 			projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
 			phongShader.setMat4("uProjection", projectionP);
+			phongShader.setVec3("uViewPos", camPos2);
 		}
 		else if (params.activeCamera == 2)
 		{
 			glm::vec3 front;
-			yaw = -90;
+			float yaw = -90;
 			glm::vec3 camPos = glm::vec3(10, 3.1, 11.7);
-			float dotProduct = glm::dot(glm::normalize(camPos), glm::vec3(0));
-			float angle = glm::acos(dotProduct);
-			angle = glm::radians(-30.f);
+			float angle = glm::radians(-30.f);
 
 			front.x = cos(glm::radians(yaw)) * cos(angle);
 			front.y = sin(angle);
@@ -683,6 +771,7 @@ int main()
 
 			projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
 			phongShader.setMat4("uProjection", projectionP);
+			phongShader.setVec3("uViewPos", camPos);
 		}
 		else if (params.activeCamera == 3)
 		{
@@ -692,14 +781,18 @@ int main()
 			float k = 5;
 			projectionP = glm::ortho(-16.f-k, 16.f+k, -9.f-k, 9.f+k, 0.1f, 201.f);
 			phongShader.setMat4("uProjection", projectionP);
+			phongShader.setVec3("uViewPos", camPos);
 		}
-		else {
-			view = glm::lookAt(params.position, params.position + params.cameraFront, params.cameraUp);
-		}
+
+		//view = glm::lookAt(params.position, params.position + params.cameraFront, params.cameraUp);
+
+		twoD.use();
+		twoD.setMat4("uProjection", projectionP);
+		twoD.setMat4("uView", view);
+		phongShader.use();
 
 
 		phongShader.setMat4("uView", view);
-		phongShader.setVec3("uViewPos", params.position);
 
 		//SCENE
 		//------------------------------------------------------------------------------------------------------------
@@ -775,7 +868,7 @@ int main()
 
 		phongShader.setVec3("uPointLights[0].Position", glm::vec3(xOffset, 3.7, 11.0));
 		phongShader.setVec3("uPointLights[0].Ka", glm::vec3(0.6, 0.6, 0.2) / 2.f);
-		phongShader.setVec3("uPointLights[0].Kd", glm::vec3(0.6, 0.6, 0.2));
+		phongShader.setVec3("uPointLights[0].Kd", glm::vec3(0.6, 0.6, 0.2)*2.f);
 		phongShader.setVec3("uPointLights[0].Ks", glm::vec3(0.6, 0.6, 0.2));
 		phongShader.setFloat("uPointLights[0].Kc", 1.5f);
 		phongShader.setFloat("uPointLights[0].Kl", 1.0f);
@@ -791,46 +884,66 @@ int main()
 		//Test cars
 		//Left
 		if (params.spot3Taken) {
-			m = glm::translate(glm::mat4(1.0), glm::vec3(3.125, 1.0, -8.5));
-			m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+			m = glm::translate(glm::mat4(1.0), glm::vec3(3.125, 0.5, -8.5));
+			m = glm::scale(m, glm::vec3(0.07));
 			phongShader.setMat4("uModel", m);
-			simpleCube->Render(&phongShader, params.spot3Color.x, params.spot3Color.y, params.spot3Color.z);
+			phongShader.setBool("isColor", true);
+			phongShader.setVec3("uColor", params.spot3Color);
+			carModel.Draw(phongShader);
+			phongShader.setBool("isColor", false);
 		}
 
 		if (params.spot4Taken) {
-			m = glm::translate(glm::mat4(1.0), glm::vec3(3.125 * 3, 1.0, -8.5));
-			m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+			m = glm::translate(glm::mat4(1.0), glm::vec3(3.125 * 3, 0.5, -8.5));
+			m = glm::scale(m, glm::vec3(0.07));
 			phongShader.setMat4("uModel", m);
-			simpleCube->Render(&phongShader, params.spot4Color.x, params.spot4Color.y, params.spot4Color.z);
+			phongShader.setBool("isColor", true);
+			phongShader.setVec3("uColor", params.spot4Color);
+			carModel.Draw(phongShader);
+			phongShader.setBool("isColor", false);
 		}
 
 		if (params.spot2Taken) {
-			m = glm::translate(glm::mat4(1.0), glm::vec3(-3.125, 1.0, -8.5));
-			m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+			m = glm::translate(glm::mat4(1.0), glm::vec3(-3.125, 0.5, -8.5));
+			m = glm::scale(m, glm::vec3(0.07));
 			phongShader.setMat4("uModel", m);
-			simpleCube->Render(&phongShader, params.spot2Color.x, params.spot2Color.y, params.spot2Color.z);
+			phongShader.setBool("isColor", true);
+			phongShader.setVec3("uColor", params.spot2Color);
+			carModel.Draw(phongShader);
+			phongShader.setBool("isColor", false);
 		}
 
 		if (params.spot1Taken) {
-			m = glm::translate(glm::mat4(1.0), glm::vec3(-3.125 * 3, 1.0, -8.5));
-			m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+			m = glm::translate(glm::mat4(1.0), glm::vec3(-3.125 * 3, 0.5, -8.5));
+			m = glm::scale(m, glm::vec3(0.07));
 			phongShader.setMat4("uModel", m);
-			simpleCube->Render(&phongShader, params.spot1Color.x, params.spot1Color.y, params.spot1Color.z);
+			phongShader.setBool("isColor", true);
+			phongShader.setVec3("uColor", params.spot1Color);
+			carModel.Draw(phongShader);
+			phongShader.setBool("isColor", false);
 		}
 
 		//Right
 		if (params.spot6Taken) {
-			m = glm::translate(glm::mat4(1.0), glm::vec3(-3.125, 1.0, 8.5));
-			m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+			m = glm::translate(glm::mat4(1.0), glm::vec3(-3.125, 0.5, 8.5));
+			m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+			m = glm::scale(m, glm::vec3(0.07));
 			phongShader.setMat4("uModel", m);
-			simpleCube->Render(&phongShader, params.spot6Color.x, params.spot6Color.y, params.spot6Color.z);
+			phongShader.setBool("isColor", true);
+			phongShader.setVec3("uColor", params.spot6Color);
+			carModel.Draw(phongShader);
+			phongShader.setBool("isColor", false);
 		}
 
 		if (params.spot5Taken) {
-			m = glm::translate(glm::mat4(1.0), glm::vec3(-3.125 * 3, 1.0, 8.5));
-			m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+			m = glm::translate(glm::mat4(1.0), glm::vec3(-3.125 * 3, 0.5, 8.5));
+			m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+			m = glm::scale(m, glm::vec3(0.07));
 			phongShader.setMat4("uModel", m);
-			simpleCube->Render(&phongShader, params.spot5Color.x, params.spot5Color.y, params.spot5Color.z);
+			phongShader.setBool("isColor", true);
+			phongShader.setVec3("uColor", params.spot5Color);
+			carModel.Draw(phongShader);
+			phongShader.setBool("isColor", false);
 		}
 
 		//Ramp
@@ -852,13 +965,13 @@ int main()
 		m = glm::translate(m, glm::vec3(12.0, 1.5, 0.0));
 		m = glm::scale(m, glm::vec3(0.2, 0.2, 9.0));
 		phongShader.setMat4("uModel", m);
-		simpleCube->Render(&phongShader, 1, 0, 1);
+		simpleCube->Render(&phongShader, 1, 0, 0);
 
 		//RampHold
 		m = glm::translate(glm::mat4(1.0), glm::vec3(12.0, 1.0, 4.5));
 		m = glm::scale(m, glm::vec3(1.0, 2.0, 1.0));
 		phongShader.setMat4("uModel", m);
-		simpleCube->Render(&phongShader, 1, 0, 1);
+		simpleCube->Render(&phongShader, 1, 1, 1);
 
 		//Glass
 		m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 3.0, 10 - 0.07));
@@ -870,8 +983,168 @@ int main()
 		phongShader.setBool("uTransp", false);
 
 
+		//2D Display
+		twoD.use();
+		//glm::vec3(10.0, 2.0, 10.251)
 
+		m = glm::translate(glm::mat4(1.0f), glm::vec3(10.0, 2.0, 10.251));
+		m = glm::scale(m, glm::vec3(0.66));
+		twoD.setMat4("uModel", m);
+		rectangle->Render(&twoD, betonDifPod);
 
+		//Taken ind
+		float offset = 0.165/2;
+
+		//spot1
+		float spotScale = 0.1f + ((params.spot1Time) / 20.0f) * (0.0f - 0.1f);
+		float spotOffset = (0.1 - spotScale) / 2;
+
+		m = glm::translate(glm::mat4(1.0f), glm::vec3(10.0 - offset * 3, 2.0 + 0.31, 10.252));
+		m = glm::scale(m, glm::vec3(0.03));
+		twoD.setMat4("uModel", m);
+		if(params.spot1Taken)
+			rectangle->Render(&twoD, 1,0,0);
+		else
+			rectangle->Render(&twoD, 0, 1, 0);
+
+		m = glm::translate(glm::mat4(1.0f), glm::vec3(10.0 - offset * 3 - spotOffset, 2.0 + 0.1, 10.252));
+		m = glm::scale(m, glm::vec3(spotScale,0.03,1.0));
+		twoD.setMat4("uModel", m);
+		rectangle->Render(&twoD, 1, 1, 0);
+
+		//spot2
+		spotScale = 0.1f + ((params.spot2Time) / 20.0f) * (0.0f - 0.1f);
+		spotOffset = (0.1 - spotScale) / 2;
+
+		m = glm::translate(glm::mat4(1.0f), glm::vec3(10.0 - offset, 2.0 + 0.31, 10.252));
+		m = glm::scale(m, glm::vec3(0.03));
+		twoD.setMat4("uModel", m);
+		if (params.spot2Taken)
+			rectangle->Render(&twoD, 1, 0, 0);
+		else
+			rectangle->Render(&twoD, 0, 1, 0);
+
+		m = glm::translate(glm::mat4(1.0f), glm::vec3(10.0 - offset - spotOffset, 2.0 + 0.1, 10.252));
+		m = glm::scale(m, glm::vec3(spotScale, 0.03, 1.0));
+		twoD.setMat4("uModel", m);
+		rectangle->Render(&twoD, 1, 1, 0);
+
+		//spot3
+		spotScale = 0.1f + ((params.spot3Time) / 20.0f) * (0.0f - 0.1f);
+		spotOffset = (0.1 - spotScale) / 2;
+
+		m = glm::translate(glm::mat4(1.0f), glm::vec3(10.0 + offset, 2.0 + 0.31, 10.252));
+		m = glm::scale(m, glm::vec3(0.03));
+		twoD.setMat4("uModel", m);
+		if (params.spot3Taken)
+			rectangle->Render(&twoD, 1, 0, 0);
+		else
+			rectangle->Render(&twoD, 0, 1, 0);
+
+		m = glm::translate(glm::mat4(1.0f), glm::vec3(10.0 + offset - spotOffset, 2.0 + 0.1, 10.252));
+		m = glm::scale(m, glm::vec3(spotScale, 0.03, 1.0));
+		twoD.setMat4("uModel", m);
+		rectangle->Render(&twoD, 1, 1, 0);
+
+		//spot4
+		spotScale = 0.1f + ((params.spot4Time) / 20.0f) * (0.0f - 0.1f);
+		spotOffset = (0.1 - spotScale) / 2;
+
+		m = glm::translate(glm::mat4(1.0f), glm::vec3(10.0 + offset * 3, 2.0 + 0.31, 10.252));
+		m = glm::scale(m, glm::vec3(0.03));
+		twoD.setMat4("uModel", m);
+		if (params.spot4Taken)
+			rectangle->Render(&twoD, 1, 0, 0);
+		else
+			rectangle->Render(&twoD, 0, 1, 0);
+
+		m = glm::translate(glm::mat4(1.0f), glm::vec3(10.0 + offset * 3 - spotOffset, 2.0 + 0.1, 10.252));
+		m = glm::scale(m, glm::vec3(spotScale, 0.03, 1.0));
+		twoD.setMat4("uModel", m);
+		rectangle->Render(&twoD, 1, 1, 0);
+
+		//spot5
+		spotScale = 0.1f + ((params.spot5Time) / 20.0f) * (0.0f - 0.1f);
+		spotOffset = (0.1 - spotScale) / 2;
+
+		m = glm::translate(glm::mat4(1.0f), glm::vec3(10.0 - offset * 3, 2.0 - 0.31, 10.252));
+		m = glm::scale(m, glm::vec3(0.03));
+		twoD.setMat4("uModel", m);
+		if (params.spot5Taken)
+			rectangle->Render(&twoD, 1, 0, 0);
+		else
+			rectangle->Render(&twoD, 0, 1, 0);
+
+		m = glm::translate(glm::mat4(1.0f), glm::vec3(10.0 - offset * 3 - spotOffset, 2.0 - 0.1, 10.252));
+		m = glm::scale(m, glm::vec3(spotScale, 0.03, 1.0));
+		twoD.setMat4("uModel", m);
+		rectangle->Render(&twoD, 1, 1, 0);
+
+		//spot6
+		spotScale = 0.1f + ((params.spot6Time) / 20.0f) * (0.0f - 0.1f);
+		spotOffset = (0.1 - spotScale) / 2;
+
+		m = glm::translate(glm::mat4(1.0f), glm::vec3(10.0 - offset, 2.0 - 0.31, 10.252));
+		m = glm::scale(m, glm::vec3(0.03));
+		twoD.setMat4("uModel", m);
+		if (params.spot6Taken)
+			rectangle->Render(&twoD, 1, 0, 0);
+		else
+			rectangle->Render(&twoD, 0, 1, 0);
+
+		m = glm::translate(glm::mat4(1.0f), glm::vec3(10.0 - offset - spotOffset, 2.0 - 0.1, 10.252));
+		m = glm::scale(m, glm::vec3(spotScale, 0.03, 1.0));
+		twoD.setMat4("uModel", m);
+		rectangle->Render(&twoD, 1, 1, 0);
+
+		//Autici
+		if (params.isTransp) {
+			twoD.setBool("isTransp", true);
+		}
+		else
+		{
+			twoD.setBool("isTransp", false);
+		}
+
+		if (params.spot6Taken) {
+			m = glm::translate(glm::mat4(1.0f), glm::vec3(10.0 - offset, 2.0 - 0.2, 10.252));
+			m = glm::scale(m, glm::vec3(0.06, 0.13, 1.0));
+			twoD.setMat4("uModel", m);
+			rectangle->Render(&twoD, params.spot6Color.x, params.spot6Color.y, params.spot6Color.z);
+		}
+		if (params.spot5Taken) {
+			m = glm::translate(glm::mat4(1.0f), glm::vec3(10.0 - offset*3, 2.0 - 0.2, 10.252));
+			m = glm::scale(m, glm::vec3(0.06, 0.13, 1.0));
+			twoD.setMat4("uModel", m);
+			rectangle->Render(&twoD, params.spot5Color.x, params.spot5Color.y, params.spot5Color.z);
+		}
+		if (params.spot4Taken) {
+			m = glm::translate(glm::mat4(1.0f), glm::vec3(10.0 + offset*3, 2.0 + 0.2, 10.252));
+			m = glm::scale(m, glm::vec3(0.06, 0.13, 1.0));
+			twoD.setMat4("uModel", m);
+			rectangle->Render(&twoD, params.spot4Color.x, params.spot4Color.y, params.spot4Color.z);
+		}
+		if (params.spot3Taken) {
+			m = glm::translate(glm::mat4(1.0f), glm::vec3(10.0 + offset, 2.0 + 0.2, 10.252));
+			m = glm::scale(m, glm::vec3(0.06, 0.13, 1.0));
+			twoD.setMat4("uModel", m);
+			rectangle->Render(&twoD, params.spot3Color.x, params.spot3Color.y, params.spot3Color.z);
+		}
+		if (params.spot2Taken) {
+			m = glm::translate(glm::mat4(1.0f), glm::vec3(10.0 - offset, 2.0 + 0.2, 10.252));
+			m = glm::scale(m, glm::vec3(0.06, 0.13, 1.0));
+			twoD.setMat4("uModel", m);
+			rectangle->Render(&twoD, params.spot2Color.x, params.spot2Color.y, params.spot2Color.z);
+		}
+		if (params.spot1Taken) {
+			m = glm::translate(glm::mat4(1.0f), glm::vec3(10.0 - offset*3, 2.0 + 0.2, 10.252));
+			m = glm::scale(m, glm::vec3(0.06, 0.13, 1.0));
+			twoD.setMat4("uModel", m);
+			rectangle->Render(&twoD, params.spot1Color.x, params.spot1Color.y, params.spot1Color.z);
+		}
+
+		twoD.setBool("isTransp", false);
+		phongShader.use();
 
 
 		//------------------------------------------------------------------------------------------------------------
