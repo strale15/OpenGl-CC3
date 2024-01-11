@@ -29,7 +29,7 @@ double lastX;
 double lastY;
 
 struct Params {
-    float dt;
+    float dt = 0;
     bool isFps = true;
 
     bool isCurosIn = true;
@@ -52,6 +52,9 @@ struct Params {
 
     bool spaceDown = false;
     bool shiftDown = false;
+
+    //Parking
+    bool rampUp = false;
 };
 
 static void DrawHud(Shader& hudShader, unsigned hudTex) {
@@ -262,6 +265,22 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
     {
         params->shiftDown = false;
     }
+
+    //Parking
+    /*if (key == GLFW_KEY_E) {
+        if (action == GLFW_PRESS) {
+            params->rotRight = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->rotRight = false;
+        }
+    }*/
+
+    if (key == GLFW_KEY_F) {
+        if (action == GLFW_PRESS) {
+            params->rampUp = !params->rampUp;
+        }
+    }
 }
 
 int main()
@@ -361,11 +380,11 @@ int main()
 
     phongShader.setVec3("uDirLight.Position", 0.0, 5, 0.0);
     phongShader.setVec3("uDirLight.Direction", 0.1, -5, 0.1);
-    phongShader.setVec3("uDirLight.Ka", glm::vec3(255.0 / 255 / 10, 238.0 / 255 / 10, 204.0 / 255 / 10));
-    phongShader.setVec3("uDirLight.Kd", glm::vec3(255.0 / 255 / 10, 238.0 / 255 / 10, 204.0 / 255 / 10));
-    phongShader.setVec3("uDirLight.Ks", glm::vec3(1.0, 1.0, 1.0));
+    phongShader.setVec3("uDirLight.Ka", glm::vec3(0.2));
+    phongShader.setVec3("uDirLight.Kd", glm::vec3(0.3));
+    phongShader.setVec3("uDirLight.Ks", glm::vec3(1.0));
 
-    phongShader.setVec3("uSpotlights[0].Position", 0.0, 10.0, 0.0);
+    phongShader.setVec3("uSpotlights[0].Position", glm::vec3(-999));
     phongShader.setVec3("uSpotlights[0].Direction", 0.0, -1.0, 0.0);
     phongShader.setVec3("uSpotlights[0].Ka", 0.0, 0.0, 0.0);
     phongShader.setVec3("uSpotlights[0].Kd", glm::vec3(3.0f, 3.0f, 3.0f));
@@ -387,9 +406,9 @@ int main()
     phongShader.setFloat("uSpotlights[1].Kl", 0.092f);
     phongShader.setFloat("uSpotlights[1].Kq", 0.032f);
 
-    phongShader.setVec3("uPointLights[0].Position", glm::vec3(0.0, -2.0, 0.0));
-    phongShader.setVec3("uPointLights[0].Ka", glm::vec3(230.0 / 255 / 0.1, 92.0 / 255 / 0.1, 0.0f));
-    phongShader.setVec3("uPointLights[0].Kd", glm::vec3(230.0 / 255 / 50, 92.0 / 255 / 50, 0.0f));
+    phongShader.setVec3("uPointLights[0].Position", glm::vec3(0.0, 3.0, 0.0));
+    phongShader.setVec3("uPointLights[0].Ka", glm::vec3(0.1));
+    phongShader.setVec3("uPointLights[0].Kd", glm::vec3(0.6));
     phongShader.setVec3("uPointLights[0].Ks", glm::vec3(1.0f));
     phongShader.setFloat("uPointLights[0].Kc", 1.5f);
     phongShader.setFloat("uPointLights[0].Kl", 1.0f);
@@ -398,6 +417,10 @@ int main()
     unsigned hudTex = Model::textureFromFile("res/hudTex.png");
     unsigned kockaDif = Model::textureFromFile("res/container_diffuse.png");
     unsigned kockaSpec = Model::textureFromFile("res/container_specular.png");
+    unsigned betonDif = Model::textureFromFile("res/betonDif.png");
+    unsigned betonSpec = Model::textureFromFile("res/betonSpec.png");
+    unsigned betonDifPod = Model::textureFromFile("res/betonDifPod.png");
+    unsigned betonSpecPod = Model::textureFromFile("res/betonSpecPod.png");
 
     phongShader.setInt("uMaterial.Kd", 0);
     phongShader.setInt("uMaterial.Ks", 1);
@@ -408,6 +431,8 @@ int main()
     float currentRot = 0;
     float FrameStartTime = 0;
     float FrameEndTime = 0;
+    float rampRot = 0;
+    float isRampUp = false;
 
     Params params;
     glfwSetWindowUserPointer(window, &params);
@@ -440,7 +465,139 @@ int main()
         m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 1, 1);
+        //simpleCube->Render(&phongShader, 0, 1, 1);
+
+        //Pod
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 0.0));
+        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(-25.0, 1.0, 25.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, betonDifPod, betonSpecPod);
+
+        //Zidovi
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 4.0, -12.5));
+        m = glm::scale(m, glm::vec3(25.0, 8.0, 1.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, betonDif, betonSpec);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 4.0, 12.5));
+        m = glm::scale(m, glm::vec3(25.0, 8.0, 1.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, betonDif, betonSpec);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-12.5, 4.0, 0.0));
+        m = glm::scale(m, glm::vec3(1.0, 8.0, 25.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, betonDif, betonSpec);
+
+        //PortirStanica
+        float xOffset = 10;
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 2.0, 12.0));
+        m = glm::translate(m, glm::vec3(xOffset, 0, 0));
+        m = glm::scale(m, glm::vec3(2.0, 4.0, 0.3));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 0, 0);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(1.0, 2.0, 11.0));
+        m = glm::translate(m, glm::vec3(xOffset, 0, 0));
+        m = glm::scale(m, glm::vec3(0.3, 4.0, 2.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 0, 0);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-1.0, 2.0, 11.0));
+        m = glm::translate(m, glm::vec3(xOffset, 0, 0));
+        m = glm::scale(m, glm::vec3(0.3, 4.0, 2.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 0, 0);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 1.0, 10.0));
+        m = glm::translate(m, glm::vec3(xOffset, 0, 0));
+        m = glm::scale(m, glm::vec3(2.0, 2.0, 0.3));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 0, 0);
+         
+        //Display
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 2.0, 10.2));
+        m = glm::translate(m, glm::vec3(xOffset, 0, 0));
+        m = glm::scale(m, glm::vec3(0.7, 0.7, 0.1));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 0, 0, 1);
+
+        //Test cars
+        //Left
+        m = glm::translate(glm::mat4(1.0), glm::vec3(3.125, 1.0, -8.5));
+        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 0, 1);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(3.125*3, 1.0, -8.5));
+        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 0, 1);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-3.125, 1.0, -8.5));
+        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 0, 1);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-3.125 * 3, 1.0, -8.5));
+        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 0, 1);
+
+        //Right
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-3.125, 1.0, 8.5));
+        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 0, 1);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-3.125*3, 1.0, 8.5));
+        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 0, 1);
+
+        //Ramp
+        if (params.rampUp || isRampUp && rampRot < 90) {
+            isRampUp = true;
+            rampRot += 20 * params.dt;
+        }
+        else if (!params.rampUp || !isRampUp && rampRot > 0) {
+            isRampUp = false;
+            rampRot -= 20 * params.dt;
+        }
+
+        rampRot = glm::clamp(rampRot, 0.f, 90.f);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(12.0, 1.5, 4.5));
+        m = glm::rotate(m, glm::radians(rampRot), glm::vec3(1.0, 0.0, 0.0));
+        m = glm::translate(m, -glm::vec3(12.0, 1.5, 4.5));
+
+        m = glm::translate(m, glm::vec3(12.0, 1.5, 0.0));
+        m = glm::scale(m, glm::vec3(0.2, 0.2, 9.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 0, 1);
+
+        //RampHold
+        m = glm::translate(glm::mat4(1.0), glm::vec3(12.0, 1.0, 4.5));
+        m = glm::scale(m, glm::vec3(1.0, 2.0, 1.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 0, 1);
+
+        //Glass
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 3.0, 10-0.07));
+        m = glm::translate(m, glm::vec3(xOffset, 0, 0));
+        m = glm::scale(m, glm::vec3(2.0, 2.0, 0.15));
+        phongShader.setBool("uTransp", true);
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 0, 0);
+        phongShader.setBool("uTransp", false);
+
+
+
+
+
+        
         //------------------------------------------------------------------------------------------------------------
 
         //HUD
@@ -457,5 +614,3 @@ int main()
     glfwTerminate();
     return 0;
 }
-
-
