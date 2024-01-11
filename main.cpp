@@ -273,11 +273,22 @@ static void DrawScene(Shader& shader, Params &params, bool isBack = false) {
     glm::vec3 lightIntA = zeroVec;
     glm::vec3 lightIntD = zeroVec;
     glm::vec3 lightIntS = zeroVec;
+    float kc = 0.2;
+    float kl = 0.092;
+    float kq = 0.00032;
+    float inner = 20;
+    float outer = 30;
     if (params.headlights) {
         if (params.longLights) {
             lightIntA = zeroVec;
             lightIntD = glm::vec3(12);
             lightIntS = glm::vec3(60.0);
+
+            float kc = 0.02;
+            float kl = 0.0092;
+            float kq = 0.000032;
+            inner = 30;
+            outer = 45;
         }
         else {
             lightIntA = zeroVec;
@@ -291,22 +302,23 @@ static void DrawScene(Shader& shader, Params &params, bool isBack = false) {
     shader.setVec3("uSpotlights[0].Ka", lightIntA);
     shader.setVec3("uSpotlights[0].Kd", lightIntD);
     shader.setVec3("uSpotlights[0].Ks", lightIntS);
-    shader.setFloat("uSpotlights[0].InnerCutOff", glm::cos(glm::radians(25.0f)));
-    shader.setFloat("uSpotlights[0].OuterCutOff", glm::cos(glm::radians(35.0f)));
-    shader.setFloat("uSpotlights[0].Kc", 0.2);
-    shader.setFloat("uSpotlights[0].Kl", 0.092f);
-    shader.setFloat("uSpotlights[0].Kq", 0.0032f);
+    shader.setFloat("uSpotlights[0].InnerCutOff", glm::cos(glm::radians(inner)));
+    shader.setFloat("uSpotlights[0].OuterCutOff", glm::cos(glm::radians(outer)));
+    shader.setFloat("uSpotlights[0].Kc", kc);
+    shader.setFloat("uSpotlights[0].Kl", kl);
+    shader.setFloat("uSpotlights[0].Kq", kq);
+
 
     shader.setVec3("uSpotlights[1].Position", light2Pos);
     shader.setVec3("uSpotlights[1].Direction", params.forward);
     shader.setVec3("uSpotlights[1].Ka", lightIntA);
     shader.setVec3("uSpotlights[1].Kd", lightIntD);
     shader.setVec3("uSpotlights[1].Ks", lightIntS);
-    shader.setFloat("uSpotlights[1].InnerCutOff", glm::cos(glm::radians(25.0f)));
-    shader.setFloat("uSpotlights[1].OuterCutOff", glm::cos(glm::radians(35.0f)));
-    shader.setFloat("uSpotlights[1].Kc", 0.2);
-    shader.setFloat("uSpotlights[1].Kl", 0.092f);
-    shader.setFloat("uSpotlights[1].Kq", 0.0032f);
+    shader.setFloat("uSpotlights[1].InnerCutOff", glm::cos(glm::radians(inner)));
+    shader.setFloat("uSpotlights[1].OuterCutOff", glm::cos(glm::radians(outer)));
+    shader.setFloat("uSpotlights[1].Kc", kc);
+    shader.setFloat("uSpotlights[1].Kl", kl);
+    shader.setFloat("uSpotlights[1].Kq", kq);
 
 
 }
@@ -763,7 +775,7 @@ int main()
     phongShader.use();
 
     glm::mat4 view;
-    glm::mat4 projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 250.0f);
+    glm::mat4 projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 1000.0f);
     phongShader.setMat4("uProjection", projectionP);
 
     phongShader.setVec3("uDirLight.Position", 0.0, 10, 0.0);
