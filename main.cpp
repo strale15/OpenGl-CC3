@@ -21,6 +21,9 @@
 
 #include <Windows.h>
 
+#include <ctime> // for time()
+#include <cstdlib> // for rand() and srand()
+
 const unsigned int wWidth = 1920;
 const unsigned int wHeight = 1080;
 
@@ -55,6 +58,27 @@ struct Params {
 
     //Parking
     bool rampUp = false;
+
+    bool spot1Taken = false;
+    bool spot2Taken = false;
+    bool spot3Taken = false;
+    bool spot4Taken = false;
+    bool spot5Taken = false;
+    bool spot6Taken = false;
+
+    float spot1Time = 0;
+    float spot2Time = 0;
+    float spot3Time = 0;
+    float spot4Time = 0;
+    float spot5Time = 0;
+    float spot6Time = 0;
+
+    glm::vec3 spot1Color = glm::vec3(0);
+    glm::vec3 spot2Color = glm::vec3(0);
+    glm::vec3 spot3Color = glm::vec3(0);
+    glm::vec3 spot4Color = glm::vec3(0);
+    glm::vec3 spot5Color = glm::vec3(0);
+    glm::vec3 spot6Color = glm::vec3(0);
 };
 
 static void DrawHud(Shader& hudShader, unsigned hudTex) {
@@ -156,6 +180,54 @@ static void HandleInput(Params* params) {
         else
             params->objPos.y -= 0.5f * params->dt;
     }
+
+    //Parking
+    float time = 20;
+    cout << params->spot1Time << endl;
+    if (params->spot1Taken) {
+        params->spot1Time += params->dt;
+        if (params->spot1Time >= time) {
+            params->spot1Taken = false;
+            params->spot2Time = 0;
+        }
+    }
+    if (params->spot2Taken) {
+        params->spot2Time += params->dt;
+        if (params->spot2Time >= time) {
+            params->spot2Taken = false;
+            params->spot2Time = 0;
+        }
+    }
+    if (params->spot3Taken) {
+        params->spot3Time += params->dt;
+        if (params->spot3Time >= time) {
+            params->spot3Taken = false;
+            params->spot3Time = 0;
+        }
+    }
+    if (params->spot4Taken) {
+        params->spot4Time += params->dt;
+        if (params->spot4Time >= time) {
+            params->spot4Taken = false;
+            params->spot4Time = 0;
+        }
+    }
+    if (params->spot5Taken) {
+        params->spot5Time += params->dt;
+        if (params->spot5Time >= time) {
+            params->spot5Taken = false;
+            params->spot5Time = 0;
+        }
+    }
+    if (params->spot6Taken) {
+        params->spot6Time += params->dt;
+        if (params->spot6Time >= time) {
+            params->spot6Taken = false;
+            params->spot6Time = 0;
+        }
+    }
+
+
 }
 
 static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
@@ -281,10 +353,108 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
             params->rampUp = !params->rampUp;
         }
     }
+
+    if (key == GLFW_KEY_1 && action == GLFW_PRESS && mode == GLFW_MOD_ALT) {
+        if (!params->spot1Taken) {
+            params->spot1Taken = true;
+            params->spot1Time = 0;
+            
+            float randomNumber1 = static_cast<float>(std::rand()) / RAND_MAX;
+            float randomNumber2 = static_cast<float>(std::rand()) / RAND_MAX;
+            float randomNumber3 = static_cast<float>(std::rand()) / RAND_MAX;
+
+            params->spot1Color = glm::vec3(randomNumber1, randomNumber2, randomNumber3);
+        }
+    }
+
+    if (key == GLFW_KEY_2 && action == GLFW_PRESS && mode == GLFW_MOD_ALT) {
+        if (!params->spot2Taken) {
+            params->spot2Taken = true;
+            params->spot2Time = 0;
+
+            float randomNumber1 = static_cast<float>(std::rand()) / RAND_MAX;
+            float randomNumber2 = static_cast<float>(std::rand()) / RAND_MAX;
+            float randomNumber3 = static_cast<float>(std::rand()) / RAND_MAX;
+
+            params->spot2Color = glm::vec3(randomNumber1, randomNumber2, randomNumber3);
+        }
+    }
+
+    if (key == GLFW_KEY_3 && action == GLFW_PRESS && mode == GLFW_MOD_ALT) {
+        if (!params->spot3Taken) {
+            params->spot3Taken = true;
+            params->spot3Time = 0;
+
+            float randomNumber1 = static_cast<float>(std::rand()) / RAND_MAX;
+            float randomNumber2 = static_cast<float>(std::rand()) / RAND_MAX;
+            float randomNumber3 = static_cast<float>(std::rand()) / RAND_MAX;
+
+            params->spot3Color = glm::vec3(randomNumber1, randomNumber2, randomNumber3);
+        }
+    }
+
+    if (key == GLFW_KEY_4 && action == GLFW_PRESS && mode == GLFW_MOD_ALT) {
+        if (!params->spot4Taken) {
+            params->spot4Taken = true;
+            params->spot4Time = 0;
+
+            float randomNumber1 = static_cast<float>(std::rand()) / RAND_MAX;
+            float randomNumber2 = static_cast<float>(std::rand()) / RAND_MAX;
+            float randomNumber3 = static_cast<float>(std::rand()) / RAND_MAX;
+
+            params->spot4Color = glm::vec3(randomNumber1, randomNumber2, randomNumber3);
+        }
+    }
+
+    if (key == GLFW_KEY_5 && action == GLFW_PRESS && mode == GLFW_MOD_ALT) {
+        if (!params->spot5Taken) {
+            params->spot5Taken = true;
+            params->spot5Time = 0;
+
+            float randomNumber1 = static_cast<float>(std::rand()) / RAND_MAX;
+            float randomNumber2 = static_cast<float>(std::rand()) / RAND_MAX;
+            float randomNumber3 = static_cast<float>(std::rand()) / RAND_MAX;
+
+            params->spot5Color = glm::vec3(randomNumber1, randomNumber2, randomNumber3);
+        }
+    }
+
+    if (key == GLFW_KEY_6 && action == GLFW_PRESS && mode == GLFW_MOD_ALT) {
+        if (!params->spot6Taken) {
+            params->spot6Taken = true;
+            params->spot6Time = 0;
+
+            float randomNumber1 = static_cast<float>(std::rand()) / RAND_MAX;
+            float randomNumber2 = static_cast<float>(std::rand()) / RAND_MAX;
+            float randomNumber3 = static_cast<float>(std::rand()) / RAND_MAX;
+
+            params->spot6Color = glm::vec3(randomNumber1, randomNumber2, randomNumber3);
+        }
+    }
+
+    if (key == GLFW_KEY_1 && action == GLFW_PRESS && mode == GLFW_MOD_SHIFT) {
+        params->spot1Time = 0;
+    }
+    if (key == GLFW_KEY_2 && action == GLFW_PRESS && mode == GLFW_MOD_SHIFT) {
+        params->spot2Time = 0;
+    }
+    if (key == GLFW_KEY_3 && action == GLFW_PRESS && mode == GLFW_MOD_SHIFT) {
+        params->spot3Time = 0;
+    }
+    if (key == GLFW_KEY_4 && action == GLFW_PRESS && mode == GLFW_MOD_SHIFT) {
+        params->spot4Time = 0;
+    }
+    if (key == GLFW_KEY_5 && action == GLFW_PRESS && mode == GLFW_MOD_SHIFT) {
+        params->spot5Time = 0;
+    }
+    if (key == GLFW_KEY_6 && action == GLFW_PRESS && mode == GLFW_MOD_SHIFT) {
+        params->spot6Time = 0;
+    }
 }
 
 int main()
 {
+    std::srand(static_cast<unsigned int>(std::time(nullptr)));
     HWND console = GetConsoleWindow();
     SetWindowPos(console, 0, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 
@@ -526,36 +696,48 @@ int main()
 
         //Test cars
         //Left
-        m = glm::translate(glm::mat4(1.0), glm::vec3(3.125, 1.0, -8.5));
-        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
-        phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 1, 0, 1);
+        if (params.spot3Taken) {
+            m = glm::translate(glm::mat4(1.0), glm::vec3(3.125, 1.0, -8.5));
+            m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+            phongShader.setMat4("uModel", m);
+            simpleCube->Render(&phongShader, params.spot3Color.x, params.spot3Color.y, params.spot3Color.z);
+        }
 
-        m = glm::translate(glm::mat4(1.0), glm::vec3(3.125*3, 1.0, -8.5));
-        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
-        phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 1, 0, 1);
+        if (params.spot4Taken) {
+            m = glm::translate(glm::mat4(1.0), glm::vec3(3.125 * 3, 1.0, -8.5));
+            m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+            phongShader.setMat4("uModel", m);
+            simpleCube->Render(&phongShader, params.spot4Color.x, params.spot4Color.y, params.spot4Color.z);
+        }
 
-        m = glm::translate(glm::mat4(1.0), glm::vec3(-3.125, 1.0, -8.5));
-        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
-        phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 1, 0, 1);
+        if (params.spot2Taken) {
+            m = glm::translate(glm::mat4(1.0), glm::vec3(-3.125, 1.0, -8.5));
+            m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+            phongShader.setMat4("uModel", m);
+            simpleCube->Render(&phongShader, params.spot2Color.x, params.spot2Color.y, params.spot2Color.z);
+        }
 
-        m = glm::translate(glm::mat4(1.0), glm::vec3(-3.125 * 3, 1.0, -8.5));
-        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
-        phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 1, 0, 1);
+        if (params.spot1Taken) {
+            m = glm::translate(glm::mat4(1.0), glm::vec3(-3.125 * 3, 1.0, -8.5));
+            m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+            phongShader.setMat4("uModel", m);
+            simpleCube->Render(&phongShader, params.spot1Color.x, params.spot1Color.y, params.spot1Color.z);
+        }
 
         //Right
-        m = glm::translate(glm::mat4(1.0), glm::vec3(-3.125, 1.0, 8.5));
-        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
-        phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 1, 0, 1);
+        if (params.spot6Taken) {
+            m = glm::translate(glm::mat4(1.0), glm::vec3(-3.125, 1.0, 8.5));
+            m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+            phongShader.setMat4("uModel", m);
+            simpleCube->Render(&phongShader, params.spot6Color.x, params.spot6Color.y, params.spot6Color.z);
+        }
 
-        m = glm::translate(glm::mat4(1.0), glm::vec3(-3.125*3, 1.0, 8.5));
-        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
-        phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 1, 0, 1);
+        if (params.spot5Taken) {
+            m = glm::translate(glm::mat4(1.0), glm::vec3(-3.125 * 3, 1.0, 8.5));
+            m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+            phongShader.setMat4("uModel", m);
+            simpleCube->Render(&phongShader, params.spot5Color.x, params.spot5Color.y, params.spot5Color.z);
+        }
 
         //Ramp
         if (params.rampUp || isRampUp && rampRot < 90) {
