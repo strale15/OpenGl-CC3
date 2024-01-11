@@ -20,6 +20,10 @@
 #include "GameObject.cpp"
 
 #include <Windows.h>
+#include <ctime> // for time()
+#include <cstdlib> // for rand() and srand()
+
+#define TREES 500
 
 const unsigned int wWidth = 1920;
 const unsigned int wHeight = 1080;
@@ -40,10 +44,16 @@ bool firstMouse = true;
 double lastX;
 double lastY;
 
+float signalCounter = 0;
+bool signalOn = false;
+
+int randomCoords[TREES*2];
+
+
 struct Params {
-    float dt;
+    float dt = 0;
     bool isFps = true;
-    bool freeCam = true;
+    bool freeCam = false;
 
     bool isCurosIn = true;
     double xPosC = 0.0;
@@ -81,9 +91,26 @@ struct Params {
 
     float fuel = 100;
 
+    bool leftSignal = false;
+    bool rightSignal = false;
+
     glm::vec3 forward = glm::vec3(0, 0, 1);
     glm::vec3 offset = glm::vec3(0);
 };
+
+static void RandomCoords() {
+    std::srand(static_cast<unsigned int>(std::time(nullptr)));
+    for (int i = 0; i < TREES * 2; i++) {
+
+        gas:
+        int randomNumber = std::rand() % (2000 + 1) - 1000;
+        if (glm::abs(randomNumber) < 30) {
+            goto gas;
+        }
+        randomCoords[i] = randomNumber;
+        //cout << randomNumber << endl;
+    }
+}
 
 static void DrawHud(Shader& hudShader, unsigned hudTex) {
     //hud
@@ -150,9 +177,9 @@ static void DrawScene(Shader& shader, Params &params, bool isBack = false) {
 
     //Road
     m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, -1.0, 0.0));
-    m = glm::scale(m, glm::vec3(500,1.0,500));
+    m = glm::scale(m, glm::vec3(2000,1.0,2000));
     shader.setMat4("uModel", m);
-    simpleCube2->Render(&shader, asphaltD, kockaSpec);
+    simpleCube2->Render(&shader, asphaltD, asphaltS);
 
     //Car
     //Base
@@ -213,6 +240,14 @@ static void DrawScene(Shader& shader, Params &params, bool isBack = false) {
     shader.setMat4("uModel", m);
     simpleCube->Render(&shader, 1, 1, 1);
 
+    //Trees
+    for (int i = 0; i < TREES; i++) {
+        m = glm::translate(glm::mat4(1.0), glm::vec3(randomCoords[i], 9.0, randomCoords[i+TREES]));
+        m = glm::scale(m, glm::vec3(1.0, 20.0, 1.0));
+        shader.setMat4("uModel", m);
+        simpleCube->Render(&shader, 0, 1, 0);
+    }
+
     //Glass
     m = glm::translate(glm::mat4(1.0), params.offset);
     m = glm::rotate(m, glm::radians(params.rotation), glm::vec3(0.0, 1.0, 0.0));
@@ -242,12 +277,12 @@ static void DrawScene(Shader& shader, Params &params, bool isBack = false) {
         if (params.longLights) {
             lightIntA = zeroVec;
             lightIntD = glm::vec3(12);
-            lightIntS = glm::vec3(30.0);
+            lightIntS = glm::vec3(60.0);
         }
         else {
             lightIntA = zeroVec;
             lightIntD = glm::vec3(5);
-            lightIntS = glm::vec3(30.0);
+            lightIntS = glm::vec3(60.0);
         }
     }
 
@@ -342,10 +377,10 @@ static void HandleInput(Params* params) {
         params->gear = 1;
     }
 
-    if (params->gasDown) {
+    if (params->gasDown && !params->breakeDown) {
         int reverse = 1;
         if (params->reverse) {
-            reverse = -1;
+            reverse = -3;
         }
 
         params->velocity += 5 * params->dt * reverse * (6 - params->gear)/2;
@@ -373,11 +408,13 @@ static void HandleInput(Params* params) {
 
     if (glm::abs(params->velocity) > 0) {
         if (params->turnLeft) {
-            params->rotation += 100 * params->dt;
+            params->rotation += 50 * params->dt;
         }
         else if (params->turnRight) {
-            params->rotation -= 100 * params->dt;
+            params->rotation -= 50 * params->dt;
         }
+
+        //params->rotation = glm::clamp(params->rotation, -60.f, 60.f);
     }
     params->velocity = glm::clamp(params->velocity, -20.f, 100.f);
 
@@ -435,7 +472,7 @@ static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
 
 static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode) {
     Params* params = (Params*)glfwGetWindowUserPointer(window);
-    if (key == GLFW_KEY_E && action == GLFW_PRESS)
+    if (key == GLFW_KEY_T && action == GLFW_PRESS)
     {
         std::cout << "glm::vec3(" << params->objPos.x << "," << params->objPos.y << "," << params->objPos.z << ")" << std::endl;
     }
@@ -552,10 +589,31 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
             params->reverse = !params->reverse;
         }
     }
+    if (key == GLFW_KEY_Q) {
+        if (action == GLFW_PRESS) {
+            params->leftSignal = !params->leftSignal;
+            if (params->rightSignal) {
+                params->rightSignal = false;
+            }
+            signalOn = true;
+            signalCounter = 0;
+        }
+    }
+    if (key == GLFW_KEY_E) {
+        if (action == GLFW_PRESS) {
+            params->rightSignal = !params->rightSignal;
+            if (params->leftSignal) {
+                params->leftSignal = false;
+            }
+            signalOn = true;
+            signalCounter = 0;
+        }
+    }
 }
 
 int main()
 {
+    RandomCoords();
     HWND console = GetConsoleWindow();
     SetWindowPos(console, 0, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 
@@ -637,7 +695,7 @@ int main()
     };
     simpleCube = new GameObject(cubeVertices);
 
-    float tiling = 100.f;
+    float tiling = 400.f;
     std::vector<float> cubeVertices2 = {
         // X     Y     Z     NX    NY    NZ    U     V    FRONT SIDE
         -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, tiling, // L D
@@ -705,22 +763,14 @@ int main()
     phongShader.use();
 
     glm::mat4 view;
-    glm::mat4 projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
+    glm::mat4 projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 250.0f);
     phongShader.setMat4("uProjection", projectionP);
 
     phongShader.setVec3("uDirLight.Position", 0.0, 10, 0.0);
-    phongShader.setVec3("uDirLight.Direction", 1, -1, 0);
-    phongShader.setVec3("uDirLight.Ka", glm::vec3(0.3));
-    phongShader.setVec3("uDirLight.Kd", glm::vec3(0.4));
+    phongShader.setVec3("uDirLight.Direction", 0.3, -1, 0);
+    phongShader.setVec3("uDirLight.Ka", glm::vec3(1, 0.43, 0.38)/ 3.f);
+    phongShader.setVec3("uDirLight.Kd", glm::vec3(1, 0.43, 0.38)/ 2.f);
     phongShader.setVec3("uDirLight.Ks", glm::vec3(1));
-
-    phongShader.setVec3("uPointLights[0].Position", glm::vec3(-1000));
-    phongShader.setVec3("uPointLights[0].Ka", glm::vec3(0.2));
-    phongShader.setVec3("uPointLights[0].Kd", glm::vec3(0.2));
-    phongShader.setVec3("uPointLights[0].Ks", glm::vec3(1.0f));
-    phongShader.setFloat("uPointLights[0].Kc", 1.5f);
-    phongShader.setFloat("uPointLights[0].Kl", 1.0f);
-    phongShader.setFloat("uPointLights[0].Kq", 0.272f);
 
     hudTex = Model::textureFromFile("res/hudTex.png");
     kockaDif = Model::textureFromFile("res/container_diffuse.png");
@@ -731,7 +781,7 @@ int main()
 
     phongShader.setInt("uMaterial.Kd", 0);
     phongShader.setInt("uMaterial.Ks", 1);
-    phongShader.setFloat("uMaterial.Shininess", 0.5 * 128);
+    phongShader.setFloat("uMaterial.Shininess", 0.25 * 128);
 
     glm::mat4 model2 = glm::mat4(1.0f);
     glm::mat4 m(1.0f);
@@ -742,7 +792,7 @@ int main()
     Params params;
     glfwSetWindowUserPointer(window, &params);
 
-    glClearColor(0.2, 0.2, 0.6, 1.0);
+    glClearColor(1, 0.43, 0.38, 1.0);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -821,8 +871,8 @@ int main()
         }
 
         //Fuel
-        float scale = 0.89 * params.fuel / 100.0;
-        scale += 0.01;
+        float scale = 0.85 * params.fuel / 100.0;
+        scale += 0.05;
         float yoffset = (0.9 - scale) / 2;
 
         m = glm::translate(glm::mat4(1.0), params.offset);
@@ -846,9 +896,79 @@ int main()
         m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(0.3, 0.3, 1.0));
         twoD.setMat4("uModel", m);
-        rectangle->Render(&twoD, 0, 0, 1);
+
+        glm::vec3 gearPos = glm::vec3(m[3]);
+        gearPos -= params.forward * 0.3f;
+
+        phongShader.use();
+
+        phongShader.setVec3("uPointLights[2].Position", gearPos);
+        phongShader.setFloat("uPointLights[2].Kc", 0.5f);
+        phongShader.setFloat("uPointLights[2].Kl", 0.2f);
+        phongShader.setFloat("uPointLights[2].Kq", 10.0f);
+
+        if (params.gear == 0) {
+            glm::vec3 zeroVec = glm::vec3(0.0f);
+            phongShader.setVec3("uPointLights[2].Ka", zeroVec);
+            phongShader.setVec3("uPointLights[2].Kd", zeroVec);
+            phongShader.setVec3("uPointLights[2].Ks", zeroVec);
+
+            twoD.use();
+            rectangle->Render(&twoD, 0.9, 0.9, 0.9);
+        }
+        else if(params.gear == 1)
+        {
+            phongShader.setVec3("uPointLights[2].Ka", glm::vec3(0, 0, 0));
+            phongShader.setVec3("uPointLights[2].Kd", glm::vec3(1, 0, 0));
+            phongShader.setVec3("uPointLights[2].Ks", glm::vec3(1, 0, 0));
+
+            twoD.use();
+            rectangle->Render(&twoD, 1, 0, 0);
+        }
+        else if (params.gear == 2)
+        {
+            phongShader.setVec3("uPointLights[2].Ka", glm::vec3(0, 0, 0));
+            phongShader.setVec3("uPointLights[2].Kd", glm::vec3(0.98, 0.65, 0));
+            phongShader.setVec3("uPointLights[2].Ks", glm::vec3(0.98, 0.65, 0));
+
+            twoD.use();
+            rectangle->Render(&twoD, 0.98, 0.65, 0);
+        }
+        else if (params.gear == 3)
+        {
+            phongShader.setVec3("uPointLights[2].Ka", glm::vec3(0, 0, 0));
+            phongShader.setVec3("uPointLights[2].Kd", glm::vec3(0.52, 0, 1));
+            phongShader.setVec3("uPointLights[2].Ks", glm::vec3(0.52, 0, 1));
+
+            twoD.use();
+            rectangle->Render(&twoD, 0.52, 0, 1);
+        }
+        else if (params.gear == 4)
+        {
+            phongShader.setVec3("uPointLights[2].Ka", glm::vec3(0, 0, 0));
+            phongShader.setVec3("uPointLights[2].Kd", glm::vec3(0, 0, 1));
+            phongShader.setVec3("uPointLights[2].Ks", glm::vec3(0, 0, 1));
+
+            twoD.use();
+            rectangle->Render(&twoD, 0, 0, 1);
+        }
+        else
+        {
+            phongShader.setVec3("uPointLights[2].Ka", glm::vec3(0, 0, 0));
+            phongShader.setVec3("uPointLights[2].Kd", glm::vec3(0, 1, 0));
+            phongShader.setVec3("uPointLights[2].Ks", glm::vec3(0, 1, 0));
+
+            twoD.use();
+            rectangle->Render(&twoD, 0, 1, 0);
+        }
 
         //Turn signal
+        signalCounter += params.dt/2;
+        if (signalCounter > 0.2) {
+            signalCounter = 0;
+            signalOn = !signalOn;
+        }
+
         m = glm::translate(glm::mat4(1.0), params.offset);
         m = glm::rotate(m, glm::radians(params.rotation), glm::vec3(0.0, 1.0, 0.0));
         m = glm::translate(m, -params.offset);
@@ -858,7 +978,29 @@ int main()
         m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(0.3, 0.3, 1.0));
         twoD.setMat4("uModel", m);
-        rectangle->Render(&twoD, 0, 1, 0);
+        rectangle->Render(&twoD, 1, 1, 0);
+
+        glm::vec3 turn1Pos = glm::vec3(m[3]);
+        turn1Pos -= params.forward * 0.3f;
+
+        phongShader.use();
+        if (!signalOn || !params.rightSignal) {
+            glm::vec3 zeroVec = glm::vec3(0.0f);
+            phongShader.setVec3("uPointLights[0].Ka", zeroVec);
+            phongShader.setVec3("uPointLights[0].Kd", zeroVec);
+            phongShader.setVec3("uPointLights[0].Ks", zeroVec);
+        }
+        else
+        {
+            phongShader.setVec3("uPointLights[0].Ka", glm::vec3(0, 0, 0));
+            phongShader.setVec3("uPointLights[0].Kd", glm::vec3(1, 1, 0));
+            phongShader.setVec3("uPointLights[0].Ks", glm::vec3(1, 1, 0));
+        }
+        phongShader.setVec3("uPointLights[0].Position", turn1Pos);
+        phongShader.setFloat("uPointLights[0].Kc", 0.5f);
+        phongShader.setFloat("uPointLights[0].Kl", 0.2f);
+        phongShader.setFloat("uPointLights[0].Kq", 10.0f);
+        twoD.use();
 
         //Turn signal 2
         m = glm::translate(glm::mat4(1.0), params.offset);
@@ -870,23 +1012,44 @@ int main()
         m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(0.3, 0.3, 1.0));
         twoD.setMat4("uModel", m);
-        rectangle->Render(&twoD, 0, 1, 0);
+        rectangle->Render(&twoD, 1, 1, 0);
+
+        glm::vec3 turn2Pos = glm::vec3(m[3]);
+        turn2Pos -= params.forward * 0.3f;
+
+        phongShader.use();
+        if (!signalOn || !params.leftSignal) {
+            glm::vec3 zeroVec = glm::vec3(0.0f);
+            phongShader.setVec3("uPointLights[1].Ka", zeroVec);
+            phongShader.setVec3("uPointLights[1].Kd", zeroVec);
+            phongShader.setVec3("uPointLights[1].Ks", zeroVec);
+        }
+        else
+        {
+            phongShader.setVec3("uPointLights[1].Ka", glm::vec3(0, 0, 0));
+            phongShader.setVec3("uPointLights[1].Kd", glm::vec3(1, 1, 0));
+            phongShader.setVec3("uPointLights[1].Ks", glm::vec3(1, 1, 0));
+        }
+        phongShader.setVec3("uPointLights[1].Position", turn2Pos);
+        phongShader.setFloat("uPointLights[1].Kc", 0.5f);
+        phongShader.setFloat("uPointLights[1].Kl", 0.2f);
+        phongShader.setFloat("uPointLights[1].Kq", 10.0f);
+        twoD.use();
+
+        //HUD
+        DrawHud(hudShader, hudTex);
 
         phongShader.use();
         //Mirror
-        glScissor(0, 0, wWidth / 5, wHeight / 5);
+        glScissor(0, 0, wWidth / 4, wHeight / 4);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glViewport(0, 0, wWidth/5, wHeight/5);
+        glViewport(0, 0, wWidth/ 4, wHeight/ 4);
         camPos = glm::vec3(0, 3, 0) + params.offset;
         view = glm::lookAt(camPos, camPos - params.forward, glm::vec3(0, 1, 0));
         //view = glm::lookAt(params.position, params.position + params.cameraFront, params.cameraUp);
         phongShader.setMat4("uView", view);
         phongShader.setVec3("uViewPos", camPos);
         DrawScene(phongShader, params);
-
-        //HUD
-        DrawHud(hudShader, hudTex);
-        phongShader.use();
 
         glfwSwapBuffers(window);
         glfwPollEvents();
