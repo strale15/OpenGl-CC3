@@ -578,10 +578,8 @@ int main()
         0.5f, 0.5f, 0.0f, 1.0f, 0.0f,  // Vertex 3 (Repeated)
         -0.5f, 0.5f, 0.0f, 0.0f, 0.0f   // Vertex 4
     };
-    GameObject* rectangle = new GameObject(vertices, 0);
+    GameObject* rectangle = new GameObject(vertices, true);
 
-
-    Model lija("res/low-poly-fox.obj");
     Model steeringWheelModel("res/Isuzu NKR Steering Wheels.obj");
 
     Shader phongShader("phong.vert", "phong.frag");
@@ -597,7 +595,7 @@ int main()
     view = glm::lookAt(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     phongShader.setMat4("uView", view);
 
-    glm::mat4 projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 200.0f);
+    glm::mat4 projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 500.0f);
     phongShader.setMat4("uProjection", projectionP);
 
     phongShader.setVec3("uViewPos", 0.0, 0.0, 5.0);
@@ -608,44 +606,12 @@ int main()
     phongShader.setVec3("uDirLight.Kd", glm::vec3(0.2));
     phongShader.setVec3("uDirLight.Ks", glm::vec3(10.f));
 
-    /*phongShader.setVec3("uSpotlights[0].Position", 0.0, 10.0, 0.0);
-    phongShader.setVec3("uSpotlights[0].Direction", 0.0, -1.0, 0.0);
-    phongShader.setVec3("uSpotlights[0].Ka", 0.0, 0.0, 0.0);
-    phongShader.setVec3("uSpotlights[0].Kd", glm::vec3(3.0f, 3.0f, 3.0f));
-    phongShader.setVec3("uSpotlights[0].Ks", glm::vec3(1.0));
-    phongShader.setFloat("uSpotlights[0].InnerCutOff", glm::cos(glm::radians(10.0f)));
-    phongShader.setFloat("uSpotlights[0].OuterCutOff", glm::cos(glm::radians(15.0f)));
-    phongShader.setFloat("uSpotlights[0].Kc", 1.0);
-    phongShader.setFloat("uSpotlights[0].Kl", 0.092f);
-    phongShader.setFloat("uSpotlights[0].Kq", 0.032f);
-
-    phongShader.setVec3("uSpotlights[1].Position", 0.0, 0.0, 6.0);
-    phongShader.setVec3("uSpotlights[1].Direction", 0.0, 0.0, -1.0);
-    phongShader.setVec3("uSpotlights[1].Ka", 0.0, 0.0, 0.0);
-    phongShader.setVec3("uSpotlights[1].Kd", glm::vec3(1.0f, 1.0f, 1.0f));
-    phongShader.setVec3("uSpotlights[1].Ks", glm::vec3(1.0));
-    phongShader.setFloat("uSpotlights[1].InnerCutOff", glm::cos(glm::radians(15.0f)));
-    phongShader.setFloat("uSpotlights[1].OuterCutOff", glm::cos(glm::radians(20.0f)));
-    phongShader.setFloat("uSpotlights[1].Kc", 1.0);
-    phongShader.setFloat("uSpotlights[1].Kl", 0.092f);
-    phongShader.setFloat("uSpotlights[1].Kq", 0.032f);*/
-
-    /*phongShader.setVec3("uPointLights[0].Position", glm::vec3(-500));
-    phongShader.setVec3("uPointLights[0].Ka", glm::vec3(230.0 / 255 / 0.1, 92.0 / 255 / 0.1, 0.0f));
-    phongShader.setVec3("uPointLights[0].Kd", glm::vec3(230.0 / 255 / 50, 92.0 / 255 / 50, 0.0f));
-    phongShader.setVec3("uPointLights[0].Ks", glm::vec3(1.0f));
-    phongShader.setFloat("uPointLights[0].Kc", 1.5f);
-    phongShader.setFloat("uPointLights[0].Kl", 1.0f);
-    phongShader.setFloat("uPointLights[0].Kq", 0.272f);*/
-
-    unsigned texture = Model::textureFromFile("res/kurac.png");
     unsigned hudTex = Model::textureFromFile("res/hudTex.png");
-    unsigned kockaDif = Model::textureFromFile("res/container_diffuse.png");
-    unsigned kockaSpec = Model::textureFromFile("res/container_specular.png");
     unsigned buildingDif = Model::textureFromFile("res/zgrada.png");
     unsigned buildingSpec = Model::textureFromFile("res/zgrada_spec.png");
     unsigned asphalt = Model::textureFromFile("res/cracked-asphalt-texture.jpg");
     unsigned tachometer = Model::textureFromFile("res/speedometer.png");
+    unsigned batSignal = Model::textureFromFile("res/batSignal.png");
 
     phongShader.setInt("uMaterial.Kd", 0);
     phongShader.setInt("uMaterial.Ks", 1);
@@ -699,10 +665,9 @@ int main()
 
 
         params.carForward = front;
+        glm::vec3 camPos = glm::vec3(cameraX, 2.3, cameraZ);
 
-        glm::mat4 view = glm::lookAt(glm::vec3(cameraX, 2.3, cameraZ),
-            glm::vec3(cameraX, 2.3, cameraZ) + front,
-            params.cameraUp);
+        glm::mat4 view = glm::lookAt(camPos, camPos + front, params.cameraUp);
 
         phongShader.setMat4("uView", view);
         phongShader.setVec3("uViewPos", glm::vec3(cameraX, 2.3, cameraZ));
@@ -717,7 +682,6 @@ int main()
         phongShader.setVec3("uViewPos", params.position);*/
 
         //2D Instruemtns
-        //glm::vec3(1.0, 0.85, 3.89)
         dShader.use();
         dShader.setMat4("uView", view);
         dShader.setMat4("uProjection", projectionP);
@@ -968,7 +932,26 @@ int main()
         //Building
         DrawBuildings(phongShader, simpleCube, buildingDif, buildingSpec);
 
+        //BatSignal
+        glm::vec3 moonPosOrg = glm::vec3(0.0, 110.0, 320.0 + params.carOffset.z);
+        glm::vec3 moonPosMod = moonPosOrg;
+        moonPosMod.y = camPos.y;
+        glm::vec3 direction = moonPosMod - camPos;
+
+        float dotProduct = glm::dot(glm::normalize(direction), glm::vec3(1.0f, 0.0f, 0.0f));
+        float angleRadians = std::acos(dotProduct);
+        float angleDegrees = glm::degrees(angleRadians);
+        angleDegrees = 90 - angleDegrees;
+
+        dShader.use();
+        m = glm::translate(glm::mat4(1.0), moonPosOrg);
+        m = glm::rotate(m, glm::radians(180.f+ angleDegrees), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(30));
+        dShader.setMat4("uModel", m);
+        rectangle->Render(&dShader, batSignal);
+
         //Glass
+        phongShader.use();
         m = glm::translate(glm::mat4(1.0), params.carOffset);
         m = glm::rotate(m, glm::radians(params.carRot), glm::vec3(0.0, 1.0, 0.0));
         m = glm::translate(m, -params.carOffset);
@@ -982,11 +965,6 @@ int main()
         simpleCube->Render(&phongShader, 0.03, 0.1, 0.95);
         phongShader.setBool("uTransp", false);
 
-
-
-        //hud
-        DrawHud(hudShader, hudTex);
-
         //Tachometar
         dShader.use();
         m = glm::translate(glm::mat4(1.0), params.carOffset);
@@ -999,6 +977,9 @@ int main()
         m = glm::scale(m, glm::vec3(0.4));
         dShader.setMat4("uModel", m);
         rectangle->Render(&dShader, tachometer);
+
+        //hud
+        DrawHud(hudShader, hudTex);
 
         //end
         glfwSwapBuffers(window);

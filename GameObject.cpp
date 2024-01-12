@@ -33,7 +33,7 @@ public:
 		glBindVertexArray(0);
 	}
 
-	GameObject(std::vector<float> vertices, int pusiGa) {
+	GameObject(std::vector<float> vertices, bool twoD) {
 		vCount = vertices.size() / 5;
 
 		glGenVertexArrays(1, &VAO);
@@ -97,6 +97,7 @@ public:
 		glDrawArrays(GL_TRIANGLES, 0, vCount);
 
 		glBindVertexArray(0);
+		shader->setBool("isColor", false);
 	}
 
 	void Render() {
