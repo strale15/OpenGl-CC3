@@ -464,7 +464,6 @@ int main()
         glfwTerminate();
         return -2;
     }
-    glfwSetWindowPos(window, 300, 100);
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, KeyCallback);
     glfwSetCursorPosCallback(window, CursosPosCallback);
@@ -621,6 +620,7 @@ int main()
 
     Params params;
     glfwSetWindowUserPointer(window, &params);
+    glfwSetWindowPos(window, 0, 40);
 
     glm::mat4 model2 = glm::mat4(1.0f);
     glm::mat4 m(1.0f);
