@@ -805,13 +805,6 @@ int main()
             rectangle2->Render(&phongShader, slika1Tex);
         else
             rectangle->Render(&phongShader, slika1Tex);
-        //Ram1
-        m = glm::translate(glm::mat4(1.0), glm::vec3(-30 - 9.99 + 0.5, 3.5, 0));
-        m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
-        m = glm::rotate(m, glm::radians(imgRot), glm::vec3(0.0, 0.0, 1.0));
-        m = glm::scale(m, glm::vec3(1.0+ ramThick, 1.0*slika1Aspc + ramThick, 1.0) * scaleFactor);
-        twoD.setMat4("uModel", m);
-        rectangle->Render(&phongShader, 0.2, 0.16, 0.09);
 
         //Slika2
         m = glm::translate(glm::mat4(1.0), glm::vec3(-30, 3.5, -9.99+0.5+0.01));
@@ -824,13 +817,6 @@ int main()
         else
             rectangle->Render(&phongShader, slika2Tex);
 
-        //Ram2
-        m = glm::translate(glm::mat4(1.0), glm::vec3(-30, 3.5, -9.99 + 0.5));
-        m = glm::rotate(m, glm::radians(0.f), glm::vec3(0.0, 1.0, 0.0));
-        m = glm::rotate(m, glm::radians(imgRot), glm::vec3(0.0, 0.0, 1.0));
-        m = glm::scale(m, glm::vec3(1.0 + ramThick, 1.0 + ramThick, 1.0) * scaleFactor);
-        twoD.setMat4("uModel", m);
-        rectangle->Render(&phongShader, 0.2, 0.16, 0.09);
 
         //Slika3
         m = glm::translate(glm::mat4(1.0), glm::vec3(-30, 3.5, 9.99-0.5-0.01));
@@ -843,6 +829,35 @@ int main()
         else
             rectangle->Render(&phongShader, slika3Tex);
 
+        //Ramovi
+        //Ram1
+        if (params.imgState == 1) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+            glPointSize(3.0f);
+        }
+        else if (params.imgState == 2) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        }
+        else
+        {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        }
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-30 - 9.99 + 0.5, 3.5, 0));
+        m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::rotate(m, glm::radians(imgRot), glm::vec3(0.0, 0.0, 1.0));
+        m = glm::scale(m, glm::vec3(1.0 + ramThick, 1.0 * slika1Aspc + ramThick, 1.0) * scaleFactor);
+        twoD.setMat4("uModel", m);
+        rectangle->Render(&phongShader, 0.2, 0.16, 0.09);
+
+        //Ram2
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-30, 3.5, -9.99 + 0.5));
+        m = glm::rotate(m, glm::radians(0.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::rotate(m, glm::radians(imgRot), glm::vec3(0.0, 0.0, 1.0));
+        m = glm::scale(m, glm::vec3(1.0 + ramThick, 1.0 + ramThick, 1.0) * scaleFactor);
+        twoD.setMat4("uModel", m);
+        rectangle->Render(&phongShader, 0.2, 0.16, 0.09);
+
         //Ram3
         m = glm::translate(glm::mat4(1.0), glm::vec3(-30, 3.5, 9.99 - 0.5));
         m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
@@ -850,6 +865,8 @@ int main()
         m = glm::scale(m, glm::vec3(1.0+ ramThick, 1.0+ ramThick, 1.0) * scaleFactor);
         twoD.setMat4("uModel", m);
         rectangle->Render(&phongShader, 0.2, 0.16, 0.09);
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
         //------------------------------------------------------------------------------------------------------------
 
