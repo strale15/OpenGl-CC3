@@ -57,9 +57,11 @@ struct Params {
     bool lightOn = true;
     bool flashLightOn = true;
 
-    int imgState = 1;
+    int imgState = 3;
 
     float zoom = 100.f;
+
+    bool isWireFrame = false;
 };
 
 static void DrawHud(Shader& hudShader, unsigned hudTex) {
@@ -167,6 +169,14 @@ static void HandleInput(Params* params) {
     //    else
     //        params->objPos.y -= 0.5f * params->dt;
     //}
+
+    if (params->isWireFrame) {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    }
+    else
+    {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
 }
 
 static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
@@ -289,19 +299,26 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
         }
     }
     if (key == GLFW_KEY_1) {
-        if (action == GLFW_PRESS && params->closeToTerminal) {
+        if (action == GLFW_PRESS) {
             params->imgState = 1;
         }
     }
     if (key == GLFW_KEY_2) {
-        if (action == GLFW_PRESS && params->closeToTerminal) {
+        if (action == GLFW_PRESS) {
             params->imgState = 2;
         }
     }
     if (key == GLFW_KEY_3) {
-        if (action == GLFW_PRESS && params->closeToTerminal) {
+        if (action == GLFW_PRESS) {
             params->imgState = 3;
         }
+    }
+
+    if (key == GLFW_KEY_1 && action == GLFW_PRESS && mode == GLFW_MOD_ALT) {
+        params->isWireFrame = true;
+    }
+    if (key == GLFW_KEY_2 && action == GLFW_PRESS && mode == GLFW_MOD_ALT) {
+        params->isWireFrame = false;
     }
 }
 
@@ -398,27 +415,27 @@ int main()
 
     std::vector<float> vertices = {
         // Positions      // UVs
-        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,  // Vertex 1
-        0.5f, -0.5f, 0.0f, 1.0f, 1.0f,  // Vertex 2
-        0.5f, 0.5f, 0.0f, 1.0f, 0.0f,  // Vertex 3
+		-0.5f, -0.5f, 0.0f, 0.0f, 1.0f,  // Vertex 1
+		0.5f, -0.5f, 0.0f, 1.0f, 1.0f,  // Vertex 2
+		0.5f, 0.5f, 0.0f, 1.0f, 0.0f,  // Vertex 3
 
-        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,  // Vertex 1 (Repeated)
-        0.5f, 0.5f, 0.0f, 1.0f, 0.0f,  // Vertex 3 (Repeated)
-        -0.5f, 0.5f, 0.0f, 0.0f, 0.0f   // Vertex 4
+		-0.5f, -0.5f, 0.0f, 0.0f, 1.0f,  // Vertex 1 (Repeated)
+		0.5f, 0.5f, 0.0f, 1.0f, 0.0f,  // Vertex 3 (Repeated)
+		-0.5f, 0.5f, 0.0f, 0.0f, 0.0f   // Vertex 4
     };
     GameObject* rectangle = new GameObject(vertices, true);
 
     std::vector<float> vertices2 = {
         // Positions      // UVs
-        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,  // Vertex 1
-         0.5f, -0.5f, 0.0f, 1.0f, 0.0f,  // Vertex 2
-         0.5f,  0.5f, 0.0f, 1.0f, 1.0f,  // Vertex 3
+        -0.5f, -0.5f, 0.0f, 1.0f, 1.0f,  // Vertex 1
+         0.5f, -0.5f, 0.0f, 0.0f, 1.0f,  // Vertex 2
+         0.5f,  0.5f, 0.0f, 0.0f, 0.0f,  // Vertex 3
 
-        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,  // Vertex 1 (Repeated)
-         0.5f,  0.5f, 0.0f, 1.0f, 1.0f,  // Vertex 3 (Repeated)
-        -0.5f,  0.5f, 0.0f, 0.0f, 1.0f   // Vertex 4
+        -0.5f, -0.5f, 0.0f, 1.0f, 1.0f,  // Vertex 1 (Repeated)
+         0.5f,  0.5f, 0.0f, 0.0f, 0.0f,  // Vertex 3 (Repeated)
+        -0.5f,  0.5f, 0.0f, 1.0f, 0.0f   // Vertex 4
     };
-    GameObject* rectangle2 = new GameObject(vertices, true);
+    GameObject* rectangle2 = new GameObject(vertices2, true);
 
     Model lija("res/low-poly-fox.obj");
     Model statueModel("res/Virgin Mary Statue.obj");
@@ -456,6 +473,12 @@ int main()
 
     unsigned tilesDif = Model::textureFromFile("res/Tiles074_2K-PNG_Color.png");
     unsigned tilesSpec = Model::textureFromFile("res/tilesSpec.png");
+
+    unsigned slika1Tex = Model::textureFromFile("res/slika1.png");
+    unsigned slika2Tex = Model::textureFromFile("res/slika2.png");
+    unsigned slika3Tex = Model::textureFromFile("res/slika3.png");
+
+    float slika1Aspc = 776 / 384.f;
 
     phongShader.setInt("uMaterial.Kd", 0);
     phongShader.setInt("uMaterial.Ks", 1);
@@ -765,26 +788,68 @@ int main()
         twoD.setMat4("uView", view);
         twoD.setMat4("uProjection", projectionP);
 
+        //SLIKE
+        float ramThick = 0.16;
+        float scaleFactor = 2.f;
+        float imgRot = 0;
+        if (params.imgState == 2)
+            imgRot = 180.f;
+
         //Slika1
-        m = glm::translate(glm::mat4(1.0), glm::vec3(-30-9.99+0.5, 3.5, 0));
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-30-9.99+0.5+0.01, 3.5, 0));
         m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
-        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+        m = glm::rotate(m, glm::radians(imgRot), glm::vec3(0.0, 0.0, 1.0));
+        m = glm::scale(m, glm::vec3(1.0, 1.0 * slika1Aspc, 1.0) * scaleFactor);
         twoD.setMat4("uModel", m);
-        rectangle->Render(&phongShader, 1, 1, 1);
+        if(params.imgState == 1)
+            rectangle2->Render(&phongShader, slika1Tex);
+        else
+            rectangle->Render(&phongShader, slika1Tex);
+        //Ram1
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-30 - 9.99 + 0.5, 3.5, 0));
+        m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::rotate(m, glm::radians(imgRot), glm::vec3(0.0, 0.0, 1.0));
+        m = glm::scale(m, glm::vec3(1.0+ ramThick, 1.0*slika1Aspc + ramThick, 1.0) * scaleFactor);
+        twoD.setMat4("uModel", m);
+        rectangle->Render(&phongShader, 0.2, 0.16, 0.09);
 
         //Slika2
-        m = glm::translate(glm::mat4(1.0), glm::vec3(-30, 3.5, -9.99+0.5));
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-30, 3.5, -9.99+0.5+0.01));
         m = glm::rotate(m, glm::radians(0.f), glm::vec3(0.0, 1.0, 0.0));
-        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+        m = glm::rotate(m, glm::radians(imgRot), glm::vec3(0.0, 0.0, 1.0));
+        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0) * scaleFactor);
         twoD.setMat4("uModel", m);
-        rectangle->Render(&phongShader, 1, 1, 1);
+        if (params.imgState == 1)
+            rectangle2->Render(&phongShader, slika2Tex);
+        else
+            rectangle->Render(&phongShader, slika2Tex);
+
+        //Ram2
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-30, 3.5, -9.99 + 0.5));
+        m = glm::rotate(m, glm::radians(0.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::rotate(m, glm::radians(imgRot), glm::vec3(0.0, 0.0, 1.0));
+        m = glm::scale(m, glm::vec3(1.0 + ramThick, 1.0 + ramThick, 1.0) * scaleFactor);
+        twoD.setMat4("uModel", m);
+        rectangle->Render(&phongShader, 0.2, 0.16, 0.09);
 
         //Slika3
-        m = glm::translate(glm::mat4(1.0), glm::vec3(-30, 3.5, 9.99-0.5));
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-30, 3.5, 9.99-0.5-0.01));
         m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
-        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+        m = glm::rotate(m, glm::radians(imgRot), glm::vec3(0.0, 0.0, 1.0));
+        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0) * scaleFactor);
         twoD.setMat4("uModel", m);
-        rectangle->Render(&phongShader, 1, 1, 1);
+        if (params.imgState == 1)
+            rectangle2->Render(&phongShader, slika3Tex);
+        else
+            rectangle->Render(&phongShader, slika3Tex);
+
+        //Ram3
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-30, 3.5, 9.99 - 0.5));
+        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::rotate(m, glm::radians(imgRot), glm::vec3(0.0, 0.0, 1.0));
+        m = glm::scale(m, glm::vec3(1.0+ ramThick, 1.0+ ramThick, 1.0) * scaleFactor);
+        twoD.setMat4("uModel", m);
+        rectangle->Render(&phongShader, 0.2, 0.16, 0.09);
 
         //------------------------------------------------------------------------------------------------------------
 
