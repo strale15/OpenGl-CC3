@@ -448,6 +448,15 @@ int main()
     unsigned kockaDif = Model::textureFromFile("res/container_diffuse.png");
     unsigned kockaSpec = Model::textureFromFile("res/container_specular.png");
 
+    unsigned woodDif = Model::textureFromFile("res/WoodFloor043_2K-PNG_Color.png");
+    unsigned woodSpec = Model::textureFromFile("res/WoodFloor043_2K-PNG_Roughness.png");
+
+    unsigned goldDif = Model::textureFromFile("res/Metal042A_2K-PNG_Color.png");
+    unsigned goldSpec = Model::textureFromFile("res/Metal042A_2K-PNG_Metalness.png");
+
+    unsigned tilesDif = Model::textureFromFile("res/Tiles074_2K-PNG_Color.png");
+    unsigned tilesSpec = Model::textureFromFile("res/tilesSpec.png");
+
     phongShader.setInt("uMaterial.Kd", 0);
     phongShader.setInt("uMaterial.Ks", 1);
     phongShader.setFloat("uMaterial.Shininess", 0.5 * 128);
@@ -553,116 +562,116 @@ int main()
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 0.0));
         m = glm::scale(m, glm::vec3(20, 1.0, 20));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 1, 1, 1);
+        simpleCube->Render(&phongShader, tilesDif,tilesSpec);
 
         //Krov
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 7.5, 0.0));
         m = glm::scale(m, glm::vec3(20, 1.0, 20));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 1, 0);
+        simpleCube->Render(&phongShader, woodDif, woodSpec);
 
         //Zid1
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 3.5, 10.0));
         m = glm::scale(m, glm::vec3(20, 7.0, 1.0));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 1, 0);
+        simpleCube->Render(&phongShader, woodDif,woodSpec);
 
         //Zid2
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 3.5, -10.0));
         m = glm::scale(m, glm::vec3(20, 7.0, 1.0));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 1, 0);
+        simpleCube->Render(&phongShader, woodDif, woodSpec);
 
         //Zid3
         m = glm::translate(glm::mat4(1.0), glm::vec3(10.0, 3.5, 0.0));
         m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(20, 7.0, 1.0));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 1, 0);
+        simpleCube->Render(&phongShader, woodDif, woodSpec);
 
         //Small wall1
         m = glm::translate(glm::mat4(1.0), glm::vec3(-10.5, 3.5, 6.0));
         //m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(1.0, 7.0, 8));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 1, 0);
+        simpleCube->Render(&phongShader, woodDif, woodSpec);
 
         //Small wall2
         m = glm::translate(glm::mat4(1.0), glm::vec3(-10.5, 3.5, -6.0));
         //m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(1.0, 7.0, 8));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 1, 0);
+        simpleCube->Render(&phongShader, woodDif, woodSpec);
 
         //Room2
         //Pod2
         m = glm::translate(glm::mat4(1.0), glm::vec3(-30.0, 0.0, 0.0));
         m = glm::scale(m, glm::vec3(20, 1.0, 20));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 1, 0, 0);
+        simpleCube->Render(&phongShader, tilesDif, tilesSpec);
 
         m = glm::translate(glm::mat4(1.0), glm::vec3(-30.0, 7.5, 0.0));
         m = glm::scale(m, glm::vec3(20, 1.0, 20));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 1, 0, 0);
+        simpleCube->Render(&phongShader, goldDif, goldSpec);
 
         //Zid1
         m = glm::translate(glm::mat4(1.0), glm::vec3(-30.0, 3.5, 10.0));
         m = glm::scale(m, glm::vec3(20, 7.0, 1.0));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 1, 0);
+        simpleCube->Render(&phongShader, goldDif, goldSpec);
 
         //Zid2
         m = glm::translate(glm::mat4(1.0), glm::vec3(-30.0, 3.5, -10.0));
         m = glm::scale(m, glm::vec3(20, 7.0, 1.0));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 1, 0);
+        simpleCube->Render(&phongShader, goldDif, goldSpec);
 
         //Zid3
         m = glm::translate(glm::mat4(1.0), glm::vec3(10.0-30-20, 3.5, 0.0));
         m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(20, 7.0, 1.0));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 1, 0);
+        simpleCube->Render(&phongShader, goldDif, goldSpec);
 
         //Small wall1
         m = glm::translate(glm::mat4(1.0), glm::vec3(-10.0-9.5, 3.5, 6.0));
         //m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(1.0, 7.0, 8));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 1, 0);
+        simpleCube->Render(&phongShader, goldDif, goldSpec);
 
         //Small wall2
         m = glm::translate(glm::mat4(1.0), glm::vec3(-10.0-9.5, 3.5, -6.0));
         //m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(1.0, 7.0, 8));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 1, 0);
+        simpleCube->Render(&phongShader, goldDif, goldSpec);
 
         //Hodnik
         //Pod
-        m = glm::translate(glm::mat4(1.0), glm::vec3(-15.0, 0.0, 0.0));
-        m = glm::scale(m, glm::vec3(10.0, 1.0, 4.0));
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-15.0, -0.01, 3.3333333333));
+        m = glm::scale(m, glm::vec3(20.0, 1.0, 20.0));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 0, 1);
+        simpleCube->Render(&phongShader, tilesDif, tilesSpec);
 
         //Krov
-        m = glm::translate(glm::mat4(1.0), glm::vec3(-15.0, 7.5, 0.0));
-        m = glm::scale(m, glm::vec3(10.0, 1.0, 4.0));
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-15.0, 7.501, 0.0));
+        m = glm::scale(m, glm::vec3(20.0, 1.0, 20.0));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 0, 1);
+        simpleCube->Render(&phongShader, woodDif, woodSpec);
 
         //Zid1
-        m = glm::translate(glm::mat4(1.0), glm::vec3(-15.0, 3.5, 2.5));
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-15.0, 3.5, 2.49));
         m = glm::scale(m, glm::vec3(9.5, 7.0, 1.0));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 1, 0);
+        simpleCube->Render(&phongShader, woodDif, woodSpec);
 
         //Zid1
-        m = glm::translate(glm::mat4(1.0), glm::vec3(-15.0, 3.5, -2.5));
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-15.0, 3.5, -2.49));
         m = glm::scale(m, glm::vec3(9.5, 7.0, 1.0));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 1, 0);
+        simpleCube->Render(&phongShader, woodDif, woodSpec);
 
         //Terminal
         glm::vec3 terminalPos = glm::vec3(-10.0 - 9.5 - 1, 1.0, 6.0);
@@ -681,7 +690,7 @@ int main()
         glm::vec3 zeroVec = glm::vec3(0);
         if (params.flashLightOn) {
             phongShader.setVec3("uSpotlights[0].Ka", 0.0, 0.0, 0.0);
-            phongShader.setVec3("uSpotlights[0].Kd", glm::vec3(1.0f, 1.0f, 1.0f) / 1.4f);
+            phongShader.setVec3("uSpotlights[0].Kd", glm::vec3(1.0f, 1.0f, 1.0f) / 1.1f);
             phongShader.setVec3("uSpotlights[0].Ks", glm::vec3(1.0));
         }
         else
@@ -693,11 +702,11 @@ int main()
 
         phongShader.setVec3("uSpotlights[0].Position", params.position);
         phongShader.setVec3("uSpotlights[0].Direction", params.cameraFront);
-        phongShader.setFloat("uSpotlights[0].InnerCutOff", glm::cos(glm::radians(20.0f)));
-        phongShader.setFloat("uSpotlights[0].OuterCutOff", glm::cos(glm::radians(25.0f)));
+        phongShader.setFloat("uSpotlights[0].InnerCutOff", glm::cos(glm::radians(35.0f)));
+        phongShader.setFloat("uSpotlights[0].OuterCutOff", glm::cos(glm::radians(40.0f)));
         phongShader.setFloat("uSpotlights[0].Kc", 1.0);
-        phongShader.setFloat("uSpotlights[0].Kl", 0.092f);
-        phongShader.setFloat("uSpotlights[0].Kq", 0.032f);
+        phongShader.setFloat("uSpotlights[0].Kl", 0.072f);
+        phongShader.setFloat("uSpotlights[0].Kq", 0.012f);
 
         time += params.dt;  // Increment this over time
         float change = 2;
@@ -721,13 +730,12 @@ int main()
         {
             time = 0;
         }
-        //cout << interpolatedColor.x << " " << interpolatedColor.y << " " << interpolatedColor.z << endl;
 
         phongShader.setVec3("uSpotlights[1].Position", glm::vec3(0, 6.8, 0));
         phongShader.setVec3("uSpotlights[1].Direction", 0.0, -1.0, 0.0);
         phongShader.setVec3("uSpotlights[1].Ka", 0.0, 0.0, 0.0);
         phongShader.setVec3("uSpotlights[1].Kd", rgbColor *1.1f);
-        phongShader.setVec3("uSpotlights[1].Ks", rgbColor);
+        phongShader.setVec3("uSpotlights[1].Ks", rgbColor*1.f);
         phongShader.setFloat("uSpotlights[1].InnerCutOff", glm::cos(glm::radians(27.0f)));
         phongShader.setFloat("uSpotlights[1].OuterCutOff", glm::cos(glm::radians(36.0f)));
         phongShader.setFloat("uSpotlights[1].Kc", 1.0);
