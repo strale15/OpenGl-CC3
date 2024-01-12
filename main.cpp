@@ -814,13 +814,13 @@ int main()
 		phongShader.setMat4("uModel", m);
 		simpleCube->Render(&phongShader, 1, 0, 0);
 
-		phongShader.setVec3("uPointLights[0].Position", glm::vec3(xOffset, 3.4, 11.0));
-		phongShader.setVec3("uPointLights[0].Ka", glm::vec3(0.6, 0.6, 0.2) / 2.f);
-		phongShader.setVec3("uPointLights[0].Kd", glm::vec3(0.6, 0.6, 0.05)*3.5f);
+		phongShader.setVec3("uPointLights[0].Position", glm::vec3(xOffset, 3.0, 11.0));
+		phongShader.setVec3("uPointLights[0].Ka", glm::vec3(0.6, 0.6, 0.2) / 6.f);
+		phongShader.setVec3("uPointLights[0].Kd", glm::vec3(0.6, 0.6, 0.05)*10.f);
 		phongShader.setVec3("uPointLights[0].Ks", glm::vec3(0.6, 0.6, 0.2));
 		phongShader.setFloat("uPointLights[0].Kc", 1.5f);
-		phongShader.setFloat("uPointLights[0].Kl", 1.0f);
-		phongShader.setFloat("uPointLights[0].Kq", 0.572f);
+		phongShader.setFloat("uPointLights[0].Kl", 5.0f);
+		phongShader.setFloat("uPointLights[0].Kq", 8.f);
 
 		//Display
 		m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 2.0, 10.2));
