@@ -41,9 +41,6 @@
     <ClInclude Include="model.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="texture.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="mesh.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
