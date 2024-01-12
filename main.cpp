@@ -52,6 +52,14 @@ struct Params {
 
     bool spaceDown = false;
     bool shiftDown = false;
+
+    bool closeToTerminal = false;
+    bool lightOn = true;
+    bool flashLightOn = true;
+
+    int imgState = 1;
+
+    float zoom = 100.f;
 };
 
 static void DrawHud(Shader& hudShader, unsigned hudTex) {
@@ -268,6 +276,40 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
     {
         params->shiftDown = false;
     }
+
+    //Gustav
+    if (key == GLFW_KEY_F) {
+        if (action == GLFW_PRESS) {
+            params->flashLightOn = !params->flashLightOn;
+        }
+    }
+    if (key == GLFW_KEY_G) {
+        if (action == GLFW_PRESS && params->closeToTerminal) {
+            params->lightOn = !params->lightOn;
+        }
+    }
+    if (key == GLFW_KEY_1) {
+        if (action == GLFW_PRESS && params->closeToTerminal) {
+            params->imgState = 1;
+        }
+    }
+    if (key == GLFW_KEY_2) {
+        if (action == GLFW_PRESS && params->closeToTerminal) {
+            params->imgState = 2;
+        }
+    }
+    if (key == GLFW_KEY_3) {
+        if (action == GLFW_PRESS && params->closeToTerminal) {
+            params->imgState = 3;
+        }
+    }
+}
+
+void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
+    Params* params = (Params*)glfwGetWindowUserPointer(window);
+    params->zoom -= static_cast<float>(yoffset * 7000.0 * params->dt);
+    params->zoom = glm::clamp(params->zoom, 20.0f, 100.0f);
+
 }
 
 int main()
@@ -299,6 +341,7 @@ int main()
     glfwSetKeyCallback(window, KeyCallback);
     glfwSetCursorPosCallback(window, CursosPosCallback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetScrollCallback(window, ScrollCallback);
 
     if (glewInit() !=GLEW_OK)
     {
@@ -365,7 +408,20 @@ int main()
     };
     GameObject* rectangle = new GameObject(vertices, true);
 
+    std::vector<float> vertices2 = {
+        // Positions      // UVs
+        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,  // Vertex 1
+         0.5f, -0.5f, 0.0f, 1.0f, 0.0f,  // Vertex 2
+         0.5f,  0.5f, 0.0f, 1.0f, 1.0f,  // Vertex 3
+
+        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,  // Vertex 1 (Repeated)
+         0.5f,  0.5f, 0.0f, 1.0f, 1.0f,  // Vertex 3 (Repeated)
+        -0.5f,  0.5f, 0.0f, 0.0f, 1.0f   // Vertex 4
+    };
+    GameObject* rectangle2 = new GameObject(vertices, true);
+
     Model lija("res/low-poly-fox.obj");
+    Model statueModel("res/Virgin Mary Statue.obj");
 
     Shader phongShader("phong.vert", "phong.frag");
     Shader hudShader("hud.vert", "hud.frag");
@@ -383,24 +439,10 @@ int main()
     phongShader.setVec3("uDirLight.Kd", glm::vec3(0.5));
     phongShader.setVec3("uDirLight.Ks", glm::vec3(1.0, 1.0, 1.0));
 
-    phongShader.setVec3("uSpotlights[1].Position", 0.0, 0.0, 6.0);
-    phongShader.setVec3("uSpotlights[1].Direction", 0.0, 0.0, -1.0);
-    phongShader.setVec3("uSpotlights[1].Ka", 0.0, 0.0, 0.0);
-    phongShader.setVec3("uSpotlights[1].Kd", glm::vec3(1.0f, 1.0f, 1.0f));
-    phongShader.setVec3("uSpotlights[1].Ks", glm::vec3(1.0));
-    phongShader.setFloat("uSpotlights[1].InnerCutOff", glm::cos(glm::radians(15.0f)));
-    phongShader.setFloat("uSpotlights[1].OuterCutOff", glm::cos(glm::radians(20.0f)));
-    phongShader.setFloat("uSpotlights[1].Kc", 1.0);
-    phongShader.setFloat("uSpotlights[1].Kl", 0.092f);
-    phongShader.setFloat("uSpotlights[1].Kq", 0.032f);
+    phongShader.setVec3("uDirLight.Ka", glm::vec3(0));
+    phongShader.setVec3("uDirLight.Kd", glm::vec3(0));
 
-    phongShader.setVec3("uPointLights[0].Position", glm::vec3(0.0, -2.0, 0.0));
-    phongShader.setVec3("uPointLights[0].Ka", glm::vec3(230.0 / 255 / 0.1, 92.0 / 255 / 0.1, 0.0f));
-    phongShader.setVec3("uPointLights[0].Kd", glm::vec3(230.0 / 255 / 50, 92.0 / 255 / 50, 0.0f));
-    phongShader.setVec3("uPointLights[0].Ks", glm::vec3(1.0f));
-    phongShader.setFloat("uPointLights[0].Kc", 1.5f);
-    phongShader.setFloat("uPointLights[0].Kl", 1.0f);
-    phongShader.setFloat("uPointLights[0].Kq", 0.272f);
+    
 
     unsigned hudTex = Model::textureFromFile("res/hudTex.png");
     unsigned kockaDif = Model::textureFromFile("res/container_diffuse.png");
@@ -417,7 +459,8 @@ int main()
     float FrameEndTime = 0;
     float rot = 0;
     float scale = 1.0;
-    glm::vec3 objPos = glm::vec3(0, 1.0, 0);
+    glm::vec3 objPos = glm::vec3(0, 0.6, 0);
+    float time = 0.0f;
 
     Params params;
     glfwSetWindowUserPointer(window, &params);
@@ -441,10 +484,39 @@ int main()
         HandleInput(&params);
 
         //Camera
+        //Map Edge
+        glm::vec3 newPos = params.position;
+        if (params.position.x > -10 && params.position.x < 10) {
+            if (params.position.z >= -1.7 && params.position.z <= 1.7)
+                newPos.x = glm::clamp(params.position.x, -10.f, 9.f);
+            else
+                newPos.x = glm::clamp(params.position.x, -9.f, 9.f);
+            newPos.z = glm::clamp(params.position.z, -9.f, 9.f);
+        }
+        else if (params.position.x > -20 && params.position.x < -10) {
+            newPos.x = glm::clamp(params.position.x, -20.f, -10.f);
+            newPos.z = glm::clamp(params.position.z, -1.7f, 1.7f);
+        }
+        else if (params.position.x > -40 && params.position.x < -20) {
+            if(params.position.z >= -1.7 && params.position.z <= 1.7)
+                newPos.x = glm::clamp(params.position.x, -39.f, -20.f);
+            else
+                newPos.x = glm::clamp(params.position.x, -39.f, -21.f);
+            newPos.z = glm::clamp(params.position.z, -9.f, 9.f);
+        }
+        else {
+            cout << "4" << endl;
+        }
+
+        params.position = newPos;
+
         view = glm::lookAt(params.position,params.position + params.cameraFront,params.cameraUp);
 
         phongShader.setMat4("uView", view);
         phongShader.setVec3("uViewPos", params.position);
+
+        projectionP = glm::perspective(glm::radians(params.zoom), (float)wWidth / (float)wHeight, 0.1f, 100.f);
+        phongShader.setMat4("uProjection", projectionP);
 
         //SCENE
         //------------------------------------------------------------------------------------------------------------
@@ -453,9 +525,9 @@ int main()
 
         m = glm::translate(glm::mat4(1.0), objPos);
         m = glm::rotate(m, glm::radians(rot), glm::vec3(0.0, 1.0, 0.0));
-        m = glm::scale(m, glm::vec3(0.6));
+        m = glm::scale(m, glm::vec3(3.8));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 1, 1, 0);
+        statueModel.Draw(phongShader);
 
         glm::vec3 direction = objPos - params.position;
         direction.y = 0;
@@ -465,13 +537,13 @@ int main()
         float angleRadians = std::acos(dotProduct);
         float angleDegrees = glm::degrees(angleRadians);
         if (angleDegrees > 80) {
-            if (glm::distance(objPos, params.position) >= 0.7) {
+            if (glm::distance(objPos, params.position) >= 1.5) {
                 glm::vec3 camPos = params.position;
                 camPos.y = objPos.y;
                 glm::vec3 direction = camPos - objPos;
                 direction = glm::normalize(direction);
-                rot += 20 * params.dt;
-                objPos += direction * params.dt * 4.f;
+                rot += 50 * params.dt;
+                //objPos += direction * params.dt * 6.f;
             }
             
         }
@@ -481,7 +553,7 @@ int main()
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 0.0));
         m = glm::scale(m, glm::vec3(20, 1.0, 20));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 1, 0);
+        simpleCube->Render(&phongShader, 1, 1, 1);
 
         //Krov
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 7.5, 0.0));
@@ -547,7 +619,7 @@ int main()
         simpleCube->Render(&phongShader, 0, 1, 0);
 
         //Zid3
-        m = glm::translate(glm::mat4(1.0), glm::vec3(10.0-30-15, 3.5, 0.0));
+        m = glm::translate(glm::mat4(1.0), glm::vec3(10.0-30-20, 3.5, 0.0));
         m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(20, 7.0, 1.0));
         phongShader.setMat4("uModel", m);
@@ -592,16 +664,120 @@ int main()
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, 0, 1, 0);
 
+        //Terminal
+        glm::vec3 terminalPos = glm::vec3(-10.0 - 9.5 - 1, 1.0, 6.0);
+        m = glm::translate(glm::mat4(1.0), terminalPos);
+        //m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(1.0, 2.0, 1.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 1, 1);
+
+        params.closeToTerminal = false;
+        float distance = glm::distance(terminalPos, params.position);
+        if (distance < 2) {
+            params.closeToTerminal = true;
+        }
+
+        glm::vec3 zeroVec = glm::vec3(0);
+        if (params.flashLightOn) {
+            phongShader.setVec3("uSpotlights[0].Ka", 0.0, 0.0, 0.0);
+            phongShader.setVec3("uSpotlights[0].Kd", glm::vec3(1.0f, 1.0f, 1.0f) / 1.4f);
+            phongShader.setVec3("uSpotlights[0].Ks", glm::vec3(1.0));
+        }
+        else
+        {
+            phongShader.setVec3("uSpotlights[0].Ka", zeroVec);
+            phongShader.setVec3("uSpotlights[0].Kd", zeroVec);
+            phongShader.setVec3("uSpotlights[0].Ks", zeroVec);
+        }
+
         phongShader.setVec3("uSpotlights[0].Position", params.position);
         phongShader.setVec3("uSpotlights[0].Direction", params.cameraFront);
-        phongShader.setVec3("uSpotlights[0].Ka", 0.0, 0.0, 0.0);
-        phongShader.setVec3("uSpotlights[0].Kd", glm::vec3(3.0f, 3.0f, 3.0f));
-        phongShader.setVec3("uSpotlights[0].Ks", glm::vec3(1.0));
-        phongShader.setFloat("uSpotlights[0].InnerCutOff", glm::cos(glm::radians(10.0f)));
-        phongShader.setFloat("uSpotlights[0].OuterCutOff", glm::cos(glm::radians(15.0f)));
+        phongShader.setFloat("uSpotlights[0].InnerCutOff", glm::cos(glm::radians(20.0f)));
+        phongShader.setFloat("uSpotlights[0].OuterCutOff", glm::cos(glm::radians(25.0f)));
         phongShader.setFloat("uSpotlights[0].Kc", 1.0);
         phongShader.setFloat("uSpotlights[0].Kl", 0.092f);
         phongShader.setFloat("uSpotlights[0].Kq", 0.032f);
+
+        time += params.dt;  // Increment this over time
+        float change = 2;
+        glm::vec3 rgbColor = glm::vec3(0);
+        if (time < change) {
+            rgbColor = glm::vec3(1,0.3,0.3);
+        }
+        else if(time < change * 2)
+        {
+            rgbColor = glm::vec3(0.3, 1, 0.3);
+        }
+        else if (time < change * 3)
+        {
+            rgbColor = glm::vec3(0.3, 0.3, 1);
+        }
+        else if (time < change * 4)
+        {
+            rgbColor = glm::vec3(1, 1, 1);
+        }
+        else
+        {
+            time = 0;
+        }
+        //cout << interpolatedColor.x << " " << interpolatedColor.y << " " << interpolatedColor.z << endl;
+
+        phongShader.setVec3("uSpotlights[1].Position", glm::vec3(0, 6.8, 0));
+        phongShader.setVec3("uSpotlights[1].Direction", 0.0, -1.0, 0.0);
+        phongShader.setVec3("uSpotlights[1].Ka", 0.0, 0.0, 0.0);
+        phongShader.setVec3("uSpotlights[1].Kd", rgbColor *1.1f);
+        phongShader.setVec3("uSpotlights[1].Ks", rgbColor);
+        phongShader.setFloat("uSpotlights[1].InnerCutOff", glm::cos(glm::radians(27.0f)));
+        phongShader.setFloat("uSpotlights[1].OuterCutOff", glm::cos(glm::radians(36.0f)));
+        phongShader.setFloat("uSpotlights[1].Kc", 1.0);
+        phongShader.setFloat("uSpotlights[1].Kl", 0.092f);
+        phongShader.setFloat("uSpotlights[1].Kq", 0.062f);
+
+        if (params.lightOn) {
+            phongShader.setVec3("uPointLights[0].Ka", glm::vec3(0.2,0.2,0.0));
+            phongShader.setVec3("uPointLights[0].Kd", glm::vec3(2.0,2.0,0.1));
+            phongShader.setVec3("uPointLights[0].Ks", glm::vec3(1.0f));
+        }
+        else
+        {
+            phongShader.setVec3("uPointLights[0].Ka", zeroVec);
+            phongShader.setVec3("uPointLights[0].Kd", zeroVec);
+            phongShader.setVec3("uPointLights[0].Ks", zeroVec);
+        }
+
+        phongShader.setVec3("uPointLights[0].Position", glm::vec3(-30.0, 6.0, 0.0));
+        phongShader.setFloat("uPointLights[0].Kc", 1.5f);
+        phongShader.setFloat("uPointLights[0].Kl", 0.05f);
+        phongShader.setFloat("uPointLights[0].Kq", 0.0572f);
+
+        //2D Slike
+        twoD.use();
+
+        twoD.setMat4("uView", view);
+        twoD.setMat4("uProjection", projectionP);
+
+        //Slika1
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-30-9.99+0.5, 3.5, 0));
+        m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+        twoD.setMat4("uModel", m);
+        rectangle->Render(&phongShader, 1, 1, 1);
+
+        //Slika2
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-30, 3.5, -9.99+0.5));
+        m = glm::rotate(m, glm::radians(0.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+        twoD.setMat4("uModel", m);
+        rectangle->Render(&phongShader, 1, 1, 1);
+
+        //Slika3
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-30, 3.5, 9.99-0.5));
+        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+        twoD.setMat4("uModel", m);
+        rectangle->Render(&phongShader, 1, 1, 1);
+
         //------------------------------------------------------------------------------------------------------------
 
         //HUD

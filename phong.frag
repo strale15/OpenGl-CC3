@@ -1,6 +1,6 @@
 #version 330 core
 #define NR_POINT_LIGHTS 1
-#define NR_SPOT_LIGHTS 1
+#define NR_SPOT_LIGHTS 2
 
 struct PointLight {
     vec3 Position;
@@ -54,8 +54,11 @@ void main() {
     vec3 ViewDirection = normalize(uViewPos - vWorldSpaceFragment);
     vec3 DirLightVector = normalize(-uDirLight.Direction);
     float DirDiffuse = max(dot(vWorldSpaceNormal, DirLightVector), 0.0f);
-    vec3 DirReflectDirection = reflect(-DirLightVector, vWorldSpaceNormal);
-    float DirSpecular = pow(max(dot(ViewDirection, DirReflectDirection), 0.0f), uMaterial.Shininess);
+    //vec3 DirReflectDirection = reflect(-DirLightVector, vWorldSpaceNormal);
+    //float DirSpecular = pow(max(dot(ViewDirection, DirReflectDirection), 0.0f), uMaterial.Shininess);
+
+    vec3 HalfwayDirection = normalize(DirLightVector + ViewDirection);
+    float DirSpecular = pow(max(dot(vWorldSpaceNormal, HalfwayDirection), 0.0f), uMaterial.Shininess);
 
     vec3 DirAmbientColor = uDirLight.Ka * MaterialColor;
     vec3 DirDiffuseColor = uDirLight.Kd * DirDiffuse * MaterialColor;
@@ -67,8 +70,11 @@ void main() {
     for (int i = 0; i < NR_POINT_LIGHTS; i++) {
         vec3 PtLightVector = normalize(uPointLights[i].Position - vWorldSpaceFragment);
         float PtDiffuse = max(dot(vWorldSpaceNormal, PtLightVector), 0.0f);
-        vec3 PtReflectDirection = reflect(-PtLightVector, vWorldSpaceNormal);
-        float PtSpecular = pow(max(dot(ViewDirection, PtReflectDirection), 0.0f), uMaterial.Shininess);
+        //vec3 PtReflectDirection = reflect(-PtLightVector, vWorldSpaceNormal);
+        //float PtSpecular = pow(max(dot(ViewDirection, PtReflectDirection), 0.0f), uMaterial.Shininess);
+
+        vec3 HalfwayDirection = normalize(PtLightVector + ViewDirection);
+        float PtSpecular = pow(max(dot(vWorldSpaceNormal, HalfwayDirection), 0.0f), uMaterial.Shininess);
 
         vec3 PtAmbientColor = uPointLights[i].Ka * MaterialColor;
         vec3 PtDiffuseColor = PtDiffuse * uPointLights[i].Kd * MaterialColor;
@@ -91,8 +97,11 @@ void main() {
         vec3 SpotlightVector = normalize(uSpotlights[i].Position - vWorldSpaceFragment);
 
         float SpotDiffuse = max(dot(vWorldSpaceNormal, SpotlightVector), 0.0f);
-        vec3 SpotReflectDirection = reflect(-SpotlightVector, vWorldSpaceNormal);
-        float SpotSpecular = pow(max(dot(ViewDirection, SpotReflectDirection), 0.0f), uMaterial.Shininess);
+        //vec3 SpotReflectDirection = reflect(-SpotlightVector, vWorldSpaceNormal);
+        //float SpotSpecular = pow(max(dot(ViewDirection, SpotReflectDirection), 0.0f), uMaterial.Shininess);
+
+        vec3 HalfwayDirectionSpot = normalize(SpotlightVector + ViewDirection);
+        float SpotSpecular = pow(max(dot(vWorldSpaceNormal, HalfwayDirectionSpot), 0.0f), uMaterial.Shininess);
 
         vec3 SpotAmbientColor = uSpotlights[i].Ka * MaterialColor;
         vec3 SpotDiffuseColor = SpotDiffuse * uSpotlights[i].Kd * MaterialColor;
