@@ -38,7 +38,7 @@ unsigned speedTex;
 GameObject* simpleCube;
 GameObject* simpleCube2;
 GameObject* rectangle;
-Model lija;
+Model astronautModel;
 
 bool firstMouse = true;
 double lastX;
@@ -240,6 +240,18 @@ static void DrawScene(Shader& shader, Params &params, bool isBack = false) {
     shader.setMat4("uModel", m);
     simpleCube->Render(&shader, 1, 1, 1);
 
+    //Bobblehead
+    m = glm::translate(glm::mat4(1.0), params.offset);
+    m = glm::rotate(m, glm::radians(params.rotation), glm::vec3(0.0, 1.0, 0.0));
+    m = glm::translate(m, -params.offset);
+    m = glm::translate(m, params.offset);
+
+    m = glm::translate(m, glm::vec3(-1.7, 1.5, 3.5));
+    m = glm::rotate(m, glm::radians(160.f), glm::vec3(0.0, 1.0, 0.0));
+    m = glm::scale(m, glm::vec3(0.2));
+    shader.setMat4("uModel", m);
+    astronautModel.Draw(shader);
+
     //Trees
     for (int i = 0; i < TREES; i++) {
         m = glm::translate(glm::mat4(1.0), glm::vec3(randomCoords[i], 9.0, randomCoords[i+TREES]));
@@ -372,7 +384,6 @@ static void HandleInput(Params* params) {
 
 
     //CAR
-    //Handle gears here
     if (params->velocity > 80) {
         params->gear = 5;
     }
@@ -425,8 +436,6 @@ static void HandleInput(Params* params) {
         else if (params->turnRight) {
             params->rotation -= 50 * params->dt;
         }
-
-        //params->rotation = glm::clamp(params->rotation, -60.f, 60.f);
     }
     params->velocity = glm::clamp(params->velocity, -20.f, 100.f);
 
@@ -435,9 +444,6 @@ static void HandleInput(Params* params) {
     if (params->velocity > 0) {
         params->fuel -= 3 * params->dt;
     }
-
-    //cout << params->velocity << " g: " << params->gear << " R: " << params->rotation << endl;
-
 }
 
 static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
@@ -766,7 +772,8 @@ int main()
     };
     rectangle = new GameObject(vertices, true);
 
-    lija = Model("res/low-poly-fox.obj");
+    astronautModel = Model("res/Astronaut.obj");
+
 
     Shader phongShader("phong.vert", "phong.frag");
     Shader hudShader("hud.vert", "hud.frag");
@@ -993,7 +1000,8 @@ int main()
         rectangle->Render(&twoD, 1, 1, 0);
 
         glm::vec3 turn1Pos = glm::vec3(m[3]);
-        turn1Pos -= params.forward * 0.3f;
+        //std::cout << "Vec3 Components: (" << turn1Pos.x << ", " << turn1Pos.y << ", " << turn1Pos.z << ")" << std::endl;
+
 
         phongShader.use();
         if (!signalOn || !params.rightSignal) {
@@ -1005,7 +1013,7 @@ int main()
         else
         {
             phongShader.setVec3("uPointLights[0].Ka", glm::vec3(0, 0, 0));
-            phongShader.setVec3("uPointLights[0].Kd", glm::vec3(1, 1, 0));
+            phongShader.setVec3("uPointLights[0].Kd", glm::vec3(3, 3, 0));
             phongShader.setVec3("uPointLights[0].Ks", glm::vec3(1, 1, 0));
         }
         phongShader.setVec3("uPointLights[0].Position", turn1Pos);
@@ -1039,7 +1047,7 @@ int main()
         else
         {
             phongShader.setVec3("uPointLights[1].Ka", glm::vec3(0, 0, 0));
-            phongShader.setVec3("uPointLights[1].Kd", glm::vec3(1, 1, 0));
+            phongShader.setVec3("uPointLights[1].Kd", glm::vec3(3, 3, 0));
             phongShader.setVec3("uPointLights[1].Ks", glm::vec3(1, 1, 0));
         }
         phongShader.setVec3("uPointLights[1].Position", turn2Pos);
