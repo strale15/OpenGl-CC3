@@ -496,6 +496,7 @@ int main()
 
     Params params;
     glfwSetWindowUserPointer(window, &params);
+    glfwSetWindowPos(window, 0, 40);
 
     glClearColor(0.2, 0.2, 0.6, 1.0);
     glEnable(GL_DEPTH_TEST);
