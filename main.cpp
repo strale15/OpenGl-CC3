@@ -29,20 +29,20 @@ double lastX;
 double lastY;
 
 struct Params {
-    float dt;
+    float dt = 0;
     bool isFps = true;
 
     bool isCurosIn = true;
     double xPosC = 0.0;
     double yPosC = 0.0;
 
-    glm::vec3 cameraFront = glm::vec3(0.0, 0.0, 1.0);
+    glm::vec3 cameraFront = glm::vec3(-1.0, 0.0, 0.0);
     glm::vec3 cameraUp = glm::vec3(0.0, 1.0, 0.0);
 
-    glm::vec3 position = glm::vec3(0.0, 2.0, 0.0);
+    glm::vec3 position = glm::vec3(-2.0, 2.0, 0.0);
     glm::vec3 objPos = glm::vec3(0.0, 0.0, 0.0);
 
-    double camYaw = 90;
+    double camYaw = -180;
     double camPitch = 0;
 
     bool wDown = false;
@@ -415,6 +415,9 @@ int main()
     float currentRot = 0;
     float FrameStartTime = 0;
     float FrameEndTime = 0;
+    float rot = 0;
+    float scale = 1.0;
+    glm::vec3 objPos = glm::vec3(0, 1.0, 0);
 
     Params params;
     glfwSetWindowUserPointer(window, &params);
@@ -445,6 +448,33 @@ int main()
 
         //SCENE
         //------------------------------------------------------------------------------------------------------------
+        
+        
+
+        m = glm::translate(glm::mat4(1.0), objPos);
+        m = glm::rotate(m, glm::radians(rot), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.6));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 1, 0);
+
+        glm::vec3 direction = objPos - params.position;
+        direction.y = 0;
+        glm::vec3 camDir2D = params.cameraFront;
+        camDir2D.y = 0;
+        float dotProduct = glm::dot(glm::normalize(direction), camDir2D);
+        float angleRadians = std::acos(dotProduct);
+        float angleDegrees = glm::degrees(angleRadians);
+        if (angleDegrees > 80) {
+            if (glm::distance(objPos, params.position) >= 0.7) {
+                glm::vec3 camPos = params.position;
+                camPos.y = objPos.y;
+                glm::vec3 direction = camPos - objPos;
+                direction = glm::normalize(direction);
+                rot += 20 * params.dt;
+                objPos += direction * params.dt * 4.f;
+            }
+            
+        }
 
         //Room1
         //Pod1
