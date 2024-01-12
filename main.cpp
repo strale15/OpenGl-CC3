@@ -560,6 +560,7 @@ int main()
 	GameObject* rectangle = new GameObject(vertices, true);
 
 	Model carModel("res/1377 Car.obj");
+	Model guardModel("res/Scarecrow.obj");
 
 	Shader phongShader("phong.vert", "phong.frag");
 	Shader twoD("twoD.vert", "twoD.frag");
@@ -576,9 +577,6 @@ int main()
 	phongShader.setVec3("uDirLight.Kd", glm::vec3(0.0));
 	phongShader.setVec3("uDirLight.Ks", glm::vec3(0.0));
 
-	unsigned hudTex = Model::textureFromFile("res/hudTex.png");
-	unsigned kockaDif = Model::textureFromFile("res/container_diffuse.png");
-	unsigned kockaSpec = Model::textureFromFile("res/container_specular.png");
 	unsigned betonDif = Model::textureFromFile("res/betonDif.png");
 	unsigned betonSpec = Model::textureFromFile("res/betonSpec.png");
 	unsigned betonDifPod = Model::textureFromFile("res/betonDifPod.png");
@@ -609,6 +607,8 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
 	while (!glfwWindowShouldClose(window))
 	{
 		FrameStartTime = glfwGetTime();
@@ -633,11 +633,11 @@ int main()
 		}
 
 		if (!cam1Rot) {
-			yaw1 -= 20*params.dt;
+			yaw1 -= 8*params.dt;
 		}
 		else
 		{
-			yaw1 += 20*params.dt;
+			yaw1 += 8*params.dt;
 		}
 
 		//Cam 1
@@ -750,27 +750,26 @@ int main()
 
 		//Pod
 		m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 0.0));
-		m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
-		m = glm::scale(m, glm::vec3(-25.0, 1.0, 25.0));
+		m = glm::rotate(m, glm::radians(-90.f), glm::vec3(1.0, 0.0, 0.0));
+		m = glm::scale(m, glm::vec3(25.0, 25.0, 1.0));
 		phongShader.setMat4("uModel", m);
 		simpleCube->Render(&phongShader, betonDifPod, betonSpecPod);
 
 		//Zidovi
 		m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, -4.5, -12.5));
-		m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 0.0, 1.0));
-		m = glm::scale(m, glm::vec3(25.0, 25.0, -1.0));
+		m = glm::scale(m, glm::vec3(25.0, 25.0, 1.0));
 		phongShader.setMat4("uModel", m);
 		simpleCube->Render(&phongShader, betonDif, betonSpec, betonEmm, true);
 
 		m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, -4.5, 12.5));
 		m = glm::rotate(m, glm::radians(180.f), glm::vec3(1.0, 0.0, 0.0));
-		m = glm::scale(m, glm::vec3(25.0, 25.0, -1.0));
+		m = glm::scale(m, glm::vec3(25.0, 25.0, 1.0));
 		phongShader.setMat4("uModel", m);
 		simpleCube->Render(&phongShader, betonDif, betonSpec);
 
 		m = glm::translate(glm::mat4(1.0), glm::vec3(-12.5, -4.5, 0.0));
-		m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 0.0, 1.0));
-		m = glm::scale(m, glm::vec3(-1.0, 25.0, 25.0));
+		m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
+		m = glm::scale(m, glm::vec3(25.0, 25.0, 1.0));
 		phongShader.setMat4("uModel", m);
 		simpleCube->Render(&phongShader, betonDif, betonSpec, betonEmm, true);
 
@@ -815,13 +814,13 @@ int main()
 		phongShader.setMat4("uModel", m);
 		simpleCube->Render(&phongShader, 1, 0, 0);
 
-		phongShader.setVec3("uPointLights[0].Position", glm::vec3(xOffset, 3.7, 11.0));
+		phongShader.setVec3("uPointLights[0].Position", glm::vec3(xOffset, 3.4, 11.0));
 		phongShader.setVec3("uPointLights[0].Ka", glm::vec3(0.6, 0.6, 0.2) / 2.f);
-		phongShader.setVec3("uPointLights[0].Kd", glm::vec3(0.6, 0.6, 0.2)*2.f);
+		phongShader.setVec3("uPointLights[0].Kd", glm::vec3(0.6, 0.6, 0.05)*3.5f);
 		phongShader.setVec3("uPointLights[0].Ks", glm::vec3(0.6, 0.6, 0.2));
 		phongShader.setFloat("uPointLights[0].Kc", 1.5f);
 		phongShader.setFloat("uPointLights[0].Kl", 1.0f);
-		phongShader.setFloat("uPointLights[0].Kq", 0.272f);
+		phongShader.setFloat("uPointLights[0].Kq", 0.572f);
 
 		//Display
 		m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 2.0, 10.2));
@@ -829,6 +828,13 @@ int main()
 		m = glm::scale(m, glm::vec3(0.7, 0.7, 0.1));
 		phongShader.setMat4("uModel", m);
 		simpleCube->Render(&phongShader, 0, 0, 1);
+
+		//Guard
+		m = glm::translate(glm::mat4(1.0), glm::vec3(xOffset+2.2, 0.36, 6));
+		m = glm::rotate(m, glm::radians(-45.f), glm::vec3(0.0, 1.0, 0.0));
+		m = glm::scale(m, glm::vec3(0.8));
+		phongShader.setMat4("uModel", m);
+		guardModel.Draw(phongShader);
 
 		//Test cars
 		//Left
@@ -898,11 +904,11 @@ int main()
 		//Ramp
 		if (params.rampUp || isRampUp && rampRot < 90) {
 			isRampUp = true;
-			rampRot += 20 * params.dt;
+			rampRot += 30 * params.dt;
 		}
 		else if (!params.rampUp || !isRampUp && rampRot > 0) {
 			isRampUp = false;
-			rampRot -= 20 * params.dt;
+			rampRot -= 35 * params.dt;
 		}
 
 		rampRot = glm::clamp(rampRot, 0.f, 90.f);

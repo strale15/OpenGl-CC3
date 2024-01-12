@@ -118,6 +118,8 @@ public:
 		glDrawArrays(GL_TRIANGLES, 0, vCount);
 
 		glBindVertexArray(0);
+
+		shader->setBool("isColor", false);
 	}
 
 	void Render() {
