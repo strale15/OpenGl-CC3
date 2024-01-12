@@ -254,7 +254,7 @@ static void DrawScene(Shader& shader, Params &params, bool isBack = false) {
 
     //Trees
     for (int i = 0; i < TREES; i++) {
-        m = glm::translate(glm::mat4(1.0), glm::vec3(randomCoords[i], 9.0, randomCoords[i+TREES]));
+        m = glm::translate(glm::mat4(1.0), glm::vec3(randomCoords[i], 9.0, randomCoords[i + TREES]));
         m = glm::scale(m, glm::vec3(1.0, 20.0, 1.0));
         shader.setMat4("uModel", m);
         simpleCube->Render(&shader, 0, 1, 0);
@@ -285,8 +285,8 @@ static void DrawScene(Shader& shader, Params &params, bool isBack = false) {
     glm::vec3 lightIntA = zeroVec;
     glm::vec3 lightIntD = zeroVec;
     glm::vec3 lightIntS = zeroVec;
-    float kc = 0.2;
-    float kl = 0.092;
+    float kc = 0.1;
+    float kl = 0.052;
     float kq = 0.00032;
     float inner = 20;
     float outer = 30;
@@ -331,8 +331,6 @@ static void DrawScene(Shader& shader, Params &params, bool isBack = false) {
     shader.setFloat("uSpotlights[1].Kc", kc);
     shader.setFloat("uSpotlights[1].Kl", kl);
     shader.setFloat("uSpotlights[1].Kq", kq);
-
-
 }
 
 static void HandleInput(Params* params) {
@@ -411,7 +409,7 @@ static void HandleInput(Params* params) {
     else {
         float damp = 2;
         if (params->breakeDown) {
-            damp = 10;
+            damp = 5;
         }
 
         if (glm::abs(params->velocity) < 0.05) {
@@ -421,10 +419,10 @@ static void HandleInput(Params* params) {
 
 
         if (params->velocity > 0) {
-            params->velocity -= 6 * damp * params->dt;
+            params->velocity -= 7 * damp * params->dt;
         }
         else if (params->velocity < 0) {
-            params->velocity += 6 * damp * params->dt;
+            params->velocity += 7 * damp * params->dt;
         }
 
     }
@@ -787,8 +785,8 @@ int main()
 
     phongShader.setVec3("uDirLight.Position", 0.0, 10, 0.0);
     phongShader.setVec3("uDirLight.Direction", 0.3, -1, 0);
-    phongShader.setVec3("uDirLight.Ka", glm::vec3(1, 0.43, 0.38)/ 3.f);
-    phongShader.setVec3("uDirLight.Kd", glm::vec3(1, 0.43, 0.38)/ 2.f);
+    phongShader.setVec3("uDirLight.Ka", glm::vec3(1, 0.43, 0.38)/ 6.f);
+    phongShader.setVec3("uDirLight.Kd", glm::vec3(1, 0.43, 0.38)/ 4.f);
     phongShader.setVec3("uDirLight.Ks", glm::vec3(1));
 
     hudTex = Model::textureFromFile("res/hudTex.png");
@@ -846,24 +844,10 @@ int main()
         }
         phongShader.setMat4("uView", view);
 
-        DrawScene(phongShader, params);
-
         //Instrument
         twoD.use();
         twoD.setMat4("uView", view);
         twoD.setMat4("uProjection", projectionP);
-
-        //SpeedMeter
-        m = glm::translate(glm::mat4(1.0), params.offset);
-        m = glm::rotate(m, glm::radians(params.rotation), glm::vec3(0.0, 1.0, 0.0));
-        m = glm::translate(m, -params.offset);
-        m = glm::translate(m, params.offset);
-
-        m = glm::translate(m, glm::vec3(1.5, 1.0, 2.98));
-        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
-        m = glm::scale(m, glm::vec3(1.0*1.9, 1.0, 1.0));
-        twoD.setMat4("uModel", m);
-        rectangle->Render(&twoD, speedTex);
 
         //Indicator
         float rotation = (180 * glm::abs(params.velocity) / 100.0);
@@ -923,7 +907,7 @@ int main()
 
         phongShader.setVec3("uPointLights[2].Position", gearPos);
         phongShader.setFloat("uPointLights[2].Kc", 0.5f);
-        phongShader.setFloat("uPointLights[2].Kl", 0.2f);
+        phongShader.setFloat("uPointLights[2].Kl", 0.6f);
         phongShader.setFloat("uPointLights[2].Kq", 10.0f);
 
         if (params.gear == 0) {
@@ -938,7 +922,7 @@ int main()
         else if(params.gear == 1)
         {
             phongShader.setVec3("uPointLights[2].Ka", glm::vec3(0, 0, 0));
-            phongShader.setVec3("uPointLights[2].Kd", glm::vec3(1, 0, 0));
+            phongShader.setVec3("uPointLights[2].Kd", glm::vec3(0.7, 0, 0));
             phongShader.setVec3("uPointLights[2].Ks", glm::vec3(1, 0, 0));
 
             twoD.use();
@@ -947,7 +931,7 @@ int main()
         else if (params.gear == 2)
         {
             phongShader.setVec3("uPointLights[2].Ka", glm::vec3(0, 0, 0));
-            phongShader.setVec3("uPointLights[2].Kd", glm::vec3(0.98, 0.65, 0));
+            phongShader.setVec3("uPointLights[2].Kd", glm::vec3(0.98, 0.65, 0)*1.5f);
             phongShader.setVec3("uPointLights[2].Ks", glm::vec3(0.98, 0.65, 0));
 
             twoD.use();
@@ -956,7 +940,7 @@ int main()
         else if (params.gear == 3)
         {
             phongShader.setVec3("uPointLights[2].Ka", glm::vec3(0, 0, 0));
-            phongShader.setVec3("uPointLights[2].Kd", glm::vec3(0.52, 0, 1));
+            phongShader.setVec3("uPointLights[2].Kd", glm::vec3(0.52, 0, 1) * 1.5f);
             phongShader.setVec3("uPointLights[2].Ks", glm::vec3(0.52, 0, 1));
 
             twoD.use();
@@ -965,7 +949,7 @@ int main()
         else if (params.gear == 4)
         {
             phongShader.setVec3("uPointLights[2].Ka", glm::vec3(0, 0, 0));
-            phongShader.setVec3("uPointLights[2].Kd", glm::vec3(0, 0, 1));
+            phongShader.setVec3("uPointLights[2].Kd", glm::vec3(0, 0, 1) * 1.9f);
             phongShader.setVec3("uPointLights[2].Ks", glm::vec3(0, 0, 1));
 
             twoD.use();
@@ -1000,6 +984,7 @@ int main()
         rectangle->Render(&twoD, 1, 1, 0);
 
         glm::vec3 turn1Pos = glm::vec3(m[3]);
+        turn1Pos -= params.forward * 0.3f;
         //std::cout << "Vec3 Components: (" << turn1Pos.x << ", " << turn1Pos.y << ", " << turn1Pos.z << ")" << std::endl;
 
 
@@ -1013,12 +998,12 @@ int main()
         else
         {
             phongShader.setVec3("uPointLights[0].Ka", glm::vec3(0, 0, 0));
-            phongShader.setVec3("uPointLights[0].Kd", glm::vec3(3, 3, 0));
+            phongShader.setVec3("uPointLights[0].Kd", glm::vec3(2, 2, 0));
             phongShader.setVec3("uPointLights[0].Ks", glm::vec3(1, 1, 0));
         }
         phongShader.setVec3("uPointLights[0].Position", turn1Pos);
-        phongShader.setFloat("uPointLights[0].Kc", 0.5f);
-        phongShader.setFloat("uPointLights[0].Kl", 0.2f);
+        phongShader.setFloat("uPointLights[0].Kc", 1.0f);
+        phongShader.setFloat("uPointLights[0].Kl", 0.6f);
         phongShader.setFloat("uPointLights[0].Kq", 10.0f);
         twoD.use();
 
@@ -1047,14 +1032,29 @@ int main()
         else
         {
             phongShader.setVec3("uPointLights[1].Ka", glm::vec3(0, 0, 0));
-            phongShader.setVec3("uPointLights[1].Kd", glm::vec3(3, 3, 0));
+            phongShader.setVec3("uPointLights[1].Kd", glm::vec3(2, 2, 0));
             phongShader.setVec3("uPointLights[1].Ks", glm::vec3(1, 1, 0));
         }
         phongShader.setVec3("uPointLights[1].Position", turn2Pos);
-        phongShader.setFloat("uPointLights[1].Kc", 0.5f);
-        phongShader.setFloat("uPointLights[1].Kl", 0.2f);
+        phongShader.setFloat("uPointLights[1].Kc", 1.0f);
+        phongShader.setFloat("uPointLights[1].Kl", 0.6f);
         phongShader.setFloat("uPointLights[1].Kq", 10.0f);
+
+        phongShader.use();
+        DrawScene(phongShader, params);
+        
+        //SpeedMeter
         twoD.use();
+        m = glm::translate(glm::mat4(1.0), params.offset);
+        m = glm::rotate(m, glm::radians(params.rotation), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, -params.offset);
+        m = glm::translate(m, params.offset);
+
+        m = glm::translate(m, glm::vec3(1.5, 1.0, 2.98));
+        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(1.0 * 1.9, 1.0, 1.0));
+        twoD.setMat4("uModel", m);
+        rectangle->Render(&twoD, speedTex);
 
         //HUD
         DrawHud(hudShader, hudTex);
