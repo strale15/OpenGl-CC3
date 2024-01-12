@@ -287,7 +287,7 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
 
 void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
     Params* params = (Params*)glfwGetWindowUserPointer(window);
-    params->zoom -= static_cast<float>(yoffset * 3.0);
+    params->zoom -= static_cast<float>(yoffset * 7000.0 * params->dt);
     params->zoom = glm::clamp(params->zoom, 20.0f, 100.0f);
 
 }
