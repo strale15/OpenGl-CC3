@@ -535,9 +535,6 @@ int main()
                 newPos.x = glm::clamp(params.position.x, -39.f, -21.f);
             newPos.z = glm::clamp(params.position.z, -9.f, 9.f);
         }
-        else {
-            cout << "4" << endl;
-        }
 
         params.position = newPos;
 
@@ -551,9 +548,6 @@ int main()
 
         //SCENE
         //------------------------------------------------------------------------------------------------------------
-        
-        
-
         m = glm::translate(glm::mat4(1.0), objPos);
         m = glm::rotate(m, glm::radians(rot), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(3.8));
@@ -567,6 +561,7 @@ int main()
         float dotProduct = glm::dot(glm::normalize(direction), camDir2D);
         float angleRadians = std::acos(dotProduct);
         float angleDegrees = glm::degrees(angleRadians);
+
         if (angleDegrees > 80) {
             if (glm::distance(objPos, params.position) >= 1.5) {
                 glm::vec3 camPos = params.position;
