@@ -347,7 +347,7 @@ int main()
     };
     GameObject* simpleCube = new GameObject(cubeVertices);
 
-    Model lija("res/low-poly-fox.obj");
+    Model appleObj("res/apple2_UV.OBJ");
 
     Shader phongShader("phong.vert", "phong.frag");
     Shader hudShader("hud.vert", "hud.frag");
@@ -360,12 +360,12 @@ int main()
     phongShader.setMat4("uProjection", projectionP);
 
     phongShader.setVec3("uDirLight.Position", 0.0, 5, 0.0);
-    phongShader.setVec3("uDirLight.Direction", 0.1, -5, 0.1);
-    phongShader.setVec3("uDirLight.Ka", glm::vec3(255.0 / 255 / 10, 238.0 / 255 / 10, 204.0 / 255 / 10));
-    phongShader.setVec3("uDirLight.Kd", glm::vec3(255.0 / 255 / 10, 238.0 / 255 / 10, 204.0 / 255 / 10));
+    phongShader.setVec3("uDirLight.Direction", 0.0, -5, 0.0);
+    phongShader.setVec3("uDirLight.Ka", glm::vec3(0.3));
+    phongShader.setVec3("uDirLight.Kd", glm::vec3(0.4));
     phongShader.setVec3("uDirLight.Ks", glm::vec3(1.0, 1.0, 1.0));
 
-    phongShader.setVec3("uSpotlights[0].Position", 0.0, 10.0, 0.0);
+    phongShader.setVec3("uSpotlights[0].Position", glm::vec3(-99999));
     phongShader.setVec3("uSpotlights[0].Direction", 0.0, -1.0, 0.0);
     phongShader.setVec3("uSpotlights[0].Ka", 0.0, 0.0, 0.0);
     phongShader.setVec3("uSpotlights[0].Kd", glm::vec3(3.0f, 3.0f, 3.0f));
@@ -376,7 +376,7 @@ int main()
     phongShader.setFloat("uSpotlights[0].Kl", 0.092f);
     phongShader.setFloat("uSpotlights[0].Kq", 0.032f);
 
-    phongShader.setVec3("uSpotlights[1].Position", 0.0, 0.0, 6.0);
+    phongShader.setVec3("uSpotlights[1].Position", glm::vec3(-99999));
     phongShader.setVec3("uSpotlights[1].Direction", 0.0, 0.0, -1.0);
     phongShader.setVec3("uSpotlights[1].Ka", 0.0, 0.0, 0.0);
     phongShader.setVec3("uSpotlights[1].Kd", glm::vec3(1.0f, 1.0f, 1.0f));
@@ -387,7 +387,7 @@ int main()
     phongShader.setFloat("uSpotlights[1].Kl", 0.092f);
     phongShader.setFloat("uSpotlights[1].Kq", 0.032f);
 
-    phongShader.setVec3("uPointLights[0].Position", glm::vec3(0.0, -2.0, 0.0));
+    phongShader.setVec3("uPointLights[0].Position", glm::vec3(-99999));
     phongShader.setVec3("uPointLights[0].Ka", glm::vec3(230.0 / 255 / 0.1, 92.0 / 255 / 0.1, 0.0f));
     phongShader.setVec3("uPointLights[0].Kd", glm::vec3(230.0 / 255 / 50, 92.0 / 255 / 50, 0.0f));
     phongShader.setVec3("uPointLights[0].Ks", glm::vec3(1.0f));
@@ -416,6 +416,8 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
     while (!glfwWindowShouldClose(window))
     {
         FrameStartTime = glfwGetTime();
@@ -436,11 +438,115 @@ int main()
 
         //SCENE
         //------------------------------------------------------------------------------------------------------------
+        //Ground
+        float treeThick = 0.3;
+        float treeHegiht = 3;
+
+
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 0.0));
-        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
-        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+        //m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(10.0, 1.0, 10.0));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 1, 1);
+        simpleCube->Render(&phongShader, 0, 1, 0);
+
+        //Sun
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 12, 0.0));
+        m = glm::rotate(m, glm::radians(30.f), glm::vec3(1.0, 0.0, 1.0));
+        m = glm::scale(m, glm::vec3(2.0, 2.0, 2.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 1, 0);
+
+        //Trunk1
+        m = glm::translate(glm::mat4(1.0), glm::vec3(4.0, treeHegiht/2+0.5, 1.0));
+        //m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(treeThick, treeHegiht, treeThick));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 1, 0);
+
+        //Trunk2
+        m = glm::translate(glm::mat4(1.0), glm::vec3(3.0, treeHegiht / 2 + 0.5, -2.0));
+        //m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(treeThick, treeHegiht, treeThick));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 1, 0);
+
+        //Trunk3
+        m = glm::translate(glm::mat4(1.0), glm::vec3(1.0, treeHegiht / 2 + 0.5, 3.0));
+        //m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(treeThick, treeHegiht, treeThick));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 1, 0);
+
+        //AppleTrunk
+        float appleTreeThick = 0.5;
+        float appleTreeHeight = 4.0;
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-2.5, appleTreeHeight/2+0.5, 0.0));
+        //m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(appleTreeThick, appleTreeHeight, appleTreeThick));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 0, 1);
+
+        //Apples
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-2.5+ appleTreeThick*2.4, appleTreeHeight+0.5+ appleTreeThick*6/2, appleTreeThick * 2.4));
+        m = glm::rotate(m, glm::radians(90.f), glm::vec3(1.0, 0.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.02));
+        phongShader.setMat4("uModel", m);
+        appleObj.Draw(phongShader);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-2.5 + appleTreeThick * 2.4, appleTreeHeight + 0.5 + appleTreeThick * 6 / 2, -appleTreeThick * 2.4));
+        m = glm::rotate(m, glm::radians(90.f), glm::vec3(1.0, 0.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.02));
+        phongShader.setMat4("uModel", m);
+        appleObj.Draw(phongShader);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-2.5 +-appleTreeThick * 2.4, appleTreeHeight + 0.5 + appleTreeThick * 6 / 2, -appleTreeThick * 2.4));
+        m = glm::rotate(m, glm::radians(90.f), glm::vec3(1.0, 0.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.02));
+        phongShader.setMat4("uModel", m);
+        appleObj.Draw(phongShader);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-2.5 - appleTreeThick * 2.4, appleTreeHeight + 0.5 + appleTreeThick * 6 / 2, appleTreeThick * 2.4));
+        m = glm::rotate(m, glm::radians(90.f), glm::vec3(1.0, 0.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.02));
+        phongShader.setMat4("uModel", m);
+        appleObj.Draw(phongShader);
+
+
+        //Leaves1
+        phongShader.setBool("uTransp", true);
+        phongShader.setFloat("uAlpha", 0.7f);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(4.0, treeHegiht + 0.5 + treeThick*6/2, 1.0));
+        m = glm::rotate(m, glm::radians(32.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(treeThick*6, treeThick * 6, treeThick*6));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 0, 1, 0);
+
+        //Leaves2
+        m = glm::translate(glm::mat4(1.0), glm::vec3(3.0, treeHegiht + 0.5 + treeThick * 6 / 2, -2.0));
+        m = glm::rotate(m, glm::radians(18.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(treeThick * 6, treeThick * 6, treeThick * 6));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 0, 1, 0);
+
+        //Leaves3
+        m = glm::translate(glm::mat4(1.0), glm::vec3(1.0, treeHegiht + 0.5 + treeThick * 6 / 2, 3.0));
+        m = glm::rotate(m, glm::radians(76.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(treeThick * 6, treeThick * 6, treeThick * 6));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 0, 1, 0);
+
+        //LeavesApple
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-2.5, appleTreeHeight + 0.5 + appleTreeThick * 6 / 2, 0.0));
+        m = glm::rotate(m, glm::radians(45.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(appleTreeThick * 6, appleTreeThick * 6, appleTreeThick * 6));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 0, 1, 0);
+        phongShader.setBool("uTransp", false);
+        
+
+
         //------------------------------------------------------------------------------------------------------------
 
         //HUD
