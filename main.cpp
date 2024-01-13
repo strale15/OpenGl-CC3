@@ -438,7 +438,8 @@ int main()
     Model lija("res/low-poly-fox.obj");
     Model statueModel("res/Virgin Mary Statue.obj");
 
-    Shader phongShader("phong.vert", "phong.frag");
+    //Shader phongShader("phong.vert", "phong.frag");
+    Shader phongShader("goro.vert", "goro.frag");
     Shader hudShader("hud.vert", "hud.frag");
     Shader twoD("twoD.vert", "twoD.frag");
 
