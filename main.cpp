@@ -451,12 +451,12 @@ int main()
 
     phongShader.setVec3("uDirLight.Position", 0.0, 5, 0.0);
     phongShader.setVec3("uDirLight.Direction", 0.1, -5, 0.1);
-    phongShader.setVec3("uDirLight.Ka", glm::vec3(0.2));
-    phongShader.setVec3("uDirLight.Kd", glm::vec3(0.5));
+    phongShader.setVec3("uDirLight.Ka", glm::vec3(0.1));
+    phongShader.setVec3("uDirLight.Kd", glm::vec3(0.1));
     phongShader.setVec3("uDirLight.Ks", glm::vec3(1.0, 1.0, 1.0));
 
-    phongShader.setVec3("uDirLight.Ka", glm::vec3(0));
-    phongShader.setVec3("uDirLight.Kd", glm::vec3(0));
+   /* phongShader.setVec3("uDirLight.Ka", glm::vec3(0));
+    phongShader.setVec3("uDirLight.Kd", glm::vec3(0));*/
 
     
 
