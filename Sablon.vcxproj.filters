@@ -30,12 +30,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="basic.frag">
-      <Filter>Source Files\Shader Files</Filter>
-    </None>
-    <None Include="basic.vert">
-      <Filter>Source Files\Shader Files</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="model.hpp">
