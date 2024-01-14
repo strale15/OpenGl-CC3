@@ -81,6 +81,17 @@ public:
 		shader->setBool("isColor", false);
 	}
 
+	void Render(Shader* shader, float r, float g, float b, bool gas) {
+		shader->setBool("isColor", true);
+		shader->setVec3("uColor", glm::vec3(r, g, b));
+
+		glBindVertexArray(VAO);
+		glDrawArrays(GL_TRIANGLE_FAN, 0, vCount);
+
+		glBindVertexArray(0);
+		shader->setBool("isColor", false);
+	}
+
 	void Render() {
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLES, 0, vCount);

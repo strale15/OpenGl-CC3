@@ -2,6 +2,7 @@
 //Preuzeto sa learnOpenGL
 
 #define _CRT_SECURE_NO_WARNINGS
+#define _USE_MATH_DEFINES
 
 #include <iostream>
 #include <fstream>
@@ -20,6 +21,7 @@
 #include "GameObject.cpp"
 
 #include <Windows.h>
+#include <cmath>
 
 const unsigned int wWidth = 1920;
 const unsigned int wHeight = 1080;
@@ -290,6 +292,79 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
     }
 }
 
+static std::vector<float> generateSphereVertices(int slices, int stacks, float radius) {
+    std::vector<float> sphereVertices;
+
+    for (int i = 0; i <= stacks; ++i) {
+        double lat0 = M_PI * (-0.5 + (double)(i) / stacks);
+        double z0 = radius * sin(lat0);
+        double zr0 = radius * cos(lat0);
+
+        double lat1 = M_PI * (-0.5 + (double)(i + 1) / stacks);
+        double z1 = radius * sin(lat1);
+        double zr1 = radius * cos(lat1);
+
+        for (int j = 0; j <= slices; ++j) {
+            double lng = 2 * M_PI * (double)j / slices;
+            double x0 = cos(lng);
+            double y0 = sin(lng);
+
+            lng = 2 * M_PI * (double)(j + 1) / slices;
+            double x1 = cos(lng);
+            double y1 = sin(lng);
+
+            // Triangle 1
+            sphereVertices.push_back(radius * x0 * zr0);  // X
+            sphereVertices.push_back(radius * y0 * zr0);  // Y
+            sphereVertices.push_back(z0);                // Z
+
+            sphereVertices.push_back(x0 * zr0 / radius);  // NX
+            sphereVertices.push_back(y0 * zr0 / radius);  // NY
+            sphereVertices.push_back(z0 / radius);       // NZ
+
+            sphereVertices.push_back((float)j / slices);  // U
+            sphereVertices.push_back((float)i / stacks);  // V
+
+            // Triangle 2
+            sphereVertices.push_back(radius * x1 * zr0);  // X
+            sphereVertices.push_back(radius * y1 * zr0);  // Y
+            sphereVertices.push_back(z0);                // Z
+
+            sphereVertices.push_back(x1 * zr0 / radius);  // NX
+            sphereVertices.push_back(y1 * zr0 / radius);  // NY
+            sphereVertices.push_back(z0 / radius);       // NZ
+
+            sphereVertices.push_back((float)(j + 1) / slices);  // U
+            sphereVertices.push_back((float)i / stacks);      // V
+
+            // Triangle 3
+            sphereVertices.push_back(radius * x0 * zr1);  // X
+            sphereVertices.push_back(radius * y0 * zr1);  // Y
+            sphereVertices.push_back(z1);                // Z
+
+            sphereVertices.push_back(x0 * zr1 / radius);  // NX
+            sphereVertices.push_back(y0 * zr1 / radius);  // NY
+            sphereVertices.push_back(z1 / radius);       // NZ
+
+            sphereVertices.push_back((float)j / slices);      // U
+            sphereVertices.push_back((float)(i + 1) / stacks);  // V
+
+            // Triangle 4
+            sphereVertices.push_back(radius * x1 * zr1);  // X
+            sphereVertices.push_back(radius * y1 * zr1);  // Y
+            sphereVertices.push_back(z1);                // Z
+
+            sphereVertices.push_back(x1 * zr1 / radius);  // NX
+            sphereVertices.push_back(y1 * zr1 / radius);  // NY
+            sphereVertices.push_back(z1 / radius);       // NZ
+
+            sphereVertices.push_back((float)(j + 1) / slices);      // U
+            sphereVertices.push_back((float)(i + 1) / stacks);  // V
+        }
+    }
+    return sphereVertices;
+}
+
 int main()
 {
     HWND console = GetConsoleWindow();
@@ -371,6 +446,13 @@ int main()
          0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, // L U
     };
     GameObject* simpleCube = new GameObject(cubeVertices);
+
+    const int slices = 30;
+    const int stacks = 30;
+    const float radius = 1.0f;
+
+    std::vector<float> sphereVertices = generateSphereVertices(slices, stacks, radius);
+    GameObject* simpleSphere = new GameObject(sphereVertices);
 
     Model appleObj("res/apple2_UV.OBJ");
     Model archerObj("res/Archer.obj");
@@ -480,9 +562,7 @@ int main()
         float treeThick = 0.3;
         float treeHegiht = 3;
 
-
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 0.0));
-        //m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(10.0, 1.0, 10.0));
         currentShader.setMat4("uModel", m);
         simpleCube->Render(&currentShader, grassD,grassS);
@@ -495,6 +575,7 @@ int main()
             m = glm::scale(m, glm::vec3(params.sunScale));
             currentShader.setMat4("uModel", m);
             simpleCube->Render(&currentShader, 0.92, params.sunG, 0.04);
+            //simpleSphere->Render(&currentShader, 0.92, params.sunG, 0.04, true);
 
             currentShader.setVec3("uDirLight.Position", 0.0, 20, 0.0);
             currentShader.setVec3("uDirLight.Direction", 0.0, -1, 0.0);
