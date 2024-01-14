@@ -167,14 +167,14 @@ static void HandleInput(Params* params) {
     if (params->spaceDown)
     {
         if (params->isFps)
-            params->position.y += 4.2 * params->dt;
+            params->position.y += 6.0 * params->dt;
         else
             params->objPos.y += 0.5f * params->dt;
     }
     if (params->shiftDown)
     {
         if (params->isFps)
-            params->position.y -= 4.1 * params->dt;
+            params->position.y -= 6.0 * params->dt;
         else
             params->objPos.y -= 0.5f * params->dt;
     }
@@ -582,7 +582,7 @@ int main()
         //Ground
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 0.0));
         //m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
-        m = glm::scale(m, glm::vec3(30.0, 1.0, 30.0));
+        m = glm::scale(m, glm::vec3(35.0, 1.0, 35.0));
         phongShader.setMat4("uModel", m);
         simpleCube2->Render(&phongShader, grassDif, grassSpec);
 
@@ -866,7 +866,7 @@ int main()
         m = glm::translate(glm::mat4(1.0), glm::vec3(-1.0, 0.5 + 0.4, -2.0));
         m = glm::scale(m, glm::vec3(1.6, 0.8, 1.0));
         phongInnerShader.setMat4("uModel", m);
-        simpleCube->Render(&phongInnerShader, 1, 0, 0);
+        simpleCube->Render(&phongInnerShader, 0.36, 0.23, 0.03);
 
         //Bice (Dingus)
         glDisable(GL_CULL_FACE);
@@ -902,7 +902,7 @@ int main()
         m = glm::translate(glm::mat4(1.0), glm::vec3(-1.5, 0.55 + offset * 2 + 1, 1.5));
         m = glm::scale(m, glm::vec3(1.2, 2.0, 1.2));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 1, 0, 0);
+        simpleCube->Render(&phongShader, 0.88, 0.48, 0.05);
 
         //Sunce
         m = glm::translate(glm::mat4(1.0), glm::vec3(10.0, 20.0, 10.0));
@@ -994,9 +994,9 @@ int main()
         simpleCube->Render(&phongShader, 1, 1, 1);
 
         if(params.shuttersOpen)
-            phongShader.setFloat("uAlpha", 0.3);
+            phongShader.setFloat("uAlpha", 0.25);
         else
-            phongShader.setFloat("uAlpha", 0.97);
+            phongShader.setFloat("uAlpha", 0.98);
         //Prozor 1
         m = glm::translate(glm::mat4(1.0), glm::vec3(-1.0, 2.5, -3.0));
         m = glm::scale(m, glm::vec3(2.0, 2.0, 0.2));
