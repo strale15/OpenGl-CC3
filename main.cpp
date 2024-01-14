@@ -425,7 +425,7 @@ int main()
         return -2;
     }
 
-    glfwSetWindowPos(window, 300, 120);
+    glfwSetWindowPos(window, 0, 40);
     glfwMakeContextCurrent(window);
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, KeyCallback);
