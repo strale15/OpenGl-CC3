@@ -292,17 +292,6 @@ void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
 
 }
 
-static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
-    Params* params = (Params*)glfwGetWindowUserPointer(window);
-
-    params->mouseDeltaX = xPos - params->lastMouseX;
-    params->lastMouseX = xPos;
-
-    params->mouseDeltaY = yPos - params->lastMouseY;
-    params->lastMouseY = yPos;
-
-}
-
 static void HandleInput(Params* params) {
     if (params->wDown || params->sDown || params->aDown || params->dDown) {
 
@@ -499,7 +488,6 @@ int main()
     }
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, KeyCallback);
-    glfwSetCursorPosCallback(window, CursosPosCallback);
     glfwSetScrollCallback(window, ScrollCallback);
 
     if (glewInit() !=GLEW_OK)
@@ -631,7 +619,7 @@ int main()
         phongShader.setVec3("uViewPos", params.camPos);
 
         if (params.isOrtho)
-            projectionP = glm::ortho(-16.f,16.f,-9.f,9.f, 0.1f, 100.f);
+            projectionP = glm::ortho(-16.f,16.f,-9.f,9.f, -100.f, 100.f);
         else
             projectionP = glm::perspective(glm::radians(params.zoom), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
 
