@@ -120,5 +120,10 @@ void main() {
     if(uTransp) {
         alpha = uAlpha;
     }
-    FragColor = vec4(FinalColor, alpha);
+    if(!isColor) {
+        vec4 col = texture(uMaterial.Kd, UV);
+        FragColor = vec4(FinalColor, col.w);
+    } else {
+        FragColor = vec4(FinalColor, alpha);
+    }
 }

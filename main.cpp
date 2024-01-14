@@ -29,7 +29,7 @@ double lastX;
 double lastY;
 
 struct Params {
-    float dt;
+    float dt = 0;
     bool isFps = true;
 
     bool isCurosIn = true;
@@ -52,6 +52,9 @@ struct Params {
 
     bool spaceDown = false;
     bool shiftDown = false;
+
+    //House
+    float dogRot = 0;
 };
 
 static void DrawHud(Shader& hudShader, unsigned hudTex) {
@@ -152,6 +155,12 @@ static void HandleInput(Params* params) {
             params->position.y -= 4.1 * params->dt;
         else
             params->objPos.y -= 0.5f * params->dt;
+    }
+
+    //House
+    params->dogRot += 50 * params->dt;
+    if (params->dogRot > 360) {
+        params->dogRot -= 360;
     }
 }
 
@@ -347,7 +356,57 @@ int main()
     };
     GameObject* simpleCube = new GameObject(cubeVertices);
 
+    float tiling = 5;
+    std::vector<float> cubeVertices2 = {
+        // X     Y     Z     NX    NY    NZ    U     V    FRONT SIDE
+        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, // L D
+        0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // R D
+        -0.5f,  0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // L U
+        0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // R D
+        0.5f,  0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, // R U
+        -0.5f,  0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // L U
+        // LEFT SIDE
+        -0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // L D
+        -0.5f, -0.5f,  0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, // R D
+        -0.5f,  0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, // L U
+        -0.5f, -0.5f,  0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, // R D
+        -0.5f,  0.5f,  0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f, // R U
+        -0.5f,  0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, // L U
+        // RIGHT SIDE
+        0.5f, -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // L D
+        0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, // R D
+        0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, // L U
+        0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, // R D
+        0.5f,  0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, // R U
+        0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, // L U
+        // BOTTOM SIDE
+        -0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, // L D
+         0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, // R D
+        -0.5f, -0.5f,  0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, // L U
+         0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, // R D
+         0.5f, -0.5f,  0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 1.0f, // R U
+        -0.5f, -0.5f,  0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, // L U
+        // TOP SIDE
+        -0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, // L D
+         0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 1.0f* tiling, 0.0f, // R D
+        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f * tiling, // L U
+         0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 1.0f * tiling, 0.0f, // R D
+         0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f * tiling, 1.0f * tiling, // R U
+        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f * tiling, // L U
+        // BACK SIDE
+        0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, // L D
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f, // R D
+         0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, // L U
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f, // R D
+        -0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f, // R U
+         0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, // L U
+    };
+    GameObject* simpleCube2 = new GameObject(cubeVertices2);
+
     Model lija("res/low-poly-fox.obj");
+    Model treeObj("res/Tree2.obj");
+    Model maxwell("res/maxwell.obj");
+    Model dogModel("res/Mesh_Beagle.obj");
 
     Shader phongShader("phong.vert", "phong.frag");
     Shader hudShader("hud.vert", "hud.frag");
@@ -360,7 +419,7 @@ int main()
     phongShader.setMat4("uProjection", projectionP);
 
     phongShader.setVec3("uDirLight.Position", 0.0, 5, 0.0);
-    phongShader.setVec3("uDirLight.Direction", 0.1, -5, 0.1);
+    phongShader.setVec3("uDirLight.Direction", 0.4, -1, 0.1);
     phongShader.setVec3("uDirLight.Ka", glm::vec3(0.3));
     phongShader.setVec3("uDirLight.Kd", glm::vec3(0.6));
     phongShader.setVec3("uDirLight.Ks", glm::vec3(1.0, 1.0, 1.0));
@@ -401,6 +460,8 @@ int main()
     unsigned tapeteDif = Model::textureFromFile("res/tapete.png");
     unsigned podDif = Model::textureFromFile("res/podDif.png");
     unsigned podSpec = Model::textureFromFile("res/podSpec.png");
+    unsigned grassDif = Model::textureFromFile("res/grassDif.png");
+    unsigned grassSpec = Model::textureFromFile("res/grassSpec.png");
 
     phongShader.setInt("uMaterial.Kd", 0);
     phongShader.setInt("uMaterial.Ks", 1);
@@ -446,7 +507,7 @@ int main()
         //m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(30.0, 1.0, 30.0));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 1, 0);
+        simpleCube2->Render(&phongShader, grassDif, grassSpec);
 
         //Pod
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.51, 0.0));
@@ -657,10 +718,112 @@ int main()
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, 0.46, 0.25, 0.11);
 
-        //Prozor 1
+        //Dimnjak
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-1.5, 0.55 + offset * 2 + 1, 1.5));
+        m = glm::scale(m, glm::vec3(1.2, 2.0, 1.2));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 0, 0);
+
+        //Sunce
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 25.0, 2.0));
+        m = glm::rotate(m, glm::radians(22.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(2.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 1, 0);
+
+        //Ograda
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-3.25-1.0, 1.0, -6.0));
+        m = glm::scale(m, glm::vec3(6.5, 1.0, 0.2));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 0.46, 0.25, 0.11);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(3.25+1.0, 1.0, -6.0));
+        m = glm::scale(m, glm::vec3(6.5, 1.0, 0.2));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 0.46, 0.25, 0.11);
+
+        //FanceOpen
+        m = glm::translate(glm::mat4(1.0), glm::vec3(1.0, 1.0, -6.0));
+        m = glm::rotate(m, glm::radians(22.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, -glm::vec3(1.0, 1.0, -6.0));
+
+        m = glm::translate(m, glm::vec3(0.0, 1.0, -6.0));
+        m = glm::scale(m, glm::vec3(2, 0.9, 0.11));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 0.36, 0.15, 0.01);
+
+        //Drvo
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-3.0, 0.5, -5.0));
+        m = glm::scale(m, glm::vec3(0.5));
+        phongShader.setMat4("uModel", m);
+        treeObj.Draw(phongShader); 
+
+        //Sto za bice
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-1.0, 0.5+0.4, -2.0));
+        m = glm::scale(m, glm::vec3(1.6, 0.8, 1.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 0, 0);
+
+        //Bice
+        glDisable(GL_CULL_FACE);
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-1.0, 0.5 + 0.8, -2.1));
+        m = glm::rotate(m, glm::radians(130.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.03));
+        phongShader.setMat4("uModel", m);
+        maxwell.Draw(phongShader);
+        
+
+        //Pas
+        glm::vec3 objectPosition(8.5, 1.2, -8.5);
+        glm::vec3 targetPosition(0.0, 0.0, 0.0);
+
+        // Calculate the direction from the object position to the target position
+        glm::vec3 direction = glm::normalize(targetPosition - objectPosition);
+
+        // Calculate the right vector (assuming up is (0, 1, 0))
+        glm::vec3 right = glm::normalize(glm::cross(glm::vec3(0.0, 1.0, 0.0), direction));
+
+        // Calculate the up vector
+        glm::vec3 up = glm::cross(direction, right);
+
+        // Create a rotation matrix using the calculated vectors
+        glm::mat4 rotationMatrix(1.0);
+        rotationMatrix[0] = glm::vec4(right, 0.0);
+        rotationMatrix[1] = glm::vec4(up, 0.0);
+        rotationMatrix[2] = glm::vec4(-direction, 0.0);
+
+        m = glm::rotate(glm::mat4(1.0), glm::radians(params.dogRot), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, glm::vec3(8.5, 1.2, -8.5));
+        m = m * rotationMatrix;
+        m = glm::rotate(m, glm::radians(-90.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.017));
+        phongShader.setMat4("uModel", m);
+        dogModel.Draw(phongShader);
+        glEnable(GL_CULL_FACE);
+
+
+        
         phongShader.setBool("uTransp", true);
+        phongShader.setFloat("uAlpha", 0.5);
+
+        //Dim
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-1.5, 0.55 + offset * 2 + 3.5, 1.5));
+        m = glm::rotate(m, glm::radians(22.f), glm::vec3(1.0, 0.0, 1.0));
+        m = glm::scale(m, glm::vec3(0.5, 1.0, 0.5));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 1, 1);
+
+        //Dim
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-1.5, 0.55 + offset * 2 + 5.5, 1.5));
+        m = glm::rotate(m, glm::radians(-22.f), glm::vec3(1.0, 0.0, 1.0));
+        m = glm::scale(m, glm::vec3(0.5, 1.4, 0.5));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 1, 1);
+
         phongShader.setFloat("uAlpha", 0.3);
 
+        //Prozor 1
         m = glm::translate(glm::mat4(1.0), glm::vec3(-1.0, 2.5, -3.0));
         m = glm::scale(m, glm::vec3(2.0, 2.0, 0.2));
         phongShader.setMat4("uModel", m);
