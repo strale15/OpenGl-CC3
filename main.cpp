@@ -32,27 +32,15 @@ struct Params {
     float dt = 0;
     bool isFps = false;
 
-    bool isCurosIn = true;
-    double xPosC = 0.0;
-    double yPosC = 0.0;
-
-    glm::vec3 cameraFront = glm::vec3(0.0, 0.0, 1.0);
-    glm::vec3 cameraFront2 = glm::vec3(0.0, 0.0, 1.0);
     glm::vec3 cameraUp = glm::vec3(0.0, 1.0, 0.0);
 
     glm::vec3 position = glm::vec3(0.0, 0.0, -1.0);
     glm::vec3 objPos = glm::vec3(0.0, 0.0, 0.0);
 
-    double camYaw = 90;
-    double camPitch = 0;
-
     bool wDown = false;
     bool sDown = false;
     bool aDown = false;
     bool dDown = false;
-
-    bool spaceDown = false;
-    bool shiftDown = false;
 
     //Valley
     bool modelRotating = false;
@@ -128,50 +116,19 @@ static void DrawHud(Shader& hudShader, unsigned hudTex) {
 static void HandleInput(Params* params) {
     if (params->wDown)
     {
-        if (params->isFps)
-            params->position += 7.2f * params->cameraFront * params->dt;
-        else
-            params->objPos.x += 25.f * params->dt;
+        params->objPos.x += 25.f * params->dt;
     }
     if (params->sDown)
     {
-        if (params->isFps)
-            params->position -= 7.2f * params->cameraFront * params->dt;
-        else
-            params->objPos.x -=  25.f * params->dt;
+        params->objPos.x -=  25.f * params->dt;
     }
     if (params->aDown)
     {
-
-        glm::vec3 strafe = glm::cross(params->cameraFront, params->cameraUp);
-        glm::vec3 strafe2 = glm::cross(params->cameraFront2, params->cameraUp);
-        if (params->isFps)
-            params->position -= 7.2f * strafe * params->dt;
-        else
-            params->objPos.z += 14.f * params->dt;
+        params->objPos.z += 14.f * params->dt;
     }
     if (params->dDown)
     {
-        glm::vec3 strafe = glm::cross(params->cameraFront, params->cameraUp);
-        glm::vec3 strafe2 = glm::cross(params->cameraFront2, params->cameraUp);
-        if (params->isFps)
-            params->position += 7.2f * strafe * params->dt;
-        else
-            params->objPos.z -= 25.f * params->dt;
-    }
-    if (params->spaceDown)
-    {
-        if (params->isFps)
-            params->position.y += 4.2 * params->dt;
-        else
-            params->objPos.y += 0.5f * params->dt;
-    }
-    if (params->shiftDown)
-    {
-        if (params->isFps)
-            params->position.y -= 4.1 * params->dt;
-        else
-            params->objPos.y -= 0.5f * params->dt;
+        params->objPos.z -= 25.f * params->dt;
     }
 
     //Valley
@@ -220,59 +177,8 @@ static void HandleInput(Params* params) {
     }
 }
 
-static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
-    Params* params = (Params*)glfwGetWindowUserPointer(window);
-
-    if (params->isCurosIn) {
-        params->xPosC = xPos;
-        params->yPosC = yPos;
-    }
-
-    if (firstMouse) {
-        lastX = xPos;
-        lastY = yPos;
-        firstMouse = false;
-    }
-
-    double xoffset = xPos - lastX;
-    double yoffset = lastY - yPos;
-    lastX = xPos;
-    lastY = yPos;
-
-    float sensitivity = 0.3f;
-
-    xoffset *= sensitivity;
-    yoffset *= sensitivity;
-
-    params->camYaw += xoffset;
-    params->camPitch += yoffset;
-
-    if (params->camPitch > 89.0) {
-        params->camPitch = 89.0;
-    }
-    else if (params->camPitch < -89.0) {
-        params->camPitch = -89.0;
-    }
-
-    glm::vec3 front;
-    front.x = cos(glm::radians(params->camYaw)) * cos(glm::radians(params->camPitch));
-    front.y = sin(glm::radians(params->camPitch));
-    front.z = sin(glm::radians(params->camYaw)) * cos(glm::radians(params->camPitch));
-
-    params->cameraFront = glm::normalize(front);
-}
-
 static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode) {
     Params* params = (Params*)glfwGetWindowUserPointer(window);
-    if (key == GLFW_KEY_E && action == GLFW_PRESS)
-    {
-        std::cout << "glm::vec3(" << params->objPos.x << "," << params->objPos.y << "," << params->objPos.z << ")" << std::endl;
-    }
-
-    if (key == GLFW_KEY_R && action == GLFW_PRESS)
-    {
-        params->isFps = !params->isFps;
-    }
 
     if (key == GLFW_KEY_W && action == GLFW_PRESS)
     {
@@ -308,24 +214,6 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
     if (key == GLFW_KEY_D && action == GLFW_RELEASE)
     {
         params->dDown = false;
-    }
-
-    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
-    {
-        params->spaceDown = true;
-    }
-    if (key == GLFW_KEY_SPACE && action == GLFW_RELEASE)
-    {
-        params->spaceDown = false;
-    }
-
-    if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS)
-    {
-        params->shiftDown = true;
-    }
-    if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_RELEASE)
-    {
-        params->shiftDown = false;
     }
 
     //Valley 
@@ -429,7 +317,6 @@ int main()
     glfwMakeContextCurrent(window);
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, KeyCallback);
-    glfwSetCursorPosCallback(window, CursosPosCallback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     if (glewInit() !=GLEW_OK)
@@ -581,13 +468,10 @@ int main()
         glm::vec3 rotatedObjPos = glm::vec3(rotatedPos);
 
         view = glm::lookAt(rotatedObjPos, glm::vec3(0), params.cameraUp);
-        //view = glm::lookAt(params.position, params.position + params.cameraFront, params.cameraUp);
-        //std::cout << "Original Point: x=" << rotatedObjPos.x << ", y=" << rotatedObjPos.y << ", z=" << rotatedObjPos.z << endl;
 
         currentShader.setMat4("uView", view);
         currentShader.setVec3("uViewPos", rotatedObjPos);
 
-        //projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
         float orthoScale = 1.55;
         projectionP = glm::ortho(-16.f* orthoScale, 16.f * orthoScale, -9.f * orthoScale, 9.f * orthoScale, -200.f, 200.f);
         currentShader.setMat4("uProjection", projectionP);
@@ -860,34 +744,26 @@ int main()
         currentShader.setFloat("uAlpha", 0.5f);
 
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 9, -1.0+params.cloudsZoffset));
-        //m = glm::rotate(m, glm::radians(30.f), glm::vec3(1.0, 0.0, 1.0));
         m = glm::scale(m, glm::vec3(1.0, 0.8, 2.0));
         currentShader.setMat4("uModel", m);
         simpleCube->Render(&currentShader, 1, 1, 1);
 
         m = glm::translate(glm::mat4(1.0), glm::vec3(3.0, 10, 4.0 + params.cloudsZoffset));
-        //m = glm::rotate(m, glm::radians(30.f), glm::vec3(1.0, 0.0, 1.0));
         m = glm::scale(m, glm::vec3(0.8, 0.8, 1.7));
         currentShader.setMat4("uModel", m);
         simpleCube->Render(&currentShader, 1, 1, 1);
 
         m = glm::translate(glm::mat4(1.0), glm::vec3(-4.0, 10.5, 2.0 + params.cloudsZoffset));
-        //m = glm::rotate(m, glm::radians(30.f), glm::vec3(1.0, 0.0, 1.0));
         m = glm::scale(m, glm::vec3(1.0, 0.6, 3.0));
         currentShader.setMat4("uModel", m);
         simpleCube->Render(&currentShader, 1, 1, 1);
 
         m = glm::translate(glm::mat4(1.0), glm::vec3(2.0, 11, -3.0 + params.cloudsZoffset));
-        //m = glm::rotate(m, glm::radians(30.f), glm::vec3(1.0, 0.0, 1.0));
         m = glm::scale(m, glm::vec3(2.0, 0.7, 1.0));
         currentShader.setMat4("uModel", m);
         simpleCube->Render(&currentShader, 1, 1, 1);
 
-
         currentShader.setBool("uTransp", false);
-        
-
-
         //------------------------------------------------------------------------------------------------------------
 
         //HUD

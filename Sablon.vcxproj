@@ -146,8 +146,6 @@
     <ClCompile Include="shader.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="basic.frag" />
-    <None Include="basic.vert" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
