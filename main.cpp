@@ -30,20 +30,11 @@ double lastY;
 
 struct Params {
     float dt = 0;
-    bool isFps = true;
-
-    bool isCurosIn = true;
-    double xPosC = 0.0;
-    double yPosC = 0.0;
-
-    glm::vec3 cameraFront = glm::vec3(0.0, 0.0, 1.0);
     glm::vec3 cameraUp = glm::vec3(0.0, 1.0, 0.0);
 
     glm::vec3 position = glm::vec3(0.0, 4.0, 0.0);
-    glm::vec3 objPos = glm::vec3(0.0, 0.0, 0.0);
 
     double camYaw = 0;
-    double camPitch = 0;
 
     bool wDown = false;
     bool sDown = false;
@@ -131,52 +122,19 @@ static void DrawHud(Shader& hudShader, unsigned hudTex) {
 static void HandleInput(Params* params) {
     if (params->wDown)
     {
-        if (params->isFps) {
-            //params->position += 7.2f * params->cameraFront * params->dt;
-            params->radius -= 5 * params->dt;
-        }     
-        else
-            params->objPos.z += 0.5f * params->dt;
+        params->radius -= 5 * params->dt;
     }
     if (params->sDown)
     {
-        if (params->isFps) {
-            params->radius += 5 * params->dt;
-            //params->position -= 7.2f * params->cameraFront * params->dt;
-        }
-        else
-            params->objPos.z -= 0.5f * params->dt;
-    }
-    if (params->aDown)
-    {
-
-        glm::vec3 strafe = glm::cross(params->cameraFront, params->cameraUp);
-        if (params->isFps)
-            params->position -= 7.2f * strafe * params->dt;
-        else
-            params->objPos.x += 0.5f * params->dt;
-    }
-    if (params->dDown)
-    {
-        glm::vec3 strafe = glm::cross(params->cameraFront, params->cameraUp);
-        if (params->isFps)
-            params->position += 7.2f * strafe * params->dt;
-        else
-            params->objPos.x -= 0.5f * params->dt;
+        params->radius += 5 * params->dt;
     }
     if (params->spaceDown)
     {
-        if (params->isFps)
-            params->position.y += 6.0 * params->dt;
-        else
-            params->objPos.y += 0.5f * params->dt;
+        params->position.y += 6.0 * params->dt;
     }
     if (params->shiftDown)
     {
-        if (params->isFps)
-            params->position.y -= 6.0 * params->dt;
-        else
-            params->objPos.y -= 0.5f * params->dt;
+        params->position.y -= 6.0 * params->dt;
     }
 
     //House
@@ -228,57 +186,23 @@ static void HandleInput(Params* params) {
 
 static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
     Params* params = (Params*)glfwGetWindowUserPointer(window);
-
-    if (params->isCurosIn) {
-        params->xPosC = xPos;
-        params->yPosC = yPos;
-    }
-
     if (firstMouse) {
         lastX = xPos;
-        lastY = yPos;
         firstMouse = false;
     }
 
     double xoffset = xPos - lastX;
-    double yoffset = lastY - yPos;
     lastX = xPos;
-    lastY = yPos;
 
     float sensitivity = 0.3f;
 
     xoffset *= sensitivity;
-    yoffset *= sensitivity;
 
     params->camYaw += xoffset;
-    params->camPitch += yoffset;
-
-    if (params->camPitch > 89.0) {
-        params->camPitch = 89.0;
-    }
-    else if (params->camPitch < -89.0) {
-        params->camPitch = -89.0;
-    }
-
-    glm::vec3 front;
-    front.x = cos(glm::radians(params->camYaw)) * cos(glm::radians(params->camPitch));
-    front.y = sin(glm::radians(params->camPitch));
-    front.z = sin(glm::radians(params->camYaw)) * cos(glm::radians(params->camPitch));
-
-    params->cameraFront = glm::normalize(front);
 }
 
 static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode) {
     Params* params = (Params*)glfwGetWindowUserPointer(window);
-    if (key == GLFW_KEY_E && action == GLFW_PRESS)
-    {
-        std::cout << "glm::vec3(" << params->objPos.x << "," << params->objPos.y << "," << params->objPos.z << ")" << std::endl;
-    }
-
-    if (key == GLFW_KEY_R && action == GLFW_PRESS)
-    {
-        params->isFps = !params->isFps;
-    }
 
     if (key == GLFW_KEY_W && action == GLFW_PRESS)
     {
@@ -296,24 +220,6 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
     if (key == GLFW_KEY_S && action == GLFW_RELEASE)
     {
         params->sDown = false;
-    }
-
-    if (key == GLFW_KEY_A && action == GLFW_PRESS)
-    {
-        params->aDown = true;
-    }
-    if (key == GLFW_KEY_A && action == GLFW_RELEASE)
-    {
-        params->aDown = false;
-    }
-
-    if (key == GLFW_KEY_D && action == GLFW_PRESS)
-    {
-        params->dDown = true;
-    }
-    if (key == GLFW_KEY_D && action == GLFW_RELEASE)
-    {
-        params->dDown = false;
     }
 
     if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
@@ -502,7 +408,6 @@ int main()
     };
     GameObject* simpleCube2 = new GameObject(cubeVertices2);
 
-    Model lija("res/low-poly-fox.obj");
     Model treeObj("res/Tree2.obj");
     Model maxwell("res/maxwell.obj");
     Model dogModel("res/Mesh_Beagle.obj");
@@ -547,9 +452,6 @@ int main()
     float FrameStartTime = 0;
     float FrameEndTime = 0;
 
-    
-    
-
     glClearColor(0.06, 0.74, 0.99, 1.0);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
@@ -571,17 +473,14 @@ int main()
         //Camera
         glm::vec3 camPos = glm::vec3(params.radius * glm::sin(glm::radians(params.camYaw)), params.position.y, params.radius * glm::cos(glm::radians(params.camYaw)));
         view = glm::lookAt(camPos, glm::vec3(0, params.position.y,0), params.cameraUp);
-        //view = glm::lookAt(params.position,params.position + params.cameraFront,params.cameraUp);
 
         phongShader.setMat4("uView", view);
-        //phongShader.setVec3("uViewPos", params.position);
         phongShader.setVec3("uViewPos", camPos);
 
         //SCENE
         //------------------------------------------------------------------------------------------------------------
         //Ground
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 0.0));
-        //m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(35.0, 1.0, 35.0));
         phongShader.setMat4("uModel", m);
         simpleCube2->Render(&phongShader, grassDif, grassSpec);
@@ -682,7 +581,6 @@ int main()
         m = glm::scale(m, glm::vec3(6.2, 0.1, 6.2));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, 1, 1, 0);
-
 
         //UNUTRASNJI OBJEKTI
         phongInnerShader.use();
@@ -943,13 +841,8 @@ int main()
         glm::vec3 objectPosition(8.5, 1.2, -8.5);
         glm::vec3 targetPosition(0.0, 0.0, 0.0);
 
-        // Calculate the direction from the object position to the target position
         glm::vec3 direction = glm::normalize(targetPosition - objectPosition);
-
-        // Calculate the right vector (assuming up is (0, 1, 0))
         glm::vec3 right = glm::normalize(glm::cross(glm::vec3(0.0, 1.0, 0.0), direction));
-
-        // Calculate the up vector
         glm::vec3 up = glm::cross(direction, right);
 
         // Create a rotation matrix using the calculated vectors
@@ -1010,10 +903,6 @@ int main()
         simpleCube->Render(&phongShader, 0.32, 0.02, 0.05);
 
         phongShader.setBool("uTransp", false);
-
-
-
-
 
         //------------------------------------------------------------------------------------------------------------
 
