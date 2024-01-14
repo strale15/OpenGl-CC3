@@ -618,19 +618,19 @@ int main()
         m = glm::translate(glm::mat4(1.0), glm::vec3(4.0, treeHegiht/2+0.5, 1.0));
         m = glm::scale(m, glm::vec3(treeThick, treeHegiht, treeThick));
         currentShader.setMat4("uModel", m);
-        simpleCube->Render(&currentShader, 1, 1, 0);
+        simpleCube->Render(&currentShader, 0.26, 0.19, 0.01);
 
         //Trunk2
         m = glm::translate(glm::mat4(1.0), glm::vec3(3.0, treeHegiht / 2 + 0.5, -2.0));
         m = glm::scale(m, glm::vec3(treeThick, treeHegiht, treeThick));
         currentShader.setMat4("uModel", m);
-        simpleCube->Render(&currentShader, 1, 1, 0);
+        simpleCube->Render(&currentShader, 0.26, 0.19, 0.01);
 
         //Trunk3
         m = glm::translate(glm::mat4(1.0), glm::vec3(1.0, treeHegiht / 2 + 0.5, 3.0));
         m = glm::scale(m, glm::vec3(treeThick, treeHegiht, treeThick));
         currentShader.setMat4("uModel", m);
-        simpleCube->Render(&currentShader, 1, 1, 0);
+        simpleCube->Render(&currentShader, 0.26, 0.19, 0.01);
 
         //AppleTrunk
         float appleTreeThick = 0.5;
