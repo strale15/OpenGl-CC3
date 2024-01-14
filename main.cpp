@@ -34,11 +34,6 @@ float imgScaleFactor;
 
 struct Params {
     float dt = 0;
-    bool isFps = true;
-
-    bool isCurosIn = true;
-    double xPosC = 0.0;
-    double yPosC = 0.0;
 
     glm::vec3 cameraFront = glm::vec3(-1.0, 0.0, 0.0);
     glm::vec3 cameraUp = glm::vec3(0.0, 1.0, 0.0);
@@ -54,10 +49,11 @@ struct Params {
     bool aDown = false;
     bool dDown = false;
 
-    bool spaceDown = false;
-    bool shiftDown = false;
+    //Gustav
+    float lightTime = 0.0f;
 
-    //Gusav
+    float statueRotation = 0;
+
     bool closeToTerminal = false;
     bool lightOn = true;
     bool flashLightOn = true;
@@ -84,7 +80,7 @@ struct Params {
 
 static void DrawHud(Shader& hudShader, unsigned hudTex) {
     //hud
-        // Bind your HUD shader program
+    // Bind your HUD shader program
     hudShader.use();
 
     // Define the vertices of a rectangle
@@ -138,55 +134,28 @@ static void DrawHud(Shader& hudShader, unsigned hudTex) {
 static void HandleInput(Params* params) {
     if (params->wDown)
     {
-        if (params->isFps) {
-            glm::vec3 newFront = params->cameraFront;
-            newFront.y = 0;
-            params->position += 7.2f * newFront * params->dt;
-        }
-        else
-            params->objPos.z += 0.5f * params->dt;
+        glm::vec3 newFront = params->cameraFront;
+        newFront.y = 0;
+        params->position += 7.2f * newFront * params->dt;
+
     }
     if (params->sDown)
     {
-        if (params->isFps) {
-            glm::vec3 newFront = params->cameraFront;
-            newFront.y = 0;
-            params->position -= 7.2f * newFront * params->dt;
-        }
-        else
-            params->objPos.z -= 0.5f * params->dt;
+        glm::vec3 newFront = params->cameraFront;
+        newFront.y = 0;
+        params->position -= 7.2f * newFront * params->dt;
+
     }
     if (params->aDown)
     {
-
         glm::vec3 strafe = glm::cross(params->cameraFront, params->cameraUp);
-        if (params->isFps)
-            params->position -= 7.2f * strafe * params->dt;
-        else
-            params->objPos.x += 0.5f * params->dt;
+        params->position -= 7.2f * strafe * params->dt;
     }
     if (params->dDown)
     {
         glm::vec3 strafe = glm::cross(params->cameraFront, params->cameraUp);
-        if (params->isFps)
-            params->position += 7.2f * strafe * params->dt;
-        else
-            params->objPos.x -= 0.5f * params->dt;
+        params->position += 7.2f * strafe * params->dt;
     }
-    //if (params->spaceDown)
-    //{
-    //    if (params->isFps)
-    //        params->position.y += 4.2 * params->dt;
-    //    else
-    //        params->objPos.y += 0.5f * params->dt;
-    //}
-    //if (params->shiftDown)
-    //{
-    //    if (params->isFps)
-    //        params->position.y -= 4.1 * params->dt;
-    //    else
-    //        params->objPos.y -= 0.5f * params->dt;
-    //}
 
     if (params->isWireFrame) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -238,12 +207,6 @@ static void HandleInput(Params* params) {
 
 static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
     Params* params = (Params*)glfwGetWindowUserPointer(window);
-
-    if (params->isCurosIn) {
-        params->xPosC = xPos;
-        params->yPosC = yPos;
-    }
-
     if (firstMouse) {
         lastX = xPos;
         lastY = yPos;
@@ -280,15 +243,6 @@ static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
 
 static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode) {
     Params* params = (Params*)glfwGetWindowUserPointer(window);
-    if (key == GLFW_KEY_E && action == GLFW_PRESS)
-    {
-        std::cout << "glm::vec3(" << params->objPos.x << "," << params->objPos.y << "," << params->objPos.z << ")" << std::endl;
-    }
-
-    if (key == GLFW_KEY_R && action == GLFW_PRESS)
-    {
-        params->isFps = !params->isFps;
-    }
 
     if (key == GLFW_KEY_W && action == GLFW_PRESS)
     {
@@ -324,24 +278,6 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
     if (key == GLFW_KEY_D && action == GLFW_RELEASE)
     {
         params->dDown = false;
-    }
-
-    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
-    {
-        params->spaceDown = true;
-    }
-    if (key == GLFW_KEY_SPACE && action == GLFW_RELEASE)
-    {
-        params->spaceDown = false;
-    }
-
-    if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS)
-    {
-        params->shiftDown = true;
-    }
-    if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_RELEASE)
-    {
-        params->shiftDown = false;
     }
 
     //Gustav
@@ -577,8 +513,6 @@ int main()
     std::vector<float> circleVert = generateCircleVertices(1, 32);
     GameObject* circle = new GameObject(circleVert, true);
 
-    Model lija("res/low-poly-fox.obj");
-    //Model statueModel("res/Virgin Mary Statue.obj");
     Model statueModel("res/model.obj");
 
     Shader phongShader("phong.vert", "phong.frag");
@@ -600,47 +534,35 @@ int main()
     phongShader.setVec3("uDirLight.Ka", glm::vec3(0));
     phongShader.setVec3("uDirLight.Kd", glm::vec3(0));
 
-    
-
     unsigned hudTex = Model::textureFromFile("res/hudTex.png");
-    unsigned kockaDif = Model::textureFromFile("res/container_diffuse.png");
-    unsigned kockaSpec = Model::textureFromFile("res/container_specular.png");
-
     unsigned woodDif = Model::textureFromFile("res/WoodFloor043_2K-PNG_Color.png");
     unsigned woodSpec = Model::textureFromFile("res/WoodFloor043_2K-PNG_Roughness.png");
-
     unsigned goldDif = Model::textureFromFile("res/Metal042A_2K-PNG_Color.png");
     unsigned goldSpec = Model::textureFromFile("res/Metal042A_2K-PNG_Metalness.png");
-
     unsigned tilesDif = Model::textureFromFile("res/Tiles074_2K-PNG_Color.png");
     unsigned tilesSpec = Model::textureFromFile("res/tilesSpec.png");
-
     unsigned slika1Tex = Model::textureFromFile("res/slika1.png");
     unsigned slika2Tex = Model::textureFromFile("res/slika2.png");
     unsigned slika3Tex = Model::textureFromFile("res/slika3.png");
 
-    slika1Aspc = 776 / 384.f;
 
     phongShader.setInt("uMaterial.Kd", 0);
     phongShader.setInt("uMaterial.Ks", 1);
     phongShader.setFloat("uMaterial.Shininess", 0.5 * 128);
 
-    glm::mat4 model2 = glm::mat4(1.0f);
+    slika1Aspc = 776 / 384.f;
+    imgScaleFactor = 2.f;
+
     glm::mat4 m(1.0f);
-    float currentRot = 0;
+    glm::vec3 statuePos = glm::vec3(0, 1.0+1, 0);
+
     float FrameStartTime = 0;
     float FrameEndTime = 0;
-    float rot = 0;
-    float scale = 1.0;
-    imgScaleFactor = 2.f;
-    glm::vec3 objPos = glm::vec3(0, 1.0+1, 0);
-    float time = 0.0f;
-    float angle = 0;
+    float statueAngle = 0;
 
     Params params;
     glfwSetWindowUserPointer(window, &params);
-    //glfwSetWindowPos(window, 0, 40);
-    glfwSetWindowPos(window, 300, 300);
+    glfwSetWindowPos(window, 0, 40);
 
     glClearColor(0.2, 0.2, 0.6, 1.0);
     glEnable(GL_DEPTH_TEST);
@@ -694,15 +616,15 @@ int main()
 
         //SCENE
         //------------------------------------------------------------------------------------------------------------
-        m = glm::translate(glm::mat4(1.0), objPos);
-        m = glm::rotate(m, angle, glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(glm::mat4(1.0), statuePos);
+        m = glm::rotate(m, statueAngle, glm::vec3(0.0, 1.0, 0.0));
         m = glm::rotate(m, glm::radians(-90.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::rotate(m, glm::radians(-90.f), glm::vec3(1.0, 0.0, 0.0));
         m = glm::scale(m, glm::vec3(0.9));
         phongShader.setMat4("uModel", m);
         statueModel.Draw(phongShader);
 
-        glm::vec3 direction = objPos - params.position;
+        glm::vec3 direction = statuePos - params.position;
         direction.y = 0;
         glm::vec3 camDir2D = params.cameraFront;
         camDir2D.y = 0;
@@ -711,13 +633,13 @@ int main()
         float angleDegrees = glm::degrees(angleRadians);
 
         if (angleDegrees > 82) {
-            rot += 50 * params.dt;
+            params.statueRotation += 50 * params.dt;
 
             //Sprdnja
-            if (glm::distance(objPos, params.position) >= 1.5) {
+            if (glm::distance(statuePos, params.position) >= 1.5) {
                 glm::vec3 camPos = params.position;
-                camPos.y = objPos.y;
-                glm::vec3 direction = camPos - objPos;
+                camPos.y = statuePos.y;
+                glm::vec3 direction = camPos - statuePos;
                 direction = glm::normalize(direction);
                 //objPos += direction * params.dt * 4.f;
 
@@ -730,14 +652,13 @@ int main()
                 angleBetween = std::acos(dotProduct);
 
                 if(angleBetween > 0.1)
-                    angle += angleBetween;
-                if (angle > M_PI * 2) {
-                    angle -= M_PI * 2;
+                    statueAngle += angleBetween;
+                if (statueAngle > M_PI * 2) {
+                    statueAngle -= M_PI * 2;
                 }
             }
             
         }
-
 
         //Room1
         //Pod1
@@ -773,14 +694,12 @@ int main()
 
         //Small wall1
         m = glm::translate(glm::mat4(1.0), glm::vec3(-10.5, 3.5, 6.0));
-        //m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(1.0, 7.0, 8));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, woodDif, woodSpec);
 
         //Small wall2
         m = glm::translate(glm::mat4(1.0), glm::vec3(-10.5, 3.5, -6.0));
-        //m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(1.0, 7.0, 8));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, woodDif, woodSpec);
@@ -818,14 +737,12 @@ int main()
 
         //Small wall1
         m = glm::translate(glm::mat4(1.0), glm::vec3(-10.0-9.5, 3.5, 6.0));
-        //m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(1.0, 7.0, 8));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, goldDif, goldSpec);
 
         //Small wall2
         m = glm::translate(glm::mat4(1.0), glm::vec3(-10.0-9.5, 3.5, -6.0));
-        //m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(1.0, 7.0, 8));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, goldDif, goldSpec);
@@ -858,7 +775,6 @@ int main()
         //Terminal
         glm::vec3 terminalPos = glm::vec3(-10.0 - 9.5 - 1, 1.0, 6.0);
         m = glm::translate(glm::mat4(1.0), terminalPos);
-        //m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(1.0, 2.0, 1.0));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, 1, 1, 1);
@@ -890,27 +806,27 @@ int main()
         phongShader.setFloat("uSpotlights[0].Kl", 0.072f);
         phongShader.setFloat("uSpotlights[0].Kq", 0.012f);
 
-        time += params.dt;  // Increment this over time
+        params.lightTime += params.dt;
         float change = 2;
         glm::vec3 rgbColor = glm::vec3(0);
-        if (time < change) {
+        if (params.lightTime < change) {
             rgbColor = glm::vec3(1,0.3,0.3);
         }
-        else if(time < change * 2)
+        else if(params.lightTime < change * 2)
         {
             rgbColor = glm::vec3(0.3, 1, 0.3);
         }
-        else if (time < change * 3)
+        else if (params.lightTime < change * 3)
         {
             rgbColor = glm::vec3(0.3, 0.3, 1);
         }
-        else if (time < change * 4)
+        else if (params.lightTime < change * 4)
         {
             rgbColor = glm::vec3(1, 1, 1);
         }
         else
         {
-            time = 0;
+            params.lightTime = 0;
         }
 
         phongShader.setVec3("uSpotlights[1].Position", glm::vec3(0, 6.8, 0));
@@ -974,7 +890,6 @@ int main()
             rectangle2->Render(&phongShader, slika2Tex);
         else
             rectangle->Render(&phongShader, slika2Tex);
-
 
         //Slika3
         m = glm::translate(glm::mat4(1.0), glm::vec3(-30, 3.5, 9.99-0.5-0.01));
