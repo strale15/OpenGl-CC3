@@ -2,6 +2,7 @@
 //Preuzeto sa learnOpenGL
 
 #define _CRT_SECURE_NO_WARNINGS
+#define _USE_MATH_DEFINES
 
 #include <iostream>
 #include <fstream>
@@ -20,6 +21,7 @@
 #include "GameObject.cpp"
 
 #include <Windows.h>
+#include <cmath>
 
 const unsigned int wWidth = 1920;
 const unsigned int wHeight = 1080;
@@ -27,6 +29,8 @@ const unsigned int wHeight = 1080;
 bool firstMouse = true;
 double lastX;
 double lastY;
+float slika1Aspc;
+float imgScaleFactor;
 
 struct Params {
     float dt = 0;
@@ -53,6 +57,7 @@ struct Params {
     bool spaceDown = false;
     bool shiftDown = false;
 
+    //Gusav
     bool closeToTerminal = false;
     bool lightOn = true;
     bool flashLightOn = true;
@@ -62,6 +67,19 @@ struct Params {
     float zoom = 100.f;
 
     bool isWireFrame = false;
+
+    bool circleUp = false;
+    bool circleDown = false;
+    bool circleLeft = false;
+    bool circleRight = false;
+
+    bool drawCircles = false;
+    float upOffset = 0;
+    float upOffset2 = 0;
+    float rightOffset = 0;
+    glm::vec3 pulseColor = glm::vec3(0.0, 0.9, 0.09);
+    bool colorReached = true;
+
 };
 
 static void DrawHud(Shader& hudShader, unsigned hudTex) {
@@ -177,6 +195,45 @@ static void HandleInput(Params* params) {
     {
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
+
+    if (params->circleUp) {
+        params->upOffset += params->dt;
+        params->upOffset2 += slika1Aspc * params->dt;
+        float max = imgScaleFactor / 2 - 0.2;
+        float max2 = imgScaleFactor * slika1Aspc / 2 - 0.2;
+        params->upOffset = glm::clamp(params->upOffset, -max, max);
+        params->upOffset2 = glm::clamp(params->upOffset2, -max2, max2);
+    }
+    if (params->circleDown) {
+        params->upOffset -= params->dt;
+        params->upOffset2 -= slika1Aspc * params->dt;
+        float max = imgScaleFactor / 2 - 0.2;
+        float max2 = imgScaleFactor * slika1Aspc / 2 - 0.2;
+        params->upOffset = glm::clamp(params->upOffset, -max, max);
+        params->upOffset2 = glm::clamp(params->upOffset2, -max2, max2);
+    }
+    if (params->circleRight) {
+        params->rightOffset += params->dt;
+        float max = imgScaleFactor / 2 - 0.2;
+        params->rightOffset = glm::clamp(params->rightOffset, -max, max);
+    }
+    if (params->circleLeft) {
+        params->rightOffset -= params->dt;
+        float max = imgScaleFactor / 2 - 0.2;
+        params->rightOffset = glm::clamp(params->rightOffset, -max, max);
+    }
+
+    if (params->pulseColor.x >= 1.0 || params->pulseColor.x <= 0.0) {
+        params->colorReached = !params->colorReached;
+    }
+
+    if (params->colorReached) {
+        params->pulseColor.x += 0.7 * params->dt;
+    }
+    else
+    {
+        params->pulseColor.x -= 0.7 * params->dt;
+    }
 }
 
 static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
@@ -288,6 +345,39 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
     }
 
     //Gustav
+    if (key == GLFW_KEY_UP) {
+        if (action == GLFW_PRESS) {
+            params->circleUp = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->circleUp = false;
+        }
+    }
+    if (key == GLFW_KEY_DOWN) {
+        if (action == GLFW_PRESS) {
+            params->circleDown = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->circleDown = false;
+        }
+    }
+    if (key == GLFW_KEY_LEFT) {
+        if (action == GLFW_PRESS) {
+            params->circleLeft = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->circleLeft = false;
+        }
+    }
+    if (key == GLFW_KEY_RIGHT) {
+        if (action == GLFW_PRESS) {
+            params->circleRight = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->circleRight = false;
+        }
+    }
+
     if (key == GLFW_KEY_F) {
         if (action == GLFW_PRESS) {
             params->flashLightOn = !params->flashLightOn;
@@ -313,6 +403,19 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
             params->imgState = 3;
         }
     }
+    if (key == GLFW_KEY_4) {
+        if (action == GLFW_PRESS) {
+            params->drawCircles = true;
+        }
+    }
+    if (key == GLFW_KEY_5) {
+        if (action == GLFW_PRESS) {
+            params->drawCircles = false;
+            params->rightOffset = 0;
+            params->upOffset = 0;
+            params->upOffset2 = 0;
+        }
+    }
 
     if (key == GLFW_KEY_1 && action == GLFW_PRESS && mode == GLFW_MOD_ALT) {
         params->isWireFrame = true;
@@ -327,6 +430,42 @@ void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
     params->zoom -= static_cast<float>(yoffset * 7000.0 * params->dt);
     params->zoom = glm::clamp(params->zoom, 20.0f, 100.0f);
 
+}
+
+std::vector<float> generateCircleVertices(float radius, int numSegments) {
+    std::vector<float> vertices;
+
+    for (int i = 0; i < numSegments; ++i) {
+        float theta1 = 2.0f * M_PI * i / numSegments;
+        float theta2 = 2.0f * M_PI * (i + 1) / numSegments;
+
+        // Calculate the vertices for the current triangle
+        float x1 = radius * std::cos(theta1);
+        float y1 = radius * std::sin(theta1);
+        float x2 = radius * std::cos(theta2);
+        float y2 = radius * std::sin(theta2);
+
+        // Add the vertices to the vector
+        vertices.push_back(0.0f);  // Center vertex
+        vertices.push_back(0.0f);
+        vertices.push_back(0.0f);
+        vertices.push_back(0.5f);  // Center vertex UV
+        vertices.push_back(0.5f);
+
+        vertices.push_back(x1);
+        vertices.push_back(y1);
+        vertices.push_back(0.0f);
+        vertices.push_back(0.5f * (x1 / radius) + 0.5f);
+        vertices.push_back(0.5f * (y1 / radius) + 0.5f);
+
+        vertices.push_back(x2);
+        vertices.push_back(y2);
+        vertices.push_back(0.0f);
+        vertices.push_back(0.5f * (x2 / radius) + 0.5f);
+        vertices.push_back(0.5f * (y2 / radius) + 0.5f);
+    }
+
+    return vertices;
 }
 
 int main()
@@ -435,6 +574,9 @@ int main()
     };
     GameObject* rectangle2 = new GameObject(vertices2, true);
 
+    std::vector<float> circleVert = generateCircleVertices(1, 32);
+    GameObject* circle = new GameObject(circleVert, true);
+
     Model lija("res/low-poly-fox.obj");
     Model statueModel("res/Virgin Mary Statue.obj");
 
@@ -476,7 +618,7 @@ int main()
     unsigned slika2Tex = Model::textureFromFile("res/slika2.png");
     unsigned slika3Tex = Model::textureFromFile("res/slika3.png");
 
-    float slika1Aspc = 776 / 384.f;
+    slika1Aspc = 776 / 384.f;
 
     phongShader.setInt("uMaterial.Kd", 0);
     phongShader.setInt("uMaterial.Ks", 1);
@@ -489,6 +631,7 @@ int main()
     float FrameEndTime = 0;
     float rot = 0;
     float scale = 1.0;
+    imgScaleFactor = 2.f;
     glm::vec3 objPos = glm::vec3(0, 0.6, 0);
     float time = 0.0f;
 
@@ -783,8 +926,7 @@ int main()
         twoD.setMat4("uProjection", projectionP);
 
         //SLIKE
-        float ramThick = 0.16;
-        float scaleFactor = 2.f;
+        float ramThick = 0.16; 
         float imgRot = 0;
         if (params.imgState == 2)
             imgRot = 180.f;
@@ -793,7 +935,7 @@ int main()
         m = glm::translate(glm::mat4(1.0), glm::vec3(-30-9.99+0.5+0.01, 3.5, 0));
         m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::rotate(m, glm::radians(imgRot), glm::vec3(0.0, 0.0, 1.0));
-        m = glm::scale(m, glm::vec3(1.0, 1.0 * slika1Aspc, 1.0) * scaleFactor);
+        m = glm::scale(m, glm::vec3(1.0, 1.0 * slika1Aspc, 1.0) * imgScaleFactor);
         twoD.setMat4("uModel", m);
         if(params.imgState == 1)
             rectangle2->Render(&phongShader, slika1Tex);
@@ -804,7 +946,7 @@ int main()
         m = glm::translate(glm::mat4(1.0), glm::vec3(-30, 3.5, -9.99+0.5+0.01));
         m = glm::rotate(m, glm::radians(0.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::rotate(m, glm::radians(imgRot), glm::vec3(0.0, 0.0, 1.0));
-        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0) * scaleFactor);
+        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0) * imgScaleFactor);
         twoD.setMat4("uModel", m);
         if (params.imgState == 1)
             rectangle2->Render(&phongShader, slika2Tex);
@@ -816,12 +958,35 @@ int main()
         m = glm::translate(glm::mat4(1.0), glm::vec3(-30, 3.5, 9.99-0.5-0.01));
         m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::rotate(m, glm::radians(imgRot), glm::vec3(0.0, 0.0, 1.0));
-        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0) * scaleFactor);
+        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0) * imgScaleFactor);
         twoD.setMat4("uModel", m);
         if (params.imgState == 1)
             rectangle2->Render(&phongShader, slika3Tex);
         else
             rectangle->Render(&phongShader, slika3Tex);
+
+        if (params.drawCircles) {
+            //Krug1
+            m = glm::translate(glm::mat4(1.0), glm::vec3(-30 - 9.99 + 0.5+0.02, 3.5+params.upOffset2, 0-params.rightOffset));
+            m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
+            m = glm::scale(m, glm::vec3(0.2));
+            twoD.setMat4("uModel", m);
+            circle->Render(&phongShader, params.pulseColor.x, params.pulseColor.y, params.pulseColor.z);
+
+            //Krug2
+            m = glm::translate(glm::mat4(1.0), glm::vec3(-30 + params.rightOffset, 3.5 + params.upOffset, -9.99 + 0.5 + 0.02));
+            m = glm::rotate(m, glm::radians(0.f), glm::vec3(0.0, 1.0, 0.0));
+            m = glm::scale(m, glm::vec3(0.2));
+            twoD.setMat4("uModel", m);
+            circle->Render(&phongShader, params.pulseColor.x, params.pulseColor.y, params.pulseColor.z);
+
+            //Krug3
+            m = glm::translate(glm::mat4(1.0), glm::vec3(-30 + params.rightOffset, 3.5 + params.upOffset, 9.99 - 0.5 - 0.02));
+            m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+            m = glm::scale(m, glm::vec3(0.2));
+            twoD.setMat4("uModel", m);
+            circle->Render(&phongShader, params.pulseColor.x, params.pulseColor.y, params.pulseColor.z);
+        }
 
         //Ramovi
         //Ram1
@@ -840,7 +1005,7 @@ int main()
         m = glm::translate(glm::mat4(1.0), glm::vec3(-30 - 9.99 + 0.5, 3.5, 0));
         m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::rotate(m, glm::radians(imgRot), glm::vec3(0.0, 0.0, 1.0));
-        m = glm::scale(m, glm::vec3(1.0 + ramThick, 1.0 * slika1Aspc + ramThick, 1.0) * scaleFactor);
+        m = glm::scale(m, glm::vec3(1.0 + ramThick, 1.0 * slika1Aspc + ramThick, 1.0) * imgScaleFactor);
         twoD.setMat4("uModel", m);
         rectangle->Render(&phongShader, 0.2, 0.16, 0.09);
 
@@ -848,7 +1013,7 @@ int main()
         m = glm::translate(glm::mat4(1.0), glm::vec3(-30, 3.5, -9.99 + 0.5));
         m = glm::rotate(m, glm::radians(0.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::rotate(m, glm::radians(imgRot), glm::vec3(0.0, 0.0, 1.0));
-        m = glm::scale(m, glm::vec3(1.0 + ramThick, 1.0 + ramThick, 1.0) * scaleFactor);
+        m = glm::scale(m, glm::vec3(1.0 + ramThick, 1.0 + ramThick, 1.0) * imgScaleFactor);
         twoD.setMat4("uModel", m);
         rectangle->Render(&phongShader, 0.2, 0.16, 0.09);
 
@@ -856,7 +1021,7 @@ int main()
         m = glm::translate(glm::mat4(1.0), glm::vec3(-30, 3.5, 9.99 - 0.5));
         m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::rotate(m, glm::radians(imgRot), glm::vec3(0.0, 0.0, 1.0));
-        m = glm::scale(m, glm::vec3(1.0+ ramThick, 1.0+ ramThick, 1.0) * scaleFactor);
+        m = glm::scale(m, glm::vec3(1.0+ ramThick, 1.0+ ramThick, 1.0) * imgScaleFactor);
         twoD.setMat4("uModel", m);
         rectangle->Render(&phongShader, 0.2, 0.16, 0.09);
 
