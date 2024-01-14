@@ -578,7 +578,8 @@ int main()
     GameObject* circle = new GameObject(circleVert, true);
 
     Model lija("res/low-poly-fox.obj");
-    Model statueModel("res/Virgin Mary Statue.obj");
+    //Model statueModel("res/Virgin Mary Statue.obj");
+    Model statueModel("res/model.obj");
 
     Shader phongShader("phong.vert", "phong.frag");
     Shader hudShader("hud.vert", "hud.frag");
@@ -632,12 +633,14 @@ int main()
     float rot = 0;
     float scale = 1.0;
     imgScaleFactor = 2.f;
-    glm::vec3 objPos = glm::vec3(0, 0.6, 0);
+    glm::vec3 objPos = glm::vec3(0, 1.0+1, 0);
     float time = 0.0f;
+    float angle = 0;
 
     Params params;
     glfwSetWindowUserPointer(window, &params);
-    glfwSetWindowPos(window, 0, 40);
+    //glfwSetWindowPos(window, 0, 40);
+    glfwSetWindowPos(window, 300, 300);
 
     glClearColor(0.2, 0.2, 0.6, 1.0);
     glEnable(GL_DEPTH_TEST);
@@ -692,8 +695,10 @@ int main()
         //SCENE
         //------------------------------------------------------------------------------------------------------------
         m = glm::translate(glm::mat4(1.0), objPos);
-        m = glm::rotate(m, glm::radians(rot), glm::vec3(0.0, 1.0, 0.0));
-        m = glm::scale(m, glm::vec3(3.8));
+        m = glm::rotate(m, angle, glm::vec3(0.0, 1.0, 0.0));
+        m = glm::rotate(m, glm::radians(-90.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::rotate(m, glm::radians(-90.f), glm::vec3(1.0, 0.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.9));
         phongShader.setMat4("uModel", m);
         statueModel.Draw(phongShader);
 
@@ -705,17 +710,34 @@ int main()
         float angleRadians = std::acos(dotProduct);
         float angleDegrees = glm::degrees(angleRadians);
 
-        if (angleDegrees > 80) {
+        if (angleDegrees > 82) {
+            rot += 50 * params.dt;
+
+            //Sprdnja
             if (glm::distance(objPos, params.position) >= 1.5) {
                 glm::vec3 camPos = params.position;
                 camPos.y = objPos.y;
                 glm::vec3 direction = camPos - objPos;
                 direction = glm::normalize(direction);
-                rot += 50 * params.dt;
-                //objPos += direction * params.dt * 6.f;
+                //objPos += direction * params.dt * 4.f;
+
+                glm::vec3 statueForward = glm::vec3(m[1]);
+                statueForward = glm::normalize(-statueForward);
+                float angleBetween;
+                float dotProduct = glm::clamp(glm::dot(statueForward, direction), -1.0f, 1.0f);
+
+                dotProduct = glm::clamp(dotProduct, -1.0f, 1.0f);
+                angleBetween = std::acos(dotProduct);
+
+                if(angleBetween > 0.1)
+                    angle += angleBetween;
+                if (angle > M_PI * 2) {
+                    angle -= M_PI * 2;
+                }
             }
             
         }
+
 
         //Room1
         //Pod1
