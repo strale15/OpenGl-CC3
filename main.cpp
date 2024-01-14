@@ -172,14 +172,14 @@ static void HandleInput(Params* params) {
 
     //Dog light pulsing
     if (params->dogLightIntensityReached) {
-        params->dogLightIntensity += 3 * params->dt;
+        params->dogLightIntensity += 2 * params->dt;
     }
     else
     {
-        params->dogLightIntensity -= 3 * params->dt;
+        params->dogLightIntensity -= 2 * params->dt;
     }
 
-    if (params->dogLightIntensity >= 2.0 || params->dogLightIntensity <= 0.3) {
+    if (params->dogLightIntensity >= 2.2 || params->dogLightIntensity <= 0.3) {
         params->dogLightIntensityReached = !params->dogLightIntensityReached;
     }
 }
