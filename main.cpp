@@ -390,8 +390,6 @@ int main()
     glm::mat4 projectionP;
 
     unsigned hudTex = Model::textureFromFile("res/hudTex.png");
-    unsigned kockaDif = Model::textureFromFile("res/container_diffuse.png");
-    unsigned kockaSpec = Model::textureFromFile("res/container_specular.png");
     unsigned grassD = Model::textureFromFile("res/grassD.png");
     unsigned grassS = Model::textureFromFile("res/grassS.png");
 
