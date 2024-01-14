@@ -585,7 +585,7 @@ int main()
         //std::cout << "Original Point: x=" << rotatedObjPos.x << ", y=" << rotatedObjPos.y << ", z=" << rotatedObjPos.z << endl;
 
         currentShader.setMat4("uView", view);
-        currentShader.setVec3("uViewPos", params.position);
+        currentShader.setVec3("uViewPos", rotatedObjPos);
 
         //projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
         float orthoScale = 1.55;
