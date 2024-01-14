@@ -21,43 +21,24 @@
 
 #include <Windows.h>
 
-#include <ctime> // for time()
-#include <cstdlib> // for rand() and srand()
+#include <ctime>
+#include <cstdlib>
 
 const unsigned int wWidth = 1920;
 const unsigned int wHeight = 1080;
 
-bool firstMouse = true;
-double lastX;
-double lastY;
-
 struct Params {
 	float dt = 0;
-	bool isFps = true;
-
-	bool isCurosIn = true;
-	double xPosC = 0.0;
-	double yPosC = 0.0;
-
-	glm::vec3 cameraFront = glm::vec3(0.0, 0.0, 1.0);
-	glm::vec3 cameraUp = glm::vec3(0.0, 1.0, 0.0);
-
-	glm::vec3 position = glm::vec3(0.0, 0.0, -1.0);
-	glm::vec3 objPos = glm::vec3(0.0, 0.0, 0.0);
-
-	double camYaw = 90;
-	double camPitch = 0;
-
-	bool wDown = false;
-	bool sDown = false;
-	bool aDown = false;
-	bool dDown = false;
-
-	bool spaceDown = false;
-	bool shiftDown = false;
 
 	//Parking
-	bool rampUp = false;
+	float rampRot = 0;
+	float isRampUp = false;
+	float yaw1 = 0;
+	float yaw2 = 0;
+	bool cam1Rot = false;
+	bool cam2Rot = false;
+
+	bool rampUpTrigger = false;
 
 	bool spot1Taken = false;
 	bool spot2Taken = false;
@@ -89,55 +70,8 @@ struct Params {
 };
 
 static void HandleInput(Params* params) {
-	if (params->wDown)
-	{
-		if (params->isFps)
-			params->position += 7.2f * params->cameraFront * params->dt;
-		else
-			params->objPos.z += 0.5f * params->dt;
-	}
-	if (params->sDown)
-	{
-		if (params->isFps)
-			params->position -= 7.2f * params->cameraFront * params->dt;
-		else
-			params->objPos.z -= 0.5f * params->dt;
-	}
-	if (params->aDown)
-	{
-
-		glm::vec3 strafe = glm::cross(params->cameraFront, params->cameraUp);
-		if (params->isFps)
-			params->position -= 7.2f * strafe * params->dt;
-		else
-			params->objPos.x += 0.5f * params->dt;
-	}
-	if (params->dDown)
-	{
-		glm::vec3 strafe = glm::cross(params->cameraFront, params->cameraUp);
-		if (params->isFps)
-			params->position += 7.2f * strafe * params->dt;
-		else
-			params->objPos.x -= 0.5f * params->dt;
-	}
-	if (params->spaceDown)
-	{
-		if (params->isFps)
-			params->position.y += 4.2 * params->dt;
-		else
-			params->objPos.y += 0.5f * params->dt;
-	}
-	if (params->shiftDown)
-	{
-		if (params->isFps)
-			params->position.y -= 4.1 * params->dt;
-		else
-			params->objPos.y -= 0.5f * params->dt;
-	}
-
 	//Parking
 	float time = 20;
-	//cout << params->spot1Time << endl;
 	if (params->spot1Taken) {
 		params->spot1Time += params->dt;
 		if (params->spot1Time >= time) {
@@ -190,127 +124,12 @@ static void HandleInput(Params* params) {
 	}
 }
 
-static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
-	Params* params = (Params*)glfwGetWindowUserPointer(window);
-
-	if (params->isCurosIn) {
-		params->xPosC = xPos;
-		params->yPosC = yPos;
-	}
-
-	if (firstMouse) {
-		lastX = xPos;
-		lastY = yPos;
-		firstMouse = false;
-	}
-
-	double xoffset = xPos - lastX;
-	double yoffset = lastY - yPos;
-	lastX = xPos;
-	lastY = yPos;
-
-	float sensitivity = 0.3f;
-
-	xoffset *= sensitivity;
-	yoffset *= sensitivity;
-
-	params->camYaw += xoffset;
-	params->camPitch += yoffset;
-
-	if (params->camPitch > 89.0) {
-		params->camPitch = 89.0;
-	}
-	else if (params->camPitch < -89.0) {
-		params->camPitch = -89.0;
-	}
-
-	glm::vec3 front;
-	front.x = cos(glm::radians(params->camYaw)) * cos(glm::radians(params->camPitch));
-	front.y = sin(glm::radians(params->camPitch));
-	front.z = sin(glm::radians(params->camYaw)) * cos(glm::radians(params->camPitch));
-
-	params->cameraFront = glm::normalize(front);
-}
-
 static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode) {
 	Params* params = (Params*)glfwGetWindowUserPointer(window);
-	if (key == GLFW_KEY_E && action == GLFW_PRESS)
-	{
-		std::cout << "glm::vec3(" << params->objPos.x << "," << params->objPos.y << "," << params->objPos.z << ")" << std::endl;
-	}
-
-	if (key == GLFW_KEY_R && action == GLFW_PRESS)
-	{
-		params->isFps = !params->isFps;
-	}
-
-	if (key == GLFW_KEY_W && action == GLFW_PRESS)
-	{
-		params->wDown = true;
-	}
-	if (key == GLFW_KEY_W && action == GLFW_RELEASE)
-	{
-		params->wDown = false;
-	}
-
-	if (key == GLFW_KEY_S && action == GLFW_PRESS)
-	{
-		params->sDown = true;
-	}
-	if (key == GLFW_KEY_S && action == GLFW_RELEASE)
-	{
-		params->sDown = false;
-	}
-
-	if (key == GLFW_KEY_A && action == GLFW_PRESS)
-	{
-		params->aDown = true;
-	}
-	if (key == GLFW_KEY_A && action == GLFW_RELEASE)
-	{
-		params->aDown = false;
-	}
-
-	if (key == GLFW_KEY_D && action == GLFW_PRESS)
-	{
-		params->dDown = true;
-	}
-	if (key == GLFW_KEY_D && action == GLFW_RELEASE)
-	{
-		params->dDown = false;
-	}
-
-	if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
-	{
-		params->spaceDown = true;
-	}
-	if (key == GLFW_KEY_SPACE && action == GLFW_RELEASE)
-	{
-		params->spaceDown = false;
-	}
-
-	if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS)
-	{
-		params->shiftDown = true;
-	}
-	if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_RELEASE)
-	{
-		params->shiftDown = false;
-	}
-
-	//Parking
-	/*if (key == GLFW_KEY_E) {
-		if (action == GLFW_PRESS) {
-			params->rotRight = true;
-		}
-		else if (action == GLFW_RELEASE) {
-			params->rotRight = false;
-		}
-	}*/
 
 	if (key == GLFW_KEY_F) {
 		if (action == GLFW_PRESS) {
-			params->rampUp = !params->rampUp;
+			params->rampUpTrigger = !params->rampUpTrigger;
 		}
 	}
 	if (key == GLFW_KEY_C) {
@@ -491,7 +310,6 @@ int main()
 	glfwMakeContextCurrent(window);
 	glfwMakeContextCurrent(window);
 	glfwSetKeyCallback(window, KeyCallback);
-	glfwSetCursorPosCallback(window, CursosPosCallback);
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	if (glewInit() != GLEW_OK)
@@ -588,17 +406,10 @@ int main()
 	phongShader.setInt("uMaterial.Ke", 2);
 	phongShader.setFloat("uMaterial.Shininess", 0.5 * 128);
 
-	glm::mat4 model2 = glm::mat4(1.0f);
 	glm::mat4 m(1.0f);
 	float currentRot = 0;
 	float FrameStartTime = 0;
 	float FrameEndTime = 0;
-	float rampRot = 0;
-	float isRampUp = false;
-	float yaw1 = 0;
-	float yaw2 = 0;
-	bool cam1Rot = false;
-	bool cam2Rot = false;
 
 	Params params;
 	glfwSetWindowUserPointer(window, &params);
@@ -624,20 +435,20 @@ int main()
 		HandleInput(&params);
 
 		//Camera
-		if (yaw1 >= 90) {
-			cam1Rot = false;
+		if (params.yaw1 >= 90) {
+			params.cam1Rot = false;
 		}
-		else if(yaw1 <= 0)
+		else if(params.yaw1 <= 0)
 		{
-			cam1Rot = true;
+			params.cam1Rot = true;
 		}
 
-		if (!cam1Rot) {
-			yaw1 -= 8*params.dt;
+		if (!params.cam1Rot) {
+			params.yaw1 -= 8*params.dt;
 		}
 		else
 		{
-			yaw1 += 8*params.dt;
+			params.yaw1 += 8*params.dt;
 		}
 
 		//Cam 1
@@ -645,9 +456,9 @@ int main()
 		glm::vec3 camPos1 = glm::vec3(-11.5, 7.3, -11.5);
 		float angle1 = glm::radians(-30.f);
 
-		front1.x = cos(glm::radians(yaw1)) * cos(angle1);
+		front1.x = cos(glm::radians(params.yaw1)) * cos(angle1);
 		front1.y = sin(angle1);
-		front1.z = sin(glm::radians(yaw1)) * cos(angle1);
+		front1.z = sin(glm::radians(params.yaw1)) * cos(angle1);
 
 		front1 = glm::normalize(front1);
 
@@ -656,9 +467,9 @@ int main()
 		glm::vec3 camPos2 = glm::vec3(11.5, 7.3, 11.5);
 		float angle2 = glm::radians(-30.f);
 
-		front2.x = cos(glm::radians(-180+yaw1)) * cos(angle2);
+		front2.x = cos(glm::radians(-180+ params.yaw1)) * cos(angle2);
 		front2.y = sin(angle2);
-		front2.z = sin(glm::radians(-180+yaw1)) * cos(angle2);
+		front2.z = sin(glm::radians(-180+ params.yaw1)) * cos(angle2);
 
 		front2 = glm::normalize(front2);
 
@@ -730,8 +541,6 @@ int main()
 			phongShader.setVec3("uViewPos", camPos);
 		}
 
-		//view = glm::lookAt(params.position, params.position + params.cameraFront, params.cameraUp);
-
 		twoD.use();
 		twoD.setMat4("uProjection", projectionP);
 		twoD.setMat4("uView", view);
@@ -742,12 +551,6 @@ int main()
 
 		//SCENE
 		//------------------------------------------------------------------------------------------------------------
-		m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 0.0));
-		m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
-		m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
-		phongShader.setMat4("uModel", m);
-		//simpleCube->Render(&phongShader, 0, 1, 1);
-
 		//Pod
 		m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 0.0));
 		m = glm::rotate(m, glm::radians(-90.f), glm::vec3(1.0, 0.0, 0.0));
@@ -902,19 +705,19 @@ int main()
 		}
 
 		//Ramp
-		if (params.rampUp || isRampUp && rampRot < 90) {
-			isRampUp = true;
-			rampRot += 30 * params.dt;
+		if (params.rampUpTrigger || params.isRampUp && params.rampRot < 90) {
+			params.isRampUp = true;
+			params.rampRot += 30 * params.dt;
 		}
-		else if (!params.rampUp || !isRampUp && rampRot > 0) {
-			isRampUp = false;
-			rampRot -= 35 * params.dt;
+		else if (!params.rampUpTrigger || !params.isRampUp && params.rampRot > 0) {
+			params.isRampUp = false;
+			params.rampRot -= 35 * params.dt;
 		}
 
-		rampRot = glm::clamp(rampRot, 0.f, 90.f);
+		params.rampRot = glm::clamp(params.rampRot, 0.f, 90.f);
 
 		m = glm::translate(glm::mat4(1.0), glm::vec3(12.0, 1.5, 4.5));
-		m = glm::rotate(m, glm::radians(rampRot), glm::vec3(1.0, 0.0, 0.0));
+		m = glm::rotate(m, glm::radians(params.rampRot), glm::vec3(1.0, 0.0, 0.0));
 		m = glm::translate(m, -glm::vec3(12.0, 1.5, 4.5));
 
 		m = glm::translate(m, glm::vec3(12.0, 1.5, 0.0));
@@ -940,7 +743,6 @@ int main()
 
 		//2D Display
 		twoD.use();
-		//glm::vec3(10.0, 2.0, 10.251)
 
 		m = glm::translate(glm::mat4(1.0f), glm::vec3(10.0, 2.0, 10.251));
 		m = glm::scale(m, glm::vec3(0.66));
@@ -1103,9 +905,6 @@ int main()
 
 
 		//------------------------------------------------------------------------------------------------------------
-
-		//HUD
-		//DrawHud(hudShader, hudTex);
 		phongShader.use();
 
 		glfwSwapBuffers(window);
