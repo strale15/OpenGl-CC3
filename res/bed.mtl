@@ -1,0 +1,34 @@
+# Blender 3.4.1 MTL File: 'None'
+# www.blender.org
+
+newmtl Material
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+
+newmtl Object001_mtl
+Ns 10.000005
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 1.000000 1.000000 1.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Ka Object001_2015-03-13_17-18-03_complete.rpf_converted.jpg
+map_Kd Object001_2015-03-13_17-18-03_complete.rpf_converted.jpg
+
+newmtl Object002_mtl
+Ns 10.000005
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 1.000000 1.000000 1.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Ka Object002_2015-03-13_16-50-00_complete.rpf_converted.jpg
+map_Kd Object002_2015-03-13_16-50-00_complete.rpf_converted.jpg
