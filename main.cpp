@@ -72,7 +72,7 @@ struct Params {
     float dogLightIntensity = 0.6;
     bool dogLightIntensityReached = false;
 
-    float radius = 10;
+    float radius = 12;
 };
 
 static void DrawHud(Shader& hudShader, unsigned hudTex) {
@@ -395,7 +395,7 @@ int main()
         return -2;
     }
 
-    glfwSetWindowPos(window, 300, 120);
+    glfwSetWindowPos(window, 0, 40);
     glfwMakeContextCurrent(window);
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, KeyCallback);
@@ -519,7 +519,7 @@ int main()
     phongShader.use();
 
     glm::mat4 view;
-    glm::mat4 projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
+    glm::mat4 projectionP = glm::perspective(glm::radians(80.0f), (float)wWidth / (float)wHeight, 0.1f, 150.0f);
     phongShader.setMat4("uProjection", projectionP);
 
     phongShader.setVec3("uDirLight.Position", 0.0, 30, 0.0);
