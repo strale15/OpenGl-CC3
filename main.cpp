@@ -31,7 +31,7 @@ double lastX;
 double lastY;
 
 struct Params {
-    float dt;
+    float dt = 0;
     bool isFps = true;
 
     bool isCurosIn = true;
@@ -54,6 +54,54 @@ struct Params {
 
     bool spaceDown = false;
     bool shiftDown = false;
+
+    //TV
+    bool tvOn = true;
+    float onBtnColor = 0.1;
+    bool btnColorReached = false;
+
+    bool left1Down = false;
+    bool left2Down = false;
+    bool right1Down = false;
+    bool right2Down = false;
+
+    float xoffset1 = 0;
+    float xoffset2 = 0;
+
+    int channel = 1;
+    float channelTime = 0;
+    int currChannel = 1;
+
+    bool renderPoints = false;
+    float clockRot = 0;
+
+    bool phong = true;
+
+    float remoteYrot = 0;
+    float remoteZrot = 0;
+
+    float remoteXoffset = 0;
+    float remoteYoffset = 0;
+    float remoteZoffset = 0;
+
+    bool remoteUp = false;
+    bool remoteDown = false;
+    bool remoteRight = false;
+    bool remoteLeft = false;
+    bool remoteHigher = false;
+    bool remoteLower = false;
+    bool remoteRotLeftY = false;
+    bool remoteRotRightY = false;
+    bool remoteRotLeftZ = false;
+    bool remoteRotRightZ = false;
+
+    float remoteLampAngle = 0;
+
+    float cameraXoffset = 0;
+    float cameraYoffset = 0;
+    bool isOrtho = false;
+    float zoom = 80;
+
 };
 
 static void DrawHud(Shader& hudShader, unsigned hudTex) {
@@ -155,6 +203,49 @@ static void HandleInput(Params* params) {
         else
             params->objPos.y -= 0.5f * params->dt;
     }
+
+    //TV
+    float remoteSpeed = 4;
+    float remoteRotSpeed = 40;
+    if (params->remoteUp) {
+        params->remoteZoffset += remoteSpeed * params->dt;
+        params->remoteZoffset = glm::clamp(params->remoteZoffset, -20.f, 5.f);
+    }
+    if (params->remoteDown) {
+        params->remoteZoffset -= remoteSpeed * params->dt;
+        params->remoteZoffset = glm::clamp(params->remoteZoffset, -20.f, 5.f);
+    }
+    if (params->remoteLeft) {
+        params->remoteXoffset += remoteSpeed * params->dt;
+        params->remoteZoffset = glm::clamp(params->remoteZoffset, -20.f, 20.f);
+    }
+    if (params->remoteRight) {
+        params->remoteXoffset -= remoteSpeed * params->dt;
+        params->remoteZoffset = glm::clamp(params->remoteZoffset, -20.f, 20.f);
+    }
+    if (params->remoteHigher) {
+        params->remoteYoffset += remoteSpeed * params->dt;
+        params->remoteYoffset = glm::clamp(params->remoteYoffset, 0.f, 20.f);
+    }
+    if (params->remoteLower) {
+        params->remoteYoffset -= remoteSpeed * params->dt;
+        params->remoteYoffset = glm::clamp(params->remoteYoffset, 0.f, 20.f);
+    }
+
+    if (params->remoteRotLeftY) {
+        params->remoteYrot += remoteRotSpeed * params->dt;
+    }
+    if (params->remoteRotRightY) {
+        params->remoteYrot -= remoteRotSpeed * params->dt;
+    }
+    if (params->remoteRotLeftZ) {
+        params->remoteZrot += remoteRotSpeed * params->dt;
+    }
+    if (params->remoteRotRightZ) {
+        params->remoteZrot -= remoteRotSpeed * params->dt;
+    }
+
+
 }
 
 static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
@@ -264,6 +355,168 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
     {
         params->shiftDown = false;
     }
+
+    //Remote
+
+    if (key == GLFW_KEY_I) {
+        if (action == GLFW_PRESS) {
+            params->remoteUp = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->remoteUp = false;
+        }
+    }
+    if (key == GLFW_KEY_K) {
+        if (action == GLFW_PRESS) {
+            params->remoteDown = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->remoteDown = false;
+        }
+    }
+    if (key == GLFW_KEY_J) {
+        if (action == GLFW_PRESS) {
+            params->remoteLeft = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->remoteLeft = false;
+        }
+    }
+    if (key == GLFW_KEY_L) {
+        if (action == GLFW_PRESS) {
+            params->remoteRight = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->remoteRight = false;
+        }
+    }
+    if (key == GLFW_KEY_Y) {
+        if (action == GLFW_PRESS) {
+            params->remoteHigher = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->remoteHigher = false;
+        }
+    }
+    if (key == GLFW_KEY_U) {
+        if (action == GLFW_PRESS) {
+            params->remoteLower = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->remoteLower = false;
+        }
+    }
+    if (key == GLFW_KEY_6) {
+        if (action == GLFW_PRESS) {
+            params->remoteRotLeftY = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->remoteRotLeftY = false;
+        }
+    }
+    if (key == GLFW_KEY_7) {
+        if (action == GLFW_PRESS) {
+            params->remoteRotRightY = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->remoteRotRightY = false;
+        }
+    }
+    if (key == GLFW_KEY_8) {
+        if (action == GLFW_PRESS) {
+            params->remoteRotLeftZ = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->remoteRotLeftZ = false;
+        }
+    }
+    if (key == GLFW_KEY_9) {
+        if (action == GLFW_PRESS) {
+            params->remoteRotRightZ = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->remoteRotRightZ = false;
+        }
+    }
+
+    //Cam
+    if (key == GLFW_KEY_Q) {
+        if (action == GLFW_PRESS) {
+            params->isOrtho = !params->isOrtho;
+        }
+    }
+
+    if (key == GLFW_KEY_X) {
+        if (action == GLFW_PRESS) {
+            params->phong = !params->phong;
+        }
+    }
+
+    //TV controls
+    if (params->remoteLampAngle > 60)
+        return;
+
+    if (key == GLFW_KEY_LEFT) {
+        if (action == GLFW_PRESS) {
+            params->left1Down = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->left1Down = false;
+        }
+    }
+    if (key == GLFW_KEY_RIGHT) {
+        if (action == GLFW_PRESS) {
+            params->right1Down = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->right1Down = false;
+        }
+    }
+    if (key == GLFW_KEY_UP) {
+        if (action == GLFW_PRESS) {
+            params->right2Down = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->right2Down = false;
+        }
+    }
+    if (key == GLFW_KEY_DOWN) {
+        if (action == GLFW_PRESS) {
+            params->left2Down = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->left2Down = false;
+        }
+    }
+
+    if (key == GLFW_KEY_O) {
+        if (action == GLFW_PRESS) {
+            params->tvOn = true;
+        }
+    }
+    if (key == GLFW_KEY_F) {
+        if (action == GLFW_PRESS) {
+            params->tvOn = false;
+        }
+    }
+
+    if (key == GLFW_KEY_1) {
+        if (action == GLFW_PRESS) {
+            params->channel = 1;
+        }
+    }
+    if (key == GLFW_KEY_2) {
+        if (action == GLFW_PRESS) {
+            params->renderPoints = true;
+        }
+    }
+    if (key == GLFW_KEY_3) {
+        if (action == GLFW_PRESS) {
+            params->channel = 2;
+            params->renderPoints = false;
+        }
+    }
+
 }
 
 std::vector<float> generateCircleVertices(float radius, int numSegments) {
@@ -474,6 +727,7 @@ int main()
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glPointSize(3.0);
     while (!glfwWindowShouldClose(window))
     {
         FrameStartTime = glfwGetTime();
@@ -536,7 +790,12 @@ int main()
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, tvHegiht / 2 + 1.0, 5.98));
         m = glm::scale(m, glm::vec3(tvLength*0.9, tvHegiht*0.9, 0.2));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 0, 0);
+        if(params.tvOn)
+            simpleCube->Render(&phongShader, 1, 1, 1);
+        else
+        {
+            simpleCube->Render(&phongShader, 0, 0, 0);
+        }
 
         //TvOnBtn
         // m = glm::translate(glm::mat4(1.0), glm::vec3(tvLength/2-0.05*6, 1.0+0.27/4, 6.0-0.1));
@@ -546,17 +805,31 @@ int main()
         simpleCube->Render(&phongShader, 1, 0, 0);
 
         //Lampica
-        m = glm::translate(glm::mat4(1.0), glm::vec3(tvLength / 2 - 0.05 * 6, 1.0 + 0.27 / 4, 6.0 - 0.1));
+        glm::vec3 lampPos = glm::vec3(tvLength / 2 - 0.05 * 6, 1.0 + 0.27 / 4, 6.0 - 0.1);
+        m = glm::translate(glm::mat4(1.0), lampPos);
         m = glm::scale(m, glm::vec3(0.05, 0.05, 0.1));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, 0, 1, 0);
 
         //Remote
-        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.65, 4.0));
-        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        glm::vec3 remotePos = glm::vec3(0.0 + params.remoteXoffset, 0.65 + params.remoteYoffset, 1.0 + params.remoteZoffset);
+        m = glm::translate(glm::mat4(1.0), remotePos);
+        m = glm::rotate(m, glm::radians(180.f+ params.remoteYrot), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::rotate(m, glm::radians(params.remoteZrot), glm::vec3(1.0, 0.0, 0.0));
         m = glm::scale(m, glm::vec3(0.07, 0.07, 0.07));
         phongShader.setMat4("uModel", m);
         remoteModel.Draw(phongShader);
+
+        //Angle calculations
+        glm::vec3 remoteForward = -glm::vec3(m[2]);
+        remoteForward = glm::normalize(remoteForward);
+        glm::vec3 direction = lampPos - (remotePos + remoteForward*0.66f);
+
+        float dotProduct = glm::dot(glm::normalize(direction), remoteForward);
+        dotProduct = glm::clamp(dotProduct, -1.f, 1.f);
+        float angleRadians = std::acos(dotProduct);
+        float angleDegrees = glm::degrees(angleRadians);
+        params.remoteLampAngle = angleDegrees;
 
         //2D Stvari
         twoD.use();
@@ -567,9 +840,10 @@ int main()
         m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(1.0));
         twoD.setMat4("uModel", m);
-        rectangle->Render(&twoD, 0, 1, 0);
+        circle->Render(&twoD, 0, 1, 0);
 
-
+        //glPolygonMode(GL_FRONT_AND_BACK, GL_POINT); 
+        //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
         //------------------------------------------------------------------------------------------------------------
 
