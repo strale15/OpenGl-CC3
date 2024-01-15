@@ -641,7 +641,7 @@ int main()
                 camPos.y = statuePos.y;
                 glm::vec3 direction = camPos - statuePos;
                 direction = glm::normalize(direction);
-                //objPos += direction * params.dt * 4.f;
+                //statuePos += direction * params.dt * 4.f;
 
                 glm::vec3 statueForward = glm::vec3(m[1]);
                 statueForward = glm::normalize(-statueForward);
