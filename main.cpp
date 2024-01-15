@@ -113,6 +113,11 @@ static void DrawHud(Shader& hudShader, unsigned hudTex) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    // Delete VAO, VBO, and EBO
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &EBO);
 }
 
 static void HandleInput(Params* params) {
