@@ -2,6 +2,7 @@
 //Preuzeto sa learnOpenGL
 
 #define _CRT_SECURE_NO_WARNINGS
+#define _USE_MATH_DEFINES
 
 #include <iostream>
 #include <fstream>
@@ -20,6 +21,7 @@
 #include "GameObject.cpp"
 
 #include <Windows.h>
+#include <cmath>
 
 const unsigned int wWidth = 1920;
 const unsigned int wHeight = 1080;
@@ -264,6 +266,42 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
     }
 }
 
+std::vector<float> generateCircleVertices(float radius, int numSegments) {
+    std::vector<float> vertices;
+
+    for (int i = 0; i < numSegments; ++i) {
+        float theta1 = 2.0f * M_PI * i / numSegments;
+        float theta2 = 2.0f * M_PI * (i + 1) / numSegments;
+
+        // Calculate the vertices for the current triangle
+        float x1 = radius * std::cos(theta1);
+        float y1 = radius * std::sin(theta1);
+        float x2 = radius * std::cos(theta2);
+        float y2 = radius * std::sin(theta2);
+
+        // Add the vertices to the vector
+        vertices.push_back(0.0f);  // Center vertex
+        vertices.push_back(0.0f);
+        vertices.push_back(0.0f);
+        vertices.push_back(0.5f);  // Center vertex UV
+        vertices.push_back(0.5f);
+
+        vertices.push_back(x1);
+        vertices.push_back(y1);
+        vertices.push_back(0.0f);
+        vertices.push_back(0.5f * (x1 / radius) + 0.5f);
+        vertices.push_back(0.5f * (y1 / radius) + 0.5f);
+
+        vertices.push_back(x2);
+        vertices.push_back(y2);
+        vertices.push_back(0.0f);
+        vertices.push_back(0.5f * (x2 / radius) + 0.5f);
+        vertices.push_back(0.5f * (y2 / radius) + 0.5f);
+    }
+
+    return vertices;
+}
+
 int main()
 {
     HWND console = GetConsoleWindow();
@@ -347,7 +385,23 @@ int main()
     };
     GameObject* simpleCube = new GameObject(cubeVertices);
 
+    std::vector<float> vertices = {
+        // Positions      // UVs
+        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,  // Vertex 1
+        0.5f, -0.5f, 0.0f, 1.0f, 1.0f,  // Vertex 2
+        0.5f, 0.5f, 0.0f, 1.0f, 0.0f,  // Vertex 3
+
+        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,  // Vertex 1 (Repeated)
+        0.5f, 0.5f, 0.0f, 1.0f, 0.0f,  // Vertex 3 (Repeated)
+        -0.5f, 0.5f, 0.0f, 0.0f, 0.0f   // Vertex 4
+    };
+    GameObject* rectangle = new GameObject(vertices, true);
+
+    std::vector<float> circleVert = generateCircleVertices(1, 32);
+    GameObject* circle = new GameObject(circleVert, true);
+
     Model lija("res/low-poly-fox.obj");
+    Model remoteModel("res/tv-remote-control.obj");
 
     Shader phongShader("phong.vert", "phong.frag");
     Shader hudShader("hud.vert", "hud.frag");
@@ -356,16 +410,15 @@ int main()
     phongShader.use();
 
     glm::mat4 view;
-    glm::mat4 projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
-    phongShader.setMat4("uProjection", projectionP);
+    glm::mat4 projectionP;
 
-    phongShader.setVec3("uDirLight.Position", 0.0, 5, 0.0);
-    phongShader.setVec3("uDirLight.Direction", 0.1, -5, 0.1);
-    phongShader.setVec3("uDirLight.Ka", glm::vec3(255.0 / 255 / 10, 238.0 / 255 / 10, 204.0 / 255 / 10));
-    phongShader.setVec3("uDirLight.Kd", glm::vec3(255.0 / 255 / 10, 238.0 / 255 / 10, 204.0 / 255 / 10));
+    phongShader.setVec3("uDirLight.Position", 0.0, 25, 0.0);
+    phongShader.setVec3("uDirLight.Direction", 0.2, -0.4, -0.5);
+    phongShader.setVec3("uDirLight.Ka", glm::vec3(0.3));
+    phongShader.setVec3("uDirLight.Kd", glm::vec3(0.6));
     phongShader.setVec3("uDirLight.Ks", glm::vec3(1.0, 1.0, 1.0));
 
-    phongShader.setVec3("uSpotlights[0].Position", 0.0, 10.0, 0.0);
+    phongShader.setVec3("uSpotlights[0].Position", glm::vec3(-9999));
     phongShader.setVec3("uSpotlights[0].Direction", 0.0, -1.0, 0.0);
     phongShader.setVec3("uSpotlights[0].Ka", 0.0, 0.0, 0.0);
     phongShader.setVec3("uSpotlights[0].Kd", glm::vec3(3.0f, 3.0f, 3.0f));
@@ -376,7 +429,7 @@ int main()
     phongShader.setFloat("uSpotlights[0].Kl", 0.092f);
     phongShader.setFloat("uSpotlights[0].Kq", 0.032f);
 
-    phongShader.setVec3("uSpotlights[1].Position", 0.0, 0.0, 6.0);
+    phongShader.setVec3("uSpotlights[1].Position", glm::vec3(-99999));
     phongShader.setVec3("uSpotlights[1].Direction", 0.0, 0.0, -1.0);
     phongShader.setVec3("uSpotlights[1].Ka", 0.0, 0.0, 0.0);
     phongShader.setVec3("uSpotlights[1].Kd", glm::vec3(1.0f, 1.0f, 1.0f));
@@ -387,7 +440,7 @@ int main()
     phongShader.setFloat("uSpotlights[1].Kl", 0.092f);
     phongShader.setFloat("uSpotlights[1].Kq", 0.032f);
 
-    phongShader.setVec3("uPointLights[0].Position", glm::vec3(0.0, -2.0, 0.0));
+    phongShader.setVec3("uPointLights[0].Position", glm::vec3(-9999));
     phongShader.setVec3("uPointLights[0].Ka", glm::vec3(230.0 / 255 / 0.1, 92.0 / 255 / 0.1, 0.0f));
     phongShader.setVec3("uPointLights[0].Kd", glm::vec3(230.0 / 255 / 50, 92.0 / 255 / 50, 0.0f));
     phongShader.setVec3("uPointLights[0].Ks", glm::vec3(1.0f));
@@ -398,6 +451,9 @@ int main()
     unsigned hudTex = Model::textureFromFile("res/hudTex.png");
     unsigned kockaDif = Model::textureFromFile("res/container_diffuse.png");
     unsigned kockaSpec = Model::textureFromFile("res/container_specular.png");
+    unsigned laminatDif = Model::textureFromFile("res/laminat.png");
+    unsigned laminatSpec = Model::textureFromFile("res/laminatSpec.png");
+    unsigned tepihDif = Model::textureFromFile("res/tepih.png");
 
     phongShader.setInt("uMaterial.Kd", 0);
     phongShader.setInt("uMaterial.Ks", 1);
@@ -412,9 +468,11 @@ int main()
     Params params;
     glfwSetWindowUserPointer(window, &params);
 
-    glClearColor(0.2, 0.2, 0.6, 1.0);
+    glClearColor(0.88, 0.88, 0.7, 1.0);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     while (!glfwWindowShouldClose(window))
     {
@@ -429,18 +487,90 @@ int main()
         HandleInput(&params);
 
         //Camera
+        projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
         view = glm::lookAt(params.position,params.position + params.cameraFront,params.cameraUp);
 
+        phongShader.setMat4("uProjection", projectionP);
         phongShader.setMat4("uView", view);
         phongShader.setVec3("uViewPos", params.position);
 
         //SCENE
         //------------------------------------------------------------------------------------------------------------
+        float tvLength = 0.3 * 16.f;
+        float tvHegiht = 0.3 * 9.f;
+        float tvColor = 0.6;
+
+        //Pod laminat
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 0.0));
-        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
-        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+        //m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(20.0, 1.0, 20.0));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 1, 1);
+        simpleCube->Render(&phongShader, laminatDif,laminatSpec);
+
+        //Pod tepih
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.001, -0.5));
+        //m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(7.0, 1.0, 7.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, tepihDif);
+
+        //Stalak1
+        m = glm::translate(glm::mat4(1.0), glm::vec3(tvLength/2-0.3, 0.25+0.5, 6));
+        m = glm::scale(m, glm::vec3(0.4,0.5,0.4));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, tvColor, tvColor, tvColor);
+
+        //Stalak2
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-tvLength/2+0.3, 0.25+0.5, 6));
+        m = glm::scale(m, glm::vec3(0.4, 0.5, 0.4));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, tvColor, tvColor, tvColor);
+
+        //TvBase
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, tvHegiht/2 +1.0, 6.0));
+        m = glm::scale(m, glm::vec3(tvLength, tvHegiht, 0.2));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, tvColor, tvColor, tvColor);
+
+        //TvScreen
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, tvHegiht / 2 + 1.0, 5.98));
+        m = glm::scale(m, glm::vec3(tvLength*0.9, tvHegiht*0.9, 0.2));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 0, 0, 0);
+
+        //TvOnBtn
+        // m = glm::translate(glm::mat4(1.0), glm::vec3(tvLength/2-0.05*6, 1.0+0.27/4, 6.0-0.1));
+        m = glm::translate(glm::mat4(1.0), glm::vec3(tvLength/2-0.05*8, 1.0+0.27/4, 6.0-0.1));
+        m = glm::scale(m, glm::vec3(0.05, 0.05, 0.1));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 0, 0);
+
+        //Lampica
+        m = glm::translate(glm::mat4(1.0), glm::vec3(tvLength / 2 - 0.05 * 6, 1.0 + 0.27 / 4, 6.0 - 0.1));
+        m = glm::scale(m, glm::vec3(0.05, 0.05, 0.1));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 0, 1, 0);
+
+        //Remote
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.65, 4.0));
+        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.07, 0.07, 0.07));
+        phongShader.setMat4("uModel", m);
+        remoteModel.Draw(phongShader);
+
+        //2D Stvari
+        twoD.use();
+        twoD.setMat4("uProjection", projectionP);
+        twoD.setMat4("uView", view);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, tvHegiht / 2 + 1.0, 5.98-0.101));
+        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(1.0));
+        twoD.setMat4("uModel", m);
+        rectangle->Render(&twoD, 0, 1, 0);
+
+
+
         //------------------------------------------------------------------------------------------------------------
 
         //HUD
@@ -457,5 +587,3 @@ int main()
     glfwTerminate();
     return 0;
 }
-
-
