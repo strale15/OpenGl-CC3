@@ -918,7 +918,7 @@ int main()
             circle->Render(&phongShader, params.pulseColor.x, params.pulseColor.y, params.pulseColor.z);
 
             //Krug3
-            m = glm::translate(glm::mat4(1.0), glm::vec3(-30 + params.rightOffset, 3.5 + params.upOffset, 9.99 - 0.5 - 0.02));
+            m = glm::translate(glm::mat4(1.0), glm::vec3(-30 - params.rightOffset, 3.5 + params.upOffset, 9.99 - 0.5 - 0.02));
             m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
             m = glm::scale(m, glm::vec3(0.2));
             twoD.setMat4("uModel", m);
