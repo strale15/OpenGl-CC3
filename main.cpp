@@ -61,7 +61,7 @@ struct Params {
 
     //TV
     bool tvOn = true;
-    float onBtnColor = 0.1;
+    float offBtnColor = 0.1;
     bool btnColorReached = false;
 
     bool left1Down = false;
@@ -272,6 +272,20 @@ static void HandleInput(Params* params) {
     if (params->right2Down) {
         params->xoffset2 -= charSpeed * params->dt;
         params->xoffset2 = glm::clamp(params->xoffset2, -((tvLength * 0.9f / 4.f) - 0.43f), tvLength * 0.9f / 4.f - 0.43f);
+    }
+
+    if (!params->tvOn) {
+        if (params->btnColorReached) {
+            params->offBtnColor -= 0.8 * params->dt;
+        }
+        else
+        {
+            params->offBtnColor += 0.8 * params->dt;
+        }
+
+        if (params->offBtnColor >= 1.0 || params->offBtnColor <= 0) {
+            params->btnColorReached = !params->btnColorReached;
+        }
     }
 
 
@@ -685,50 +699,15 @@ int main()
     Model lija("res/low-poly-fox.obj");
     Model remoteModel("res/tv-remote-control.obj");
 
+    Shader currentShader;
     Shader phongShader("phong.vert", "phong.frag");
+    Shader goroShader("goro.vert", "goro.frag");
     Shader hudShader("hud.vert", "hud.frag");
     Shader twoD("twoD.vert", "twoD.frag");
+    currentShader = phongShader;
 
-    phongShader.use();
-
-    glm::mat4 view;
-    glm::mat4 projectionP;
-
-    phongShader.setVec3("uDirLight.Position", 0.0, 25, 0.0);
-    phongShader.setVec3("uDirLight.Direction", 0.2, -0.4, -0.5);
-    phongShader.setVec3("uDirLight.Ka", glm::vec3(0.3));
-    phongShader.setVec3("uDirLight.Kd", glm::vec3(0.6));
-    phongShader.setVec3("uDirLight.Ks", glm::vec3(1.0, 1.0, 1.0));
-
-    phongShader.setVec3("uSpotlights[0].Position", glm::vec3(-9999));
-    phongShader.setVec3("uSpotlights[0].Direction", 0.0, -1.0, 0.0);
-    phongShader.setVec3("uSpotlights[0].Ka", 0.0, 0.0, 0.0);
-    phongShader.setVec3("uSpotlights[0].Kd", glm::vec3(3.0f, 3.0f, 3.0f));
-    phongShader.setVec3("uSpotlights[0].Ks", glm::vec3(1.0));
-    phongShader.setFloat("uSpotlights[0].InnerCutOff", glm::cos(glm::radians(10.0f)));
-    phongShader.setFloat("uSpotlights[0].OuterCutOff", glm::cos(glm::radians(15.0f)));
-    phongShader.setFloat("uSpotlights[0].Kc", 1.0);
-    phongShader.setFloat("uSpotlights[0].Kl", 0.092f);
-    phongShader.setFloat("uSpotlights[0].Kq", 0.032f);
-
-    phongShader.setVec3("uSpotlights[1].Position", glm::vec3(-99999));
-    phongShader.setVec3("uSpotlights[1].Direction", 0.0, 0.0, -1.0);
-    phongShader.setVec3("uSpotlights[1].Ka", 0.0, 0.0, 0.0);
-    phongShader.setVec3("uSpotlights[1].Kd", glm::vec3(1.0f, 1.0f, 1.0f));
-    phongShader.setVec3("uSpotlights[1].Ks", glm::vec3(1.0));
-    phongShader.setFloat("uSpotlights[1].InnerCutOff", glm::cos(glm::radians(15.0f)));
-    phongShader.setFloat("uSpotlights[1].OuterCutOff", glm::cos(glm::radians(20.0f)));
-    phongShader.setFloat("uSpotlights[1].Kc", 1.0);
-    phongShader.setFloat("uSpotlights[1].Kl", 0.092f);
-    phongShader.setFloat("uSpotlights[1].Kq", 0.032f);
-
-    phongShader.setVec3("uPointLights[0].Position", glm::vec3(-9999));
-    phongShader.setVec3("uPointLights[0].Ka", glm::vec3(230.0 / 255 / 0.1, 92.0 / 255 / 0.1, 0.0f));
-    phongShader.setVec3("uPointLights[0].Kd", glm::vec3(230.0 / 255 / 50, 92.0 / 255 / 50, 0.0f));
-    phongShader.setVec3("uPointLights[0].Ks", glm::vec3(1.0f));
-    phongShader.setFloat("uPointLights[0].Kc", 1.5f);
-    phongShader.setFloat("uPointLights[0].Kl", 1.0f);
-    phongShader.setFloat("uPointLights[0].Kq", 0.272f);
+   
+    
 
     unsigned hudTex = Model::textureFromFile("res/hudTex.png");
     unsigned laminatDif = Model::textureFromFile("res/laminat.png");
@@ -737,11 +716,8 @@ int main()
     unsigned narutoTex = Model::textureFromFile("res/naruto.png");
     unsigned mataraTex = Model::textureFromFile("res/madara4.png");
 
-    phongShader.setInt("uMaterial.Kd", 0);
-    phongShader.setInt("uMaterial.Ks", 1);
-    phongShader.setFloat("uMaterial.Shininess", 0.5 * 128);
-
-    glm::mat4 model2 = glm::mat4(1.0f);
+    glm::mat4 view;
+    glm::mat4 projectionP;
     glm::mat4 m(1.0f);
     float currentRot = 0;
     float FrameStartTime = 0;
@@ -757,6 +733,8 @@ int main()
     glCullFace(GL_BACK);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glPointSize(3.0);
+    glfwWindowHint(GLFW_SAMPLES, 16);
+    glEnable(GL_MULTISAMPLE);
     while (!glfwWindowShouldClose(window))
     {
         FrameStartTime = glfwGetTime();
@@ -765,17 +743,40 @@ int main()
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        if (params.phong) {
+            currentShader = phongShader;
+        }
+        else
+        {
+            currentShader = goroShader;
+        }
+        //Shadersetup
+        currentShader.use();
+
+        currentShader.setVec3("uDirLight.Position", 0.0, 25, 0.0);
+        currentShader.setVec3("uDirLight.Direction", 0.2, -0.4, -0.5);
+        currentShader.setVec3("uDirLight.Ka", glm::vec3(0.2));
+        currentShader.setVec3("uDirLight.Kd", glm::vec3(0.5));
+        currentShader.setVec3("uDirLight.Ks", glm::vec3(1.0, 1.0, 1.0));
+
+        //currentShader.setVec3("uDirLight.Ka", glm::vec3(0));
+        //currentShader.setVec3("uDirLight.Kd", glm::vec3(0));
+
+        currentShader.setInt("uMaterial.Kd", 0);
+        currentShader.setInt("uMaterial.Ks", 1);
+        currentShader.setFloat("uMaterial.Shininess", 0.5 * 128);
+
         //Loop
-        phongShader.use();
+        currentShader.use();
         HandleInput(&params);
 
         //Camera
         projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
         view = glm::lookAt(params.position, params.position + params.cameraFront, params.cameraUp);
 
-        phongShader.setMat4("uProjection", projectionP);
-        phongShader.setMat4("uView", view);
-        phongShader.setVec3("uViewPos", params.position);
+        currentShader.setMat4("uProjection", projectionP);
+        currentShader.setMat4("uView", view);
+        currentShader.setVec3("uViewPos", params.position);
 
         //SCENE
         //------------------------------------------------------------------------------------------------------------
@@ -785,33 +786,33 @@ int main()
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 0.0));
         //m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(20.0, 1.0, 20.0));
-        phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, laminatDif, laminatSpec);
+        currentShader.setMat4("uModel", m);
+        simpleCube->Render(&currentShader, laminatDif, laminatSpec);
 
         //Pod tepih
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.001, -0.5));
         //m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(7.0, 1.0, 7.0));
-        phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, tepihDif);
+        currentShader.setMat4("uModel", m);
+        simpleCube->Render(&currentShader, tepihDif);
 
         //Stalak1
         m = glm::translate(glm::mat4(1.0), glm::vec3(tvLength / 2 - 0.3, 0.25 + 0.5, 6));
         m = glm::scale(m, glm::vec3(0.4, 0.5, 0.4));
-        phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, tvColor, tvColor, tvColor);
+        currentShader.setMat4("uModel", m);
+        simpleCube->Render(&currentShader, tvColor, tvColor, tvColor);
 
         //Stalak2
         m = glm::translate(glm::mat4(1.0), glm::vec3(-tvLength / 2 + 0.3, 0.25 + 0.5, 6));
         m = glm::scale(m, glm::vec3(0.4, 0.5, 0.4));
-        phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, tvColor, tvColor, tvColor);
+        currentShader.setMat4("uModel", m);
+        simpleCube->Render(&currentShader, tvColor, tvColor, tvColor);
 
         //TvBase
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, tvHegiht / 2 + 1.0, 6.0));
         m = glm::scale(m, glm::vec3(tvLength, tvHegiht, 0.2));
-        phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, tvColor, tvColor, tvColor);
+        currentShader.setMat4("uModel", m);
+        simpleCube->Render(&currentShader, tvColor, tvColor, tvColor);
 
         //Calculate chennel
         if (params.channel != params.currChannel) {
@@ -828,29 +829,80 @@ int main()
         //TvScreen
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, tvHegiht / 2 + 1.0, 5.98));
         m = glm::scale(m, glm::vec3(tvLength * 0.9, tvHegiht * 0.9, 0.2));
-        phongShader.setMat4("uModel", m);
+        currentShader.setMat4("uModel", m);
+
+        float charDist = 0;
         if (!params.tvOn || params.channelTime != 0)
         {
-            simpleCube->Render(&phongShader, 0, 0, 0);
+            simpleCube->Render(&currentShader, 0, 0, 0);
         }
         else
         {
-            simpleCube->Render(&phongShader, 1, 1, 1);
+            simpleCube->Render(&currentShader, 1, 1, 1);
+            charDist = 3.5 - (params.xoffset1 - params.xoffset2 + 1.24523);
         }
+        currentShader.setVec3("uSpotlights[0].Position", glm::vec3(0.0, tvHegiht / 2 + 1.0, 5.98));
+        currentShader.setVec3("uSpotlights[0].Direction", 0.0, 0.0, -1.0);
+        currentShader.setVec3("uSpotlights[0].Ka", 0.0, 0.0, 0.0);
+        currentShader.setVec3("uSpotlights[0].Kd", glm::vec3(0.8f)* charDist);
+        currentShader.setVec3("uSpotlights[0].Ks", glm::vec3(1.0)* charDist/3.f);
+        currentShader.setFloat("uSpotlights[0].InnerCutOff", glm::cos(glm::radians(75.0f)));
+        currentShader.setFloat("uSpotlights[0].OuterCutOff", glm::cos(glm::radians(81.0f)));
+        currentShader.setFloat("uSpotlights[0].Kc", 1.5);
+        currentShader.setFloat("uSpotlights[0].Kl", 0.092f);
+        currentShader.setFloat("uSpotlights[0].Kq", 0.032f);
 
         //TvOnBtn
         // m = glm::translate(glm::mat4(1.0), glm::vec3(tvLength/2-0.05*6, 1.0+0.27/4, 6.0-0.1));
-        m = glm::translate(glm::mat4(1.0), glm::vec3(tvLength/2-0.05*8, 1.0+0.27/4, 6.0-0.1));
-        m = glm::scale(m, glm::vec3(0.05, 0.05, 0.1));
-        phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 1, 0, 0);
+        if (params.tvOn) {
+            m = glm::translate(glm::mat4(1.0), glm::vec3(tvLength/2-0.05*10, 1.0+0.27/4, 6.0-0.1));
+            m = glm::scale(m, glm::vec3(0.05, 0.05, 0.1));
+            currentShader.setMat4("uModel", m);
+            simpleCube->Render(&currentShader, 0.79, 0.24, 0.84);
+        }
+        else
+        {
+            m = glm::translate(glm::mat4(1.0), glm::vec3(tvLength / 2 - 0.05 * 8, 1.0 + 0.27 / 4, 6.0 - 0.1));
+            m = glm::scale(m, glm::vec3(0.05, 0.05, 0.1));
+            currentShader.setMat4("uModel", m);
+            simpleCube->Render(&currentShader, params.offBtnColor, params.offBtnColor, params.offBtnColor);
+        }
 
         //Lampica
-        glm::vec3 lampPos = glm::vec3(tvLength / 2 - 0.05 * 6, 1.0 + 0.27 / 4, 6.0 - 0.1);
+        glm::vec3 lampPos = glm::vec3(tvLength / 2 - 0.05 * 6, 1.0 + 0.27 / 4, 6.0 -0.025-0.1);
         m = glm::translate(glm::mat4(1.0), lampPos);
-        m = glm::scale(m, glm::vec3(0.05, 0.05, 0.1));
-        phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 1, 0);
+        m = glm::scale(m, glm::vec3(0.05, 0.05, 0.05));
+        currentShader.setMat4("uModel", m);
+        if (params.tvOn) {
+            simpleCube->Render(&currentShader, 1, 1, 1);
+
+            if (params.channelTime != 0) {
+                currentShader.setVec3("uPointLights[0].Ka", glm::vec3(0.1, 0.1, 0.0));
+                currentShader.setVec3("uPointLights[0].Kd", glm::vec3(8.f, 8.0f, 0.0));
+                currentShader.setVec3("uPointLights[0].Ks", glm::vec3(1.0, 1.0f, 0));
+            }
+            else
+            {
+                currentShader.setVec3("uPointLights[0].Ka", glm::vec3(0.1, 0.1, 0.0));
+                currentShader.setVec3("uPointLights[0].Kd", glm::vec3(0.0, 8.0f, 0.0));
+                currentShader.setVec3("uPointLights[0].Ks", glm::vec3(0, 1.0f, 0));
+            }
+
+        }
+        else
+        {
+            simpleCube->Render(&currentShader, 0, 1, 0);
+            currentShader.setVec3("uPointLights[0].Ka", glm::vec3(0.0, 0.0, 0.0));
+            currentShader.setVec3("uPointLights[0].Kd", glm::vec3(0.0, 0.0f, 0.0));
+            currentShader.setVec3("uPointLights[0].Ks", glm::vec3(0, 0.0f, 0));
+        }
+
+        glm::vec3 lampPos2 = lampPos;
+        lampPos2.z -= 0.03;
+        currentShader.setVec3("uPointLights[0].Position", lampPos2);
+        currentShader.setFloat("uPointLights[0].Kc", 5.0f);
+        currentShader.setFloat("uPointLights[0].Kl", 15.0f);
+        currentShader.setFloat("uPointLights[0].Kq", 25.f);
 
         //Remote
         glm::vec3 remotePos = glm::vec3(0.0 + params.remoteXoffset, 0.65 + params.remoteYoffset, 1.0 + params.remoteZoffset);
@@ -858,8 +910,8 @@ int main()
         m = glm::rotate(m, glm::radians(180.f+ params.remoteYrot), glm::vec3(0.0, 1.0, 0.0));
         m = glm::rotate(m, glm::radians(params.remoteZrot), glm::vec3(1.0, 0.0, 0.0));
         m = glm::scale(m, glm::vec3(0.07, 0.07, 0.07));
-        phongShader.setMat4("uModel", m);
-        remoteModel.Draw(phongShader);
+        currentShader.setMat4("uModel", m);
+        remoteModel.Draw(currentShader);
 
         //Angle calculations
         glm::vec3 remoteForward = -glm::vec3(m[2]);
@@ -877,7 +929,7 @@ int main()
         twoD.setMat4("uProjection", projectionP);
         twoD.setMat4("uView", view);
 
-        if (params.currChannel == 1 && params.channelTime == 0) {
+        if (params.tvOn && params.currChannel == 1 && params.channelTime == 0) {
             //Clock
             if (params.renderPoints) {
                 glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
@@ -890,6 +942,7 @@ int main()
             circle->Render(&twoD, 1, 1, 0);
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
+            //Big pointer
             float pointLen = 0.9;
             m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, tvHegiht / 2 + 1.0, 5.98 - 0.102));
             m = glm::rotate(m, glm::radians(params.clockRot - 180), glm::vec3(0.0, 0.0, 1.0));
@@ -901,6 +954,7 @@ int main()
             twoD.setMat4("uModel", m);
             rectangle->Render(&twoD, 1, 0, 0);
 
+            //Small pointer
             pointLen = 0.7;
             m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, tvHegiht / 2 + 1.0 - pointLen / 2, 5.98 - 0.1015));
             m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
@@ -909,7 +963,7 @@ int main()
             rectangle->Render(&twoD, 0, 0, 1);
 
         }
-        else if (params.currChannel == 2 && params.channelTime == 0) {
+        else if (params.tvOn && params.currChannel == 2 && params.channelTime == 0) {
             //NarutoXMadara
             //Naruto
             m = glm::translate(glm::mat4(1.0), glm::vec3(-(tvLength * 0.9f / 4.f) + params.xoffset1, tvHegiht / 2 + 1.0, 5.98 - 0.1019));
@@ -930,7 +984,7 @@ int main()
 
         //HUD
         DrawHud(hudShader, hudTex);
-        phongShader.use();
+        currentShader.use();
 
         glfwSwapBuffers(window);
         glfwPollEvents();

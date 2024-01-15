@@ -13,11 +13,17 @@ out vec4 FragColor;
 uniform Material uMaterial;
 uniform bool isColor;
 uniform vec3 uColor;
+uniform bool uTransp;
+uniform float uAlpha;
 
 
 void main() {
 	vec3 MaterialColor = isColor ? uColor : vec3(texture(uMaterial.Kd, TexCoord));
 	vec3 finalColor = vCol * MaterialColor;
 
-	FragColor = vec4(finalColor, 1.0f);
+	float alpha = 1.0f;
+    if(uTransp) {
+        alpha = uAlpha;
+    }
+	FragColor = vec4(finalColor, alpha);
 }
