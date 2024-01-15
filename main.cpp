@@ -36,31 +36,16 @@ float tvHegiht = 0.3 * 9.f;
 
 struct Params {
     float dt = 0;
-    bool isFps = true;
 
-    bool isCurosIn = true;
-    double xPosC = 0.0;
-    double yPosC = 0.0;
-
-    glm::vec3 cameraFront = glm::vec3(0.0, 0.0, 1.0);
-    glm::vec3 cameraUp = glm::vec3(0.0, 1.0, 0.0);
-
-    glm::vec3 position = glm::vec3(0.0, 0.0, -1.0);
-    glm::vec3 objPos = glm::vec3(0.0, 0.0, 0.0);
-
-    double camYaw = 90;
-    double camPitch = 0;
+    glm::vec3 position = glm::vec3(0.0, 1.5, -1.0);
 
     bool wDown = false;
     bool sDown = false;
     bool aDown = false;
     bool dDown = false;
 
-    bool spaceDown = false;
-    bool shiftDown = false;
-
     //TV
-    bool tvOn = true;
+    bool tvOn = false;
     float offBtnColor = 0.1;
     bool btnColorReached = false;
 
@@ -72,9 +57,9 @@ struct Params {
     float xoffset1 = 0;
     float xoffset2 = 0;
 
-    int channel = 1;
+    int channel = 2;
     float channelTime = 0;
-    int currChannel = 1;
+    int currChannel = 2;
 
     bool renderPoints = false;
     float clockRot = 0;
@@ -164,52 +149,29 @@ static void DrawHud(Shader& hudShader, unsigned hudTex) {
 }
 
 static void HandleInput(Params* params) {
+    float camSpeed = 3;
     if (params->wDown)
     {
-        if (params->isFps)
-            params->position += 7.2f * params->cameraFront * params->dt;
-        else
-            params->objPos.z += 0.5f * params->dt;
+        params->cameraYoffset += camSpeed * params->dt;
+        params->cameraYoffset = glm::clamp(params->cameraYoffset, -0.5f, 10.f);
     }
     if (params->sDown)
     {
-        if (params->isFps)
-            params->position -= 7.2f * params->cameraFront * params->dt;
-        else
-            params->objPos.z -= 0.5f * params->dt;
+        params->cameraYoffset -= camSpeed * params->dt;
+        params->cameraYoffset = glm::clamp(params->cameraYoffset, -0.5f, 10.f);
     }
     if (params->aDown)
     {
-
-        glm::vec3 strafe = glm::cross(params->cameraFront, params->cameraUp);
-        if (params->isFps)
-            params->position -= 7.2f * strafe * params->dt;
-        else
-            params->objPos.x += 0.5f * params->dt;
+        params->cameraXoffset += camSpeed * params->dt;
+        params->cameraXoffset = glm::clamp(params->cameraXoffset, -20.f, 20.f);
     }
     if (params->dDown)
     {
-        glm::vec3 strafe = glm::cross(params->cameraFront, params->cameraUp);
-        if (params->isFps)
-            params->position += 7.2f * strafe * params->dt;
-        else
-            params->objPos.x -= 0.5f * params->dt;
-    }
-    if (params->spaceDown)
-    {
-        if (params->isFps)
-            params->position.y += 4.2 * params->dt;
-        else
-            params->objPos.y += 0.5f * params->dt;
-    }
-    if (params->shiftDown)
-    {
-        if (params->isFps)
-            params->position.y -= 4.1 * params->dt;
-        else
-            params->objPos.y -= 0.5f * params->dt;
+        params->cameraXoffset -= camSpeed * params->dt;
+        params->cameraXoffset = glm::clamp(params->cameraXoffset, -20.f, 20.f);
     }
 
+    //Clock
     params->clockRot += params->dt*6;
     if (params->clockRot > 360) {
         params->clockRot -= 360;
@@ -300,59 +262,8 @@ static void HandleInput(Params* params) {
 
 }
 
-static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
-    Params* params = (Params*)glfwGetWindowUserPointer(window);
-
-    if (params->isCurosIn) {
-        params->xPosC = xPos;
-        params->yPosC = yPos;
-    }
-
-    if (firstMouse) {
-        lastX = xPos;
-        lastY = yPos;
-        firstMouse = false;
-    }
-
-    double xoffset = xPos - lastX;
-    double yoffset = lastY - yPos;
-    lastX = xPos;
-    lastY = yPos;
-
-    float sensitivity = 0.3f;
-
-    xoffset *= sensitivity;
-    yoffset *= sensitivity;
-
-    params->camYaw += xoffset;
-    params->camPitch += yoffset;
-
-    if (params->camPitch > 89.0) {
-        params->camPitch = 89.0;
-    }
-    else if (params->camPitch < -89.0) {
-        params->camPitch = -89.0;
-    }
-
-    glm::vec3 front;
-    front.x = cos(glm::radians(params->camYaw)) * cos(glm::radians(params->camPitch));
-    front.y = sin(glm::radians(params->camPitch));
-    front.z = sin(glm::radians(params->camYaw)) * cos(glm::radians(params->camPitch));
-
-    params->cameraFront = glm::normalize(front);
-}
-
 static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode) {
     Params* params = (Params*)glfwGetWindowUserPointer(window);
-    if (key == GLFW_KEY_E && action == GLFW_PRESS)
-    {
-        std::cout << "glm::vec3(" << params->objPos.x << "," << params->objPos.y << "," << params->objPos.z << ")" << std::endl;
-    }
-
-    if (key == GLFW_KEY_R && action == GLFW_PRESS)
-    {
-        params->isFps = !params->isFps;
-    }
 
     if (key == GLFW_KEY_W && action == GLFW_PRESS)
     {
@@ -390,26 +301,7 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
         params->dDown = false;
     }
 
-    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
-    {
-        params->spaceDown = true;
-    }
-    if (key == GLFW_KEY_SPACE && action == GLFW_RELEASE)
-    {
-        params->spaceDown = false;
-    }
-
-    if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS)
-    {
-        params->shiftDown = true;
-    }
-    if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_RELEASE)
-    {
-        params->shiftDown = false;
-    }
-
     //Remote
-
     if (key == GLFW_KEY_I) {
         if (action == GLFW_PRESS) {
             params->remoteUp = true;
@@ -581,7 +473,7 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
 void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
     Params* params = (Params*)glfwGetWindowUserPointer(window);
     params->zoom -= static_cast<float>(yoffset * 7000.0 * params->dt);
-    params->zoom = glm::clamp(params->zoom, 10.0f, 90.0f);
+    params->zoom = glm::clamp(params->zoom, 25.0f, 90.0f);
 
 }
 
@@ -648,7 +540,6 @@ int main()
     glfwMakeContextCurrent(window);
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, KeyCallback);
-    glfwSetCursorPosCallback(window, CursosPosCallback);
     glfwSetScrollCallback(window, ScrollCallback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -735,6 +626,7 @@ int main()
     unsigned tepihDif = Model::textureFromFile("res/tepih.png");
     unsigned narutoTex = Model::textureFromFile("res/naruto.png");
     unsigned mataraTex = Model::textureFromFile("res/madara4.png");
+    unsigned tvLogoTex = Model::textureFromFile("res/tvLogo.png");
 
     glm::mat4 view;
     glm::mat4 projectionP;
@@ -795,11 +687,15 @@ int main()
         {
             projectionP = glm::perspective(glm::radians(params.zoom), (float)wWidth / (float)wHeight, 0.1f, 150.0f);
         }
-        view = glm::lookAt(params.position, params.position + params.cameraFront, params.cameraUp);
+
+        glm::vec3 camPos = params.position;
+        camPos.x += params.cameraXoffset;
+        camPos.y += params.cameraYoffset;
+        view = glm::lookAt(camPos, glm::vec3(0.0, tvHegiht / 2 + 1.0, 5.98), glm::vec3(0,1,0));
 
         currentShader.setMat4("uProjection", projectionP);
         currentShader.setMat4("uView", view);
-        currentShader.setVec3("uViewPos", params.position);
+        currentShader.setVec3("uViewPos", camPos);
 
         //SCENE
         //------------------------------------------------------------------------------------------------------------
@@ -862,7 +758,6 @@ int main()
         {
             simpleCube->Render(&currentShader, 1, 1, 1);
             charDist = 3.5 - (params.xoffset2 - params.xoffset1 + 1.24523);
-            cout << charDist << endl;
             if (params.currChannel == 1) {
                 lightColor = glm::vec3(0.59, 0.05, 0.11);
             }
@@ -937,7 +832,7 @@ int main()
         currentShader.setFloat("uPointLights[0].Kq", 25.f);
 
         //Remote
-        glm::vec3 remotePos = glm::vec3(0.0 + params.remoteXoffset, 0.65 + params.remoteYoffset, 1.0 + params.remoteZoffset);
+        glm::vec3 remotePos = glm::vec3(0.0 + params.remoteXoffset, 0.65 + params.remoteYoffset, 2.0 + params.remoteZoffset);
         m = glm::translate(glm::mat4(1.0), remotePos);
         m = glm::rotate(m, glm::radians(180.f+ params.remoteYrot), glm::vec3(0.0, 1.0, 0.0));
         m = glm::rotate(m, glm::radians(params.remoteZrot), glm::vec3(1.0, 0.0, 0.0));
@@ -960,6 +855,13 @@ int main()
         twoD.use();
         twoD.setMat4("uProjection", projectionP);
         twoD.setMat4("uView", view);
+
+        float aspectLogo = 336 / 64;
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 1.0 + 0.27 / 4, 5.98 - 0.101));
+        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.12* aspectLogo, 0.12, 1.0));
+        twoD.setMat4("uModel", m);
+        rectangle->Render(&twoD, tvLogoTex);
 
         if (params.tvOn && params.currChannel == 1 && params.channelTime == 0) {
             //Clock
