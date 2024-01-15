@@ -106,6 +106,8 @@ struct Params {
     bool isOrtho = false;
     float zoom = 80;
 
+    bool isWireFrame = false;
+
 };
 
 static void DrawHud(Shader& hudShader, unsigned hudTex) {
@@ -288,6 +290,13 @@ static void HandleInput(Params* params) {
         }
     }
 
+    if (params->isWireFrame) {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    }
+    else
+    {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
 
 }
 
@@ -495,6 +504,13 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
         }
     }
 
+    if (key == GLFW_KEY_C) {
+        if (action == GLFW_PRESS) {
+            params->isWireFrame = !params->isWireFrame;
+        }
+
+    }
+
     //TV controls
     if (params->remoteLampAngle > 60)
         return;
@@ -562,6 +578,13 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
 
 }
 
+void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
+    Params* params = (Params*)glfwGetWindowUserPointer(window);
+    params->zoom -= static_cast<float>(yoffset * 7000.0 * params->dt);
+    params->zoom = glm::clamp(params->zoom, 10.0f, 90.0f);
+
+}
+
 std::vector<float> generateCircleVertices(float radius, int numSegments) {
     std::vector<float> vertices;
 
@@ -626,6 +649,7 @@ int main()
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, KeyCallback);
     glfwSetCursorPosCallback(window, CursosPosCallback);
+    glfwSetScrollCallback(window, ScrollCallback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     if (glewInit() != GLEW_OK)
@@ -755,9 +779,6 @@ int main()
         currentShader.setVec3("uDirLight.Kd", glm::vec3(0.5));
         currentShader.setVec3("uDirLight.Ks", glm::vec3(1.0, 1.0, 1.0));
 
-        //currentShader.setVec3("uDirLight.Ka", glm::vec3(0));
-        //currentShader.setVec3("uDirLight.Kd", glm::vec3(0));
-
         currentShader.setInt("uMaterial.Kd", 0);
         currentShader.setInt("uMaterial.Ks", 1);
         currentShader.setFloat("uMaterial.Shininess", 0.5 * 128);
@@ -767,7 +788,13 @@ int main()
         HandleInput(&params);
 
         //Camera
-        projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
+        if (params.isOrtho) {
+            projectionP = glm::ortho(-16.f, 16.f, -9.f, 9.f, -150.f, 150.f);
+        }
+        else
+        {
+            projectionP = glm::perspective(glm::radians(params.zoom), (float)wWidth / (float)wHeight, 0.1f, 150.0f);
+        }
         view = glm::lookAt(params.position, params.position + params.cameraFront, params.cameraUp);
 
         currentShader.setMat4("uProjection", projectionP);
@@ -780,14 +807,12 @@ int main()
 
         //Pod laminat
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 0.0));
-        //m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(20.0, 1.0, 20.0));
         currentShader.setMat4("uModel", m);
         simpleCube->Render(&currentShader, laminatDif, laminatSpec);
 
         //Pod tepih
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.001, -0.5));
-        //m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(7.0, 1.0, 7.0));
         currentShader.setMat4("uModel", m);
         simpleCube->Render(&currentShader, tepihDif);
@@ -828,6 +853,7 @@ int main()
         currentShader.setMat4("uModel", m);
 
         float charDist = 0;
+        glm::vec3 lightColor = glm::vec3(0.8f);
         if (!params.tvOn || params.channelTime != 0)
         {
             simpleCube->Render(&currentShader, 0, 0, 0);
@@ -835,13 +861,22 @@ int main()
         else
         {
             simpleCube->Render(&currentShader, 1, 1, 1);
-            charDist = 3.5 - (params.xoffset1 - params.xoffset2 + 1.24523);
+            charDist = 3.5 - (params.xoffset2 - params.xoffset1 + 1.24523);
+            cout << charDist << endl;
+            if (params.currChannel == 1) {
+                lightColor = glm::vec3(0.59, 0.05, 0.11);
+            }
+            else if(params.currChannel == 2)
+            {
+                lightColor = glm::vec3(0.19, 0.48, 0.9);
+            }
+            
         }
         currentShader.setVec3("uSpotlights[0].Position", glm::vec3(0.0, tvHegiht / 2 + 1.0, 5.98));
         currentShader.setVec3("uSpotlights[0].Direction", 0.0, 0.0, -1.0);
         currentShader.setVec3("uSpotlights[0].Ka", 0.0, 0.0, 0.0);
-        currentShader.setVec3("uSpotlights[0].Kd", glm::vec3(0.8f)* charDist);
-        currentShader.setVec3("uSpotlights[0].Ks", glm::vec3(1.0)* charDist/3.f);
+        currentShader.setVec3("uSpotlights[0].Kd", lightColor * charDist);
+        currentShader.setVec3("uSpotlights[0].Ks", lightColor * charDist/2.f);
         currentShader.setFloat("uSpotlights[0].InnerCutOff", glm::cos(glm::radians(75.0f)));
         currentShader.setFloat("uSpotlights[0].OuterCutOff", glm::cos(glm::radians(81.0f)));
         currentShader.setFloat("uSpotlights[0].Kc", 1.5);
@@ -870,27 +905,28 @@ int main()
         m = glm::scale(m, glm::vec3(0.05, 0.05, 0.05));
         currentShader.setMat4("uModel", m);
         if (params.tvOn) {
-            simpleCube->Render(&currentShader, 1, 1, 1);
 
             if (params.channelTime != 0) {
+                simpleCube->Render(&currentShader, 1, 1, 0);
                 currentShader.setVec3("uPointLights[0].Ka", glm::vec3(0.1, 0.1, 0.0));
                 currentShader.setVec3("uPointLights[0].Kd", glm::vec3(8.f, 8.0f, 0.0));
                 currentShader.setVec3("uPointLights[0].Ks", glm::vec3(1.0, 1.0f, 0));
             }
             else
             {
-                currentShader.setVec3("uPointLights[0].Ka", glm::vec3(0.1, 0.1, 0.0));
+                simpleCube->Render(&currentShader, 0, 1, 0);
+                currentShader.setVec3("uPointLights[0].Ka", glm::vec3(0.0, 0.1, 0.0));
                 currentShader.setVec3("uPointLights[0].Kd", glm::vec3(0.0, 8.0f, 0.0));
-                currentShader.setVec3("uPointLights[0].Ks", glm::vec3(0, 1.0f, 0));
+                currentShader.setVec3("uPointLights[0].Ks", glm::vec3(0.0, 1.0f, 0));
             }
 
         }
         else
         {
-            simpleCube->Render(&currentShader, 0, 1, 0);
-            currentShader.setVec3("uPointLights[0].Ka", glm::vec3(0.0, 0.0, 0.0));
-            currentShader.setVec3("uPointLights[0].Kd", glm::vec3(0.0, 0.0f, 0.0));
-            currentShader.setVec3("uPointLights[0].Ks", glm::vec3(0, 0.0f, 0));
+            simpleCube->Render(&currentShader, 1, 0, 0);
+            currentShader.setVec3("uPointLights[0].Ka", glm::vec3(0.1, 0.0, 0.0));
+            currentShader.setVec3("uPointLights[0].Kd", glm::vec3(8.0, 0.0f, 0.0));
+            currentShader.setVec3("uPointLights[0].Ks", glm::vec3(1.0, 0.0f, 0));
         }
 
         glm::vec3 lampPos2 = lampPos;
