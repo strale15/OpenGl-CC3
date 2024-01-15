@@ -696,7 +696,6 @@ int main()
     std::vector<float> circleVert = generateCircleVertices(1, 32);
     GameObject* circle = new GameObject(circleVert, true);
 
-    Model lija("res/low-poly-fox.obj");
     Model remoteModel("res/tv-remote-control.obj");
 
     Shader currentShader;
@@ -705,9 +704,6 @@ int main()
     Shader hudShader("hud.vert", "hud.frag");
     Shader twoD("twoD.vert", "twoD.frag");
     currentShader = phongShader;
-
-   
-    
 
     unsigned hudTex = Model::textureFromFile("res/hudTex.png");
     unsigned laminatDif = Model::textureFromFile("res/laminat.png");
