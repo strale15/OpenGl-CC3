@@ -29,6 +29,10 @@ const unsigned int wHeight = 1080;
 bool firstMouse = true;
 double lastX;
 double lastY;
+float narutoAspect = 1.469;
+float madaraAspect = 1.064;
+float tvLength = 0.3 * 16.f;
+float tvHegiht = 0.3 * 9.f;
 
 struct Params {
     float dt = 0;
@@ -204,6 +208,11 @@ static void HandleInput(Params* params) {
             params->objPos.y -= 0.5f * params->dt;
     }
 
+    params->clockRot += params->dt*6;
+    if (params->clockRot > 360) {
+        params->clockRot -= 360;
+    }
+
     //TV
     float remoteSpeed = 4;
     float remoteRotSpeed = 40;
@@ -243,6 +252,26 @@ static void HandleInput(Params* params) {
     }
     if (params->remoteRotRightZ) {
         params->remoteZrot -= remoteRotSpeed * params->dt;
+    }
+
+    float charSpeed = 2;
+    if (params->left1Down) {
+        params->xoffset1 += charSpeed * params->dt;
+        params->xoffset1 = glm::clamp(params->xoffset1, -10.f, 10.f);
+        params->xoffset1 = glm::clamp(params->xoffset1, -((tvLength * 0.9f / 4.f) - 0.33f*narutoAspect), tvLength * 0.9f / 4.f - 0.33f * narutoAspect);
+    }
+    if (params->right1Down) {
+        params->xoffset1 -= charSpeed * params->dt;
+        params->xoffset1 = glm::clamp(params->xoffset1, -10.f, 10.f);
+        params->xoffset1 = glm::clamp(params->xoffset1, -((tvLength * 0.9f / 4.f) - 0.33f * narutoAspect), tvLength * 0.9f / 4.f - 0.33f * narutoAspect);
+    }
+    if (params->left2Down) {
+        params->xoffset2 += charSpeed * params->dt;
+        params->xoffset2 = glm::clamp(params->xoffset2, -((tvLength*0.9f/4.f)-0.43f), tvLength * 0.9f / 4.f - 0.43f);
+    }
+    if (params->right2Down) {
+        params->xoffset2 -= charSpeed * params->dt;
+        params->xoffset2 = glm::clamp(params->xoffset2, -((tvLength * 0.9f / 4.f) - 0.43f), tvLength * 0.9f / 4.f - 0.43f);
     }
 
 
@@ -503,6 +532,7 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
     if (key == GLFW_KEY_1) {
         if (action == GLFW_PRESS) {
             params->channel = 1;
+            params->renderPoints = false;
         }
     }
     if (key == GLFW_KEY_2) {
@@ -513,7 +543,6 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
     if (key == GLFW_KEY_3) {
         if (action == GLFW_PRESS) {
             params->channel = 2;
-            params->renderPoints = false;
         }
     }
 
@@ -560,7 +589,7 @@ int main()
     HWND console = GetConsoleWindow();
     SetWindowPos(console, 0, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 
-    if(!glfwInit())
+    if (!glfwInit())
     {
         std::cout << "GLFW fail!\n" << std::endl;
         return -1;
@@ -585,7 +614,7 @@ int main()
     glfwSetCursorPosCallback(window, CursosPosCallback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    if (glewInit() !=GLEW_OK)
+    if (glewInit() != GLEW_OK)
     {
         std::cout << "GLEW fail! :(\n" << std::endl;
         return -3;
@@ -702,11 +731,11 @@ int main()
     phongShader.setFloat("uPointLights[0].Kq", 0.272f);
 
     unsigned hudTex = Model::textureFromFile("res/hudTex.png");
-    unsigned kockaDif = Model::textureFromFile("res/container_diffuse.png");
-    unsigned kockaSpec = Model::textureFromFile("res/container_specular.png");
     unsigned laminatDif = Model::textureFromFile("res/laminat.png");
     unsigned laminatSpec = Model::textureFromFile("res/laminatSpec.png");
     unsigned tepihDif = Model::textureFromFile("res/tepih.png");
+    unsigned narutoTex = Model::textureFromFile("res/naruto.png");
+    unsigned mataraTex = Model::textureFromFile("res/madara4.png");
 
     phongShader.setInt("uMaterial.Kd", 0);
     phongShader.setInt("uMaterial.Ks", 1);
@@ -742,7 +771,7 @@ int main()
 
         //Camera
         projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
-        view = glm::lookAt(params.position,params.position + params.cameraFront,params.cameraUp);
+        view = glm::lookAt(params.position, params.position + params.cameraFront, params.cameraUp);
 
         phongShader.setMat4("uProjection", projectionP);
         phongShader.setMat4("uView", view);
@@ -750,8 +779,6 @@ int main()
 
         //SCENE
         //------------------------------------------------------------------------------------------------------------
-        float tvLength = 0.3 * 16.f;
-        float tvHegiht = 0.3 * 9.f;
         float tvColor = 0.6;
 
         //Pod laminat
@@ -759,7 +786,7 @@ int main()
         //m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(20.0, 1.0, 20.0));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, laminatDif,laminatSpec);
+        simpleCube->Render(&phongShader, laminatDif, laminatSpec);
 
         //Pod tepih
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.001, -0.5));
@@ -769,32 +796,46 @@ int main()
         simpleCube->Render(&phongShader, tepihDif);
 
         //Stalak1
-        m = glm::translate(glm::mat4(1.0), glm::vec3(tvLength/2-0.3, 0.25+0.5, 6));
-        m = glm::scale(m, glm::vec3(0.4,0.5,0.4));
+        m = glm::translate(glm::mat4(1.0), glm::vec3(tvLength / 2 - 0.3, 0.25 + 0.5, 6));
+        m = glm::scale(m, glm::vec3(0.4, 0.5, 0.4));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, tvColor, tvColor, tvColor);
 
         //Stalak2
-        m = glm::translate(glm::mat4(1.0), glm::vec3(-tvLength/2+0.3, 0.25+0.5, 6));
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-tvLength / 2 + 0.3, 0.25 + 0.5, 6));
         m = glm::scale(m, glm::vec3(0.4, 0.5, 0.4));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, tvColor, tvColor, tvColor);
 
         //TvBase
-        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, tvHegiht/2 +1.0, 6.0));
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, tvHegiht / 2 + 1.0, 6.0));
         m = glm::scale(m, glm::vec3(tvLength, tvHegiht, 0.2));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, tvColor, tvColor, tvColor);
 
+        //Calculate chennel
+        if (params.channel != params.currChannel) {
+            if (params.channelTime >= 0.5) {
+                params.currChannel = params.channel;
+                params.channelTime = 0;
+            }
+            else
+            {
+                params.channelTime += params.dt;
+            }
+        }
+
         //TvScreen
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, tvHegiht / 2 + 1.0, 5.98));
-        m = glm::scale(m, glm::vec3(tvLength*0.9, tvHegiht*0.9, 0.2));
+        m = glm::scale(m, glm::vec3(tvLength * 0.9, tvHegiht * 0.9, 0.2));
         phongShader.setMat4("uModel", m);
-        if(params.tvOn)
-            simpleCube->Render(&phongShader, 1, 1, 1);
-        else
+        if (!params.tvOn || params.channelTime != 0)
         {
             simpleCube->Render(&phongShader, 0, 0, 0);
+        }
+        else
+        {
+            simpleCube->Render(&phongShader, 1, 1, 1);
         }
 
         //TvOnBtn
@@ -836,14 +877,54 @@ int main()
         twoD.setMat4("uProjection", projectionP);
         twoD.setMat4("uView", view);
 
-        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, tvHegiht / 2 + 1.0, 5.98-0.101));
-        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
-        m = glm::scale(m, glm::vec3(1.0));
-        twoD.setMat4("uModel", m);
-        circle->Render(&twoD, 0, 1, 0);
+        if (params.currChannel == 1 && params.channelTime == 0) {
+            //Clock
+            if (params.renderPoints) {
+                glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+            }
 
-        //glPolygonMode(GL_FRONT_AND_BACK, GL_POINT); 
-        //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, tvHegiht / 2 + 1.0, 5.98 - 0.101));
+            m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+            m = glm::scale(m, glm::vec3(1.0));
+            twoD.setMat4("uModel", m);
+            circle->Render(&twoD, 1, 1, 0);
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+            float pointLen = 0.9;
+            m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, tvHegiht / 2 + 1.0, 5.98 - 0.102));
+            m = glm::rotate(m, glm::radians(params.clockRot - 180), glm::vec3(0.0, 0.0, 1.0));
+            m = glm::translate(m, -glm::vec3(0.0, tvHegiht / 2 + 1.0, 5.98 - 0.102));
+
+            m = glm::translate(m, glm::vec3(0.0, tvHegiht / 2 + 1.0 - pointLen / 2, 5.98 - 0.102));
+            m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+            m = glm::scale(m, glm::vec3(0.02, pointLen, 1.0));
+            twoD.setMat4("uModel", m);
+            rectangle->Render(&twoD, 1, 0, 0);
+
+            pointLen = 0.7;
+            m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, tvHegiht / 2 + 1.0 - pointLen / 2, 5.98 - 0.1015));
+            m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+            m = glm::scale(m, glm::vec3(0.02, pointLen, 1.0));
+            twoD.setMat4("uModel", m);
+            rectangle->Render(&twoD, 0, 0, 1);
+
+        }
+        else if (params.currChannel == 2 && params.channelTime == 0) {
+            //NarutoXMadara
+            //Naruto
+            m = glm::translate(glm::mat4(1.0), glm::vec3(-(tvLength * 0.9f / 4.f) + params.xoffset1, tvHegiht / 2 + 1.0, 5.98 - 0.1019));
+            m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+            m = glm::scale(m, glm::vec3(1.0 * narutoAspect, 1.0, 1.0) / 1.5f);
+            twoD.setMat4("uModel", m);
+            rectangle->Render(&twoD, narutoTex);
+
+            //Madara
+            m = glm::translate(glm::mat4(1.0), glm::vec3((tvLength * 0.9f / 4.f) + params.xoffset2, tvHegiht / 2 + 1.0, 5.98 - 0.1019));
+            m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+            m = glm::scale(m, glm::vec3(1.3, 1.3 * madaraAspect, 1.0) / 1.5f);
+            twoD.setMat4("uModel", m);
+            rectangle->Render(&twoD, mataraTex);
+        }
 
         //------------------------------------------------------------------------------------------------------------
 
