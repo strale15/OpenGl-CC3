@@ -199,9 +199,9 @@ static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
     double xoffset = xPos - lastX;
     lastX = xPos;
 
-    float sensitivity = 0.3f;
+    float sensitivity = 180.f;
 
-    xoffset *= sensitivity;
+    xoffset *= sensitivity * params->dt;
 
     params->camYaw += xoffset;
 }
@@ -617,13 +617,13 @@ int main()
 
         float innerOffset = 0.15;
 
-        //Pod2(plafon)
+        //Pod2(pod za sobu gore)
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.51 + offset + 0.01, 0.0));
         m = glm::scale(m, glm::vec3(6.0, 0.1, 6.0));
         phongInnerShader.setMat4("uModel", m);
         simpleCube->Render(&phongInnerShader, podDif, podSpec);
 
-        //Plafon
+        //Plafon(skroz gore vrh kuce)
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.5 + offset * 2, 0.0));
         m = glm::scale(m, glm::vec3(5.9, 0.1, 5.9));
         phongInnerShader.setMat4("uModel", m);
@@ -709,75 +709,75 @@ int main()
             phongInnerShaderUpper.setVec3("uPointLights[0].Ks", glm::vec3(1.0f));
         }
 
-        //Pod2 (plafon prve sobe)
+        //Pod2 (plafon za sobu dole)
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.51 + offset, 0.0));
         m = glm::scale(m, glm::vec3(6.0, 0.1, 6.0));
         phongInnerShader.setMat4("uModel", m);
-        simpleCube->Render(&phongInnerShader, podDif, podSpec);
+        simpleCube->Render(&phongInnerShaderUpper, podDif, podSpec);
 
         //Pod
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.51, 0.0));
         m = glm::scale(m, glm::vec3(6.0, 0.1, 6.0));
-        phongInnerShader.setMat4("uModel", m);
-        simpleCube->Render(&phongInnerShader, podDif, podSpec);
+        phongInnerShaderUpper.setMat4("uModel", m);
+        simpleCube->Render(&phongInnerShaderUpper, podDif, podSpec);
 
         //Zadnj zid
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 2.5 , 3.0 - innerOffset));
         m = glm::scale(m, glm::vec3(5.99, 4.0, 0.1));
-        phongInnerShader.setMat4("uModel", m);
-        simpleCube->Render(&phongInnerShader, tapeteDif);
+        phongInnerShaderUpper.setMat4("uModel", m);
+        simpleCube->Render(&phongInnerShaderUpper, tapeteDif);
 
         //Sa leve strane zid
         m = glm::translate(glm::mat4(1.0), glm::vec3(3.0 - innerOffset, 2.5 , 0.0));
         m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(6.19, 4.0, 0.1));
-        phongInnerShader.setMat4("uModel", m);
-        simpleCube->Render(&phongInnerShader, tapeteDif);
+        phongInnerShaderUpper.setMat4("uModel", m);
+        simpleCube->Render(&phongInnerShaderUpper, tapeteDif);
 
         //Sa desne strane zid
         m = glm::translate(glm::mat4(1.0), glm::vec3(-3.0 + innerOffset, 2.5 , 0.0));
         m = glm::rotate(m, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(6.19, 4.0, 0.1));
-        phongInnerShader.setMat4("uModel", m);
-        simpleCube->Render(&phongInnerShader, tapeteDif);
+        phongInnerShaderUpper.setMat4("uModel", m);
+        simpleCube->Render(&phongInnerShaderUpper, tapeteDif);
 
         //Zid sa vratima
         m = glm::translate(glm::mat4(1.0), glm::vec3(1.5, 2.5 , -3.0 + innerOffset));
         m = glm::scale(m, glm::vec3(2.99, 4.0, 0.1));
-        phongInnerShader.setMat4("uModel", m);
-        simpleCube->Render(&phongInnerShader, tapeteDif);
+        phongInnerShaderUpper.setMat4("uModel", m);
+        simpleCube->Render(&phongInnerShaderUpper, tapeteDif);
 
         //Zid ispod prozora
         m = glm::translate(glm::mat4(1.0), glm::vec3(-1.49, 1.0 , -3.0 + innerOffset));
         m = glm::scale(m, glm::vec3(3.0, 1.0, 0.1));
-        phongInnerShader.setMat4("uModel", m);
-        simpleCube->Render(&phongInnerShader, tapeteDif);
+        phongInnerShaderUpper.setMat4("uModel", m);
+        simpleCube->Render(&phongInnerShaderUpper, tapeteDif);
 
         //Zid iznad prozora
         m = glm::translate(glm::mat4(1.0), glm::vec3(-1.49, 4.0 , -3.0 + innerOffset));
         m = glm::scale(m, glm::vec3(2.99, 1.0, 0.1));
-        phongInnerShader.setMat4("uModel", m);
-        simpleCube->Render(&phongInnerShader, tapeteDif);
+        phongInnerShaderUpper.setMat4("uModel", m);
+        simpleCube->Render(&phongInnerShaderUpper, tapeteDif);
 
         //Zid desno od prozora
         m = glm::translate(glm::mat4(1.0), glm::vec3(-2.5, 2.5 , -3.0 + innerOffset));
         m = glm::scale(m, glm::vec3(0.99, 2.0, 0.1));
-        phongInnerShader.setMat4("uModel", m);
-        simpleCube->Render(&phongInnerShader, tapeteDif);
+        phongInnerShaderUpper.setMat4("uModel", m);
+        simpleCube->Render(&phongInnerShaderUpper, tapeteDif);
 
         //Sto za bice
         m = glm::translate(glm::mat4(1.0), glm::vec3(-1.0, 0.5 + 0.4, -2.0));
         m = glm::scale(m, glm::vec3(1.6, 0.8, 1.0));
-        phongInnerShader.setMat4("uModel", m);
-        simpleCube->Render(&phongInnerShader, 0.36, 0.23, 0.03);
+        phongInnerShaderUpper.setMat4("uModel", m);
+        simpleCube->Render(&phongInnerShaderUpper, 0.36, 0.23, 0.03);
 
         //Bice (Dingus)
         glDisable(GL_CULL_FACE);
         m = glm::translate(glm::mat4(1.0), glm::vec3(-1.0, 0.5 + 0.8, -2.1));
         m = glm::rotate(m, glm::radians(130.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(0.03));
-        phongInnerShader.setMat4("uModel", m);
-        maxwell.Draw(phongInnerShader);
+        phongInnerShaderUpper.setMat4("uModel", m);
+        maxwell.Draw(phongInnerShaderUpper);
         glEnable(GL_CULL_FACE);
 
 
