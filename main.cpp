@@ -60,6 +60,8 @@ struct Params {
 
     //Tank
     glm::vec3 turretForward = glm::vec3(0.0, 0.0, 1.0);
+    glm::vec3 turretUp = glm::vec3(0.0, 0.0, 0.0);
+    glm::vec3 turretRight = glm::vec3(0.0, 0.0, 0.0);
     glm::vec3 muzzlePos = glm::vec3(0.0, 0.0, 0.0);
 
     bool rotLeft = false;
@@ -232,8 +234,8 @@ static void HandleInput(Params* params) {
         
     }
 
-    if (params->afterFire > 0.1) {
-        if (params->afterFire >= 6) {
+    if (params->afterFire > 0.1 && params->isCharged) {
+        if (params->afterFire >= 10) {
             params->afterFire = 0;
         }
         else
@@ -433,6 +435,7 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
                 params->ammo -= 1;
                 params->isCharged = false;
                 params->firedThisFrame = true;
+                params->afterFire = 0;
             }
         }
     }
@@ -613,14 +616,6 @@ int main()
     phongShader.setVec3("uDirLight.Kd", glm::vec3(0.6));
     phongShader.setVec3("uDirLight.Ks", glm::vec3(1.0, 1.0, 1.0));
 
-    phongShader.setVec3("uPointLights[0].Position", glm::vec3(-99999));
-    phongShader.setVec3("uPointLights[0].Ka", glm::vec3(230.0 / 255 / 0.1, 92.0 / 255 / 0.1, 0.0f));
-    phongShader.setVec3("uPointLights[0].Kd", glm::vec3(230.0 / 255 / 50, 92.0 / 255 / 50, 0.0f));
-    phongShader.setVec3("uPointLights[0].Ks", glm::vec3(1.0f));
-    phongShader.setFloat("uPointLights[0].Kc", 1.5f);
-    phongShader.setFloat("uPointLights[0].Kl", 1.0f);
-    phongShader.setFloat("uPointLights[0].Kq", 0.272f);
-
     unsigned hudTex = Model::textureFromFile("res/hudTex.png");
     unsigned kockaDif = Model::textureFromFile("res/container_diffuse.png");
     unsigned kockaSpec = Model::textureFromFile("res/container_specular.png");
@@ -663,6 +658,10 @@ int main()
         phongShader.setMat4("uProjection", projectionP);
         phongShader.setMat4("uView", view);
         phongShader.setVec3("uViewPos", params.position);
+
+        if (params.afterFire != 0) {
+            cout << params.afterFire  << " " << params.chargeTime << endl;
+        }
 
         //SCENE
         //------------------------------------------------------------------------------------------------------------
@@ -799,6 +798,10 @@ int main()
 
         params.turretForward = forward;
         params.muzzlePos = objPos;
+        params.turretUp = glm::vec3(0, 1, 0);
+        params.turretRight = glm::cross(forward, params.turretUp);
+
+
 
         m = glm::translate(glm::mat4(1.0), objPos);
         m = glm::scale(m, glm::vec3(0.6));
@@ -826,6 +829,25 @@ int main()
             cout << "hit" << endl;
         }
 
+        glm::vec3 muzzleLightInt = glm::vec3(0);
+        glm::vec3 muzzleLightIntS = glm::vec3(0);
+
+        if (params.afterFire != 0) {
+            float intCoef = 0.15 - params.afterFire;
+            if (intCoef < 0) {
+                intCoef = 0;
+            }
+            muzzleLightInt = glm::vec3(1, 1, 0) * intCoef * 3000.f;
+            muzzleLightIntS = glm::vec3(1, 1, 0) * intCoef * 10.f;
+        }
+
+        phongShader.setVec3("uPointLights[0].Position", params.muzzlePos);
+        phongShader.setVec3("uPointLights[0].Ka", muzzleLightInt/10.f);
+        phongShader.setVec3("uPointLights[0].Kd", muzzleLightInt);
+        phongShader.setVec3("uPointLights[0].Ks", muzzleLightIntS);
+        phongShader.setFloat("uPointLights[0].Kc", 1.5f);
+        phongShader.setFloat("uPointLights[0].Kl", 4.0f);
+        phongShader.setFloat("uPointLights[0].Kq", 4.272f);
         //------------------------------------------------------------------------------------------------------------
 
         if (params.firedThisFrame) {
@@ -900,6 +922,31 @@ int main()
         m = glm::scale(m, glm::vec3(0.015,0.15,1));
         twoD.setMat4("uModel", m);
         rectangle->Render(&twoD, 1, 0, 0);
+
+
+        //Transparentne stvari
+        if (params.afterFire != 0) {
+            phongShader.use();
+            phongShader.setBool("uTransp", true);
+            phongShader.setFloat("uAlpha", 1-params.afterFire/10.f);
+
+            m = glm::translate(glm::mat4(1.0), params.muzzlePos + params.turretForward * 1.6f - params.turretRight + params.turretUp * 0.5f);
+            m = glm::scale(m, glm::vec3(0.5));
+            phongShader.setMat4("uModel", m);
+            simpleCube->Render(&phongShader, 1, 1, 1);
+
+            m = glm::translate(glm::mat4(1.0), params.muzzlePos + params.turretForward*2.f + params.turretRight - params.turretUp * 0.5f);
+            m = glm::scale(m, glm::vec3(0.4));
+            phongShader.setMat4("uModel", m);
+            simpleCube->Render(&phongShader, 1, 1, 1);
+
+            m = glm::translate(glm::mat4(1.0), params.muzzlePos + params.turretForward + params.turretRight);
+            m = glm::scale(m, glm::vec3(0.6));
+            phongShader.setMat4("uModel", m);
+            simpleCube->Render(&phongShader, 1, 1, 1);
+
+            phongShader.setBool("uTransp", false);
+        }
 
         //HUD
         DrawHud(hudShader, hudTex);
