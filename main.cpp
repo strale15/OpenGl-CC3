@@ -602,6 +602,7 @@ int main()
     glClearColor(0.2, 0.2, 0.6, 1.0);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     while (!glfwWindowShouldClose(window))
@@ -890,5 +891,3 @@ void renderNets(Shader& phongShader, GameObject* simpleCube) {
         simpleCube->Render(&phongShader, 0, 1, 1);
     }
 }
-
-
