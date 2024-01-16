@@ -28,6 +28,7 @@ struct DirectionalLight {
 struct Material {
     sampler2D Kd;
     sampler2D Ks;
+    sampler2D Ke;
     float Shininess;
 };
 
@@ -115,7 +116,13 @@ void main() {
         }
     }
 
-    vec3 FinalColor = DirColor + PtLightsColor + SptLightsColor;
+    vec3 emission = vec3(0,0,0);
+    if(!isColor) {
+        emission = texture(uMaterial.Ke, UV).rgb;
+        emission /= 1.3;
+    }
+
+    vec3 FinalColor = DirColor + PtLightsColor + SptLightsColor + emission;
     float alpha = 1.0f;
     if(uTransp) {
         alpha = uAlpha;
