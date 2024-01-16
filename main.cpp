@@ -2,6 +2,7 @@
 //Preuzeto sa learnOpenGL
 
 #define _CRT_SECURE_NO_WARNINGS
+#define _USE_MATH_DEFINES
 
 #include <iostream>
 #include <fstream>
@@ -19,7 +20,11 @@
 
 #include "GameObject.cpp"
 
+#include <cmath>
 #include <Windows.h>
+
+#include <stdlib.h>     /* srand, rand */
+#include <time.h> 
 
 const unsigned int wWidth = 1920;
 const unsigned int wHeight = 1080;
@@ -54,6 +59,9 @@ struct Params {
     bool shiftDown = false;
 
     //Tank
+    glm::vec3 turretForward = glm::vec3(0.0, 0.0, 1.0);
+    glm::vec3 muzzlePos = glm::vec3(0.0, 0.0, 0.0);
+
     bool rotLeft = false;
     bool rotRight = false;
     bool rotUp = false;
@@ -212,7 +220,7 @@ static void HandleInput(Params* params) {
     }
 
     if (!params->isCharged) {
-        if (params->chargeTime >= 4) {
+        if (params->chargeTime >= 7.5) {
             params->isCharged = true;
             params->chargeTime = 0;
         }
@@ -232,10 +240,6 @@ static void HandleInput(Params* params) {
         {
             params->afterFire += params->dt;
         }
-    }
-
-    if (params->firedThisFrame) {
-        params->firedThisFrame = false;
     }
 }
 
@@ -404,7 +408,7 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
             params->isScope = true;
         }
     }
-    if (key == GLFW_KEY_V) {
+    if (key == GLFW_KEY_C) {
         if (action == GLFW_PRESS) {
             params->isScope = false;
         }
@@ -451,8 +455,51 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
     }
 }
 
+std::vector<float> generateHalfCircleVertices(float radius, int numSegments) {
+    std::vector<float> vertices;
+
+    // Ensure an even number of segments for a smooth half circle
+    if (numSegments % 2 != 0) {
+        numSegments++;
+    }
+
+    for (int i = 0; i < numSegments-1; ++i) {
+        float theta1 = M_PI * i / (numSegments - 1);
+        float theta2 = M_PI * (i + 1) / (numSegments - 1);
+
+        // Calculate the vertices for the current triangle
+        float x1 = radius * std::cos(theta1);
+        float y1 = radius * std::sin(theta1);
+        float x2 = radius * std::cos(theta2);
+        float y2 = radius * std::sin(theta2);
+
+        // Add the vertices to the vector
+        vertices.push_back(0.0f);  // Center vertex
+        vertices.push_back(0.0f);
+        vertices.push_back(0.0f);
+        vertices.push_back(0.5f);  // Center vertex UV
+        vertices.push_back(0.5f);
+
+        vertices.push_back(x1);
+        vertices.push_back(y1);
+        vertices.push_back(0.0f);
+        vertices.push_back(0.5f * (x1 / radius) + 0.5f);
+        vertices.push_back(0.5f * (y1 / radius) + 0.5f);
+
+        vertices.push_back(x2);
+        vertices.push_back(y2);
+        vertices.push_back(0.0f);
+        vertices.push_back(0.5f * (x2 / radius) + 0.5f);
+        vertices.push_back(0.5f * (y2 / radius) + 0.5f);
+    }
+
+    return vertices;
+}
+
 int main()
 {
+    srand(time(NULL));
+
     HWND console = GetConsoleWindow();
     SetWindowPos(console, 0, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 
@@ -546,6 +593,9 @@ int main()
     };
     GameObject* rectangle = new GameObject(vertices, true);
 
+    std::vector<float> circleVert = generateHalfCircleVertices(1, 64);
+    GameObject* halfCircle = new GameObject(circleVert, true);
+
     Model lija("res/low-poly-fox.obj");
 
     Shader phongShader("phong.vert", "phong.frag");
@@ -555,25 +605,13 @@ int main()
     phongShader.use();
 
     glm::mat4 view;
-    glm::mat4 projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
-    phongShader.setMat4("uProjection", projectionP);
+    glm::mat4 projectionP;
 
     phongShader.setVec3("uDirLight.Position", 0.0, 30, 0.0);
     phongShader.setVec3("uDirLight.Direction", 0.2, -1, 0.2);
     phongShader.setVec3("uDirLight.Ka", glm::vec3(0.2));
     phongShader.setVec3("uDirLight.Kd", glm::vec3(0.6));
     phongShader.setVec3("uDirLight.Ks", glm::vec3(1.0, 1.0, 1.0));
-
-    phongShader.setVec3("uSpotlights[0].Position", glm::vec3(-999999));
-    phongShader.setVec3("uSpotlights[0].Direction", 0.0, -1.0, 0.0);
-    phongShader.setVec3("uSpotlights[0].Ka", 0.0, 0.0, 0.0);
-    phongShader.setVec3("uSpotlights[0].Kd", glm::vec3(3.0f, 3.0f, 3.0f));
-    phongShader.setVec3("uSpotlights[0].Ks", glm::vec3(1.0));
-    phongShader.setFloat("uSpotlights[0].InnerCutOff", glm::cos(glm::radians(10.0f)));
-    phongShader.setFloat("uSpotlights[0].OuterCutOff", glm::cos(glm::radians(15.0f)));
-    phongShader.setFloat("uSpotlights[0].Kc", 1.0);
-    phongShader.setFloat("uSpotlights[0].Kl", 0.092f);
-    phongShader.setFloat("uSpotlights[0].Kq", 0.032f);
 
     phongShader.setVec3("uPointLights[0].Position", glm::vec3(-99999));
     phongShader.setVec3("uPointLights[0].Ka", glm::vec3(230.0 / 255 / 0.1, 92.0 / 255 / 0.1, 0.0f));
@@ -614,23 +652,35 @@ int main()
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        if (params.firedThisFrame) {
-            cout << "puc";
-        }
-
         //Loop
         phongShader.use();
         HandleInput(&params);
 
         //Camera
         view = glm::lookAt(params.position,params.position + params.cameraFront,params.cameraUp);
+        projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
 
+        phongShader.setMat4("uProjection", projectionP);
         phongShader.setMat4("uView", view);
         phongShader.setVec3("uViewPos", params.position);
 
         //SCENE
         //------------------------------------------------------------------------------------------------------------
-        
+        if (params.nightVision && params.isScope) {
+            phongShader.setVec3("uDirLight.Position", 0.0, 30, 0.0);
+            phongShader.setVec3("uDirLight.Direction", 0.2, -1, 0.2);
+            phongShader.setVec3("uDirLight.Ka", glm::vec3(0,0.1,0));
+            phongShader.setVec3("uDirLight.Kd", glm::vec3(0,0.3,0));
+            phongShader.setVec3("uDirLight.Ks", glm::vec3(0,1.0, 0.0));
+        }
+        else
+        {
+            phongShader.setVec3("uDirLight.Position", 0.0, 30, 0.0);
+            phongShader.setVec3("uDirLight.Direction", 0.2, -1, 0.2);
+            phongShader.setVec3("uDirLight.Ka", glm::vec3(0.2));
+            phongShader.setVec3("uDirLight.Kd", glm::vec3(0.6));
+            phongShader.setVec3("uDirLight.Ks", glm::vec3(1.0, 1.0, 1.0));
+        }
         
         //Ground
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 0.0));
@@ -660,6 +710,28 @@ int main()
         m = glm::scale(m, glm::vec3(2.5, 1.4, 0.05));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, 0, 0, 1);
+
+        glm::vec3 spotPos = glm::vec3(m[3]);
+        glm::vec3 spotDir = glm::normalize(glm::vec3(m[2]));
+        glm::vec3 spotRight = glm::cross(spotDir, glm::vec3(0, 1, 0));
+
+        glm::vec3 lightInt = glm::vec3(0);
+        glm::vec3 lightIntS = glm::vec3(0);
+        if (params.isLightOn) {
+            lightInt = glm::vec3(2.f);
+            lightIntS = glm::vec3(1.f);
+        }
+
+        phongShader.setVec3("uSpotlights[0].Position", spotPos + spotRight*1.1f);
+        phongShader.setVec3("uSpotlights[0].Direction", spotDir);
+        phongShader.setVec3("uSpotlights[0].Ka", 0.0, 0.0, 0.0);
+        phongShader.setVec3("uSpotlights[0].Kd", lightInt);
+        phongShader.setVec3("uSpotlights[0].Ks", lightIntS);
+        phongShader.setFloat("uSpotlights[0].InnerCutOff", glm::cos(glm::radians(20.0f)));
+        phongShader.setFloat("uSpotlights[0].OuterCutOff", glm::cos(glm::radians(25.0f)));
+        phongShader.setFloat("uSpotlights[0].Kc", 1.0);
+        phongShader.setFloat("uSpotlights[0].Kl", 0.92f);
+        phongShader.setFloat("uSpotlights[0].Kq", 0.032f);
 
         //Kupola3
         m = glm::rotate(glm::mat4(1.0), glm::radians(params.rotY), glm::vec3(0.0, 1.0, 0.0));
@@ -725,16 +797,112 @@ int main()
         objPos = glm::vec3(m[3]);
         objPos += forward * 7.5f / 2.f;
 
+        params.turretForward = forward;
+        params.muzzlePos = objPos;
+
         m = glm::translate(glm::mat4(1.0), objPos);
         m = glm::scale(m, glm::vec3(0.6));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, 0, 1, 1);
 
+        //Meta
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 1.5, 25.0));
+        m = glm::scale(m, glm::vec3(1,2,1));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 0, 1, 1);
+
+        //Formula za metu
+        glm::vec3 targetPos = glm::vec3(0.0, 1.5, 25.0);
+        glm::vec3 direction = targetPos - params.muzzlePos;
+        float dotProduct = glm::dot(glm::normalize(direction), params.turretForward);
+        dotProduct = glm::clamp(dotProduct, -1.f, 1.f);
+        float angleRadians = std::acos(dotProduct);
+        float angleDegrees = glm::degrees(angleRadians);
+
+        if (params.firedThisFrame) {
+            cout << "puc " << angleDegrees << " " << endl;
+        }
+        if (params.firedThisFrame && angleDegrees <= 5) {
+            cout << "hit" << endl;
+        }
+
         //------------------------------------------------------------------------------------------------------------
+
+        if (params.firedThisFrame) {
+            params.firedThisFrame = false;
+        }
+
+        //2D Stvari
+        twoD.use();
+        twoD.setMat4("uProjection", projectionP);
+        twoD.setMat4("uView", view);
+
+        spotPos -= spotDir * 0.05f;
+
+        //base inst
+        m = glm::rotate(glm::mat4(1.0), glm::radians(params.rotY), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, glm::vec3(0.0, 0.5 + 1.2 + 0.7, 3.5 / 2 - 0.1));
+        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+        twoD.setMat4("uModel", m);
+        //rectangle->Render(&twoD, 1, 0.5, 1);
+
+        for (int i = 0; i < params.ammo; i++) {
+            m = glm::rotate(glm::mat4(1.0), glm::radians(params.rotY), glm::vec3(0.0, 1.0, 0.0));
+            m = glm::translate(m, glm::vec3(0.0, 0.5 + 1.2 + 0.7, 3.5 / 2 - 0.11));
+            m = glm::translate(m, glm::vec3(1.1-0.06*i, -0.4, 0.0));
+            m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+            m = glm::scale(m, glm::vec3(0.03, 0.2, 1.0));
+            twoD.setMat4("uModel", m);
+            rectangle->Render(&twoD, 1, 1, 0);
+        }
+
+        m = glm::rotate(glm::mat4(1.0), glm::radians(params.rotY), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, glm::vec3(0.0, 0.5 + 1.2 + 0.7, 3.5 / 2 - 0.1));
+        m = glm::translate(m, glm::vec3(-0.7, -0.3,0));
+        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.2));
+        twoD.setMat4("uModel", m);
+        if (params.isCharged) {
+            rectangle->Render(&twoD, 0, 1, 0);
+        }
+        else
+        {
+            rectangle->Render(&twoD, 1, 1, 1);
+        }
+
+        m = glm::rotate(glm::mat4(1.0), glm::radians(params.rotY), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, glm::vec3(0.0, 0.5 + 1.2 + 0.7, 3.5 / 2 - 0.1));
+        m = glm::translate(m, glm::vec3(-0.7, -0.1, 0));
+        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.2));
+        twoD.setMat4("uModel", m);
+        halfCircle->Render(&twoD, 1, 0.5, 1);
+
+        //Pointer
+        float randomInnacuracy = static_cast<float>(rand()) / static_cast<float>(RAND_MAX / params.voltage) - params.voltage/2;
+
+        m = glm::rotate(glm::mat4(1.0), glm::radians(params.rotY), glm::vec3(0.0, 1.0, 0.0));
+
+        m = glm::translate(m, glm::vec3(0.0, 0.5 + 1.2 + 0.7, 3.5 / 2 - 0.11));
+        m = glm::translate(m, glm::vec3(-0.7, -0.1, 0));
+
+        float rotation = params.voltage * 18 - 90 + randomInnacuracy;
+        rotation = glm::clamp(rotation, -90.f, 90.f);
+        m = glm::rotate(m, glm::radians(rotation), glm::vec3(0.0, 0.0, 1.0));
+
+        m = glm::translate(m, -glm::vec3(0.0, 0.5 + 1.2 + 0.7, 3.5 / 2 - 0.11));
+        m = glm::translate(m, -glm::vec3(-0.7, -0.1, 0));
+
+        m = glm::translate(m, glm::vec3(0.0, 0.5 + 1.2 + 0.7, 3.5 / 2 - 0.11));
+        m = glm::translate(m, glm::vec3(-0.7, -0.1+0.075, 0));
+        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.015,0.15,1));
+        twoD.setMat4("uModel", m);
+        rectangle->Render(&twoD, 1, 0, 0);
 
         //HUD
         DrawHud(hudShader, hudTex);
-        phongShader.use();
 
         glfwSwapBuffers(window);
         glfwPollEvents();
