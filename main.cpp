@@ -32,14 +32,10 @@ struct Params {
     float dt;
     bool isFps = true;
 
-    bool isCurosIn = true;
-    double xPosC = 0.0;
-    double yPosC = 0.0;
-
     glm::vec3 cameraFront = glm::vec3(0.0, 0.0, 1.0);
     glm::vec3 cameraUp = glm::vec3(0.0, 1.0, 0.0);
-
     glm::vec3 position = glm::vec3(0.0, 0.0, -1.0);
+
     glm::vec3 objPos = glm::vec3(0.0, 0.0, 0.0);
 
     double camYaw = 90;
@@ -105,6 +101,11 @@ static void DrawHud(Shader& hudShader, unsigned hudTex) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    // Delete VAO, VBO, and EBO
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &EBO);
 }
 
 static void HandleInput(Params* params) {
@@ -157,11 +158,6 @@ static void HandleInput(Params* params) {
 
 static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
     Params* params = (Params*)glfwGetWindowUserPointer(window);
-
-    if (params->isCurosIn) {
-        params->xPosC = xPos;
-        params->yPosC = yPos;
-    }
 
     if (firstMouse) {
         lastX = xPos;
