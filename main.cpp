@@ -29,7 +29,7 @@ double lastX;
 double lastY;
 
 struct Params {
-    float dt;
+    float dt = 0;
     bool isFps = true;
 
     bool isCurosIn = true;
@@ -52,6 +52,33 @@ struct Params {
 
     bool spaceDown = false;
     bool shiftDown = false;
+
+    //Tank
+    bool rotLeft = false;
+    bool rotRight = false;
+    bool rotUp = false;
+    bool rotDown = false;
+
+    float rotY = 0;
+    float rotX = 0;
+
+    float chargeTime = 0;
+    bool isCharged = true;
+    int ammo = 10;
+    bool firedThisFrame = false;
+
+    bool isScope = false;
+
+    bool voltageUp = false;
+    bool voltageDown = false;
+    float voltage = 10;
+
+    bool nightVision = false;
+    float zoom = 90;
+
+    float afterFire = 0;
+
+    bool isLightOn = false;
 };
 
 static void DrawHud(Shader& hudShader, unsigned hudTex) {
@@ -105,6 +132,11 @@ static void DrawHud(Shader& hudShader, unsigned hudTex) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    // Delete VAO, VBO, and EBO
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &EBO);
 }
 
 static void HandleInput(Params* params) {
@@ -152,6 +184,58 @@ static void HandleInput(Params* params) {
             params->position.y -= 4.1 * params->dt;
         else
             params->objPos.y -= 0.5f * params->dt;
+    }
+
+    //Tank
+    if (params->rotLeft) {
+        params->rotY += 8 * params->voltage * params->dt;
+    }
+    if (params->rotRight) {
+        params->rotY -= 8 * params->voltage * params->dt;
+    }
+    if (params->rotUp) {
+        params->rotX += 10 * params->dt;
+        params->rotX = glm::clamp(params->rotX, -10.f, 10.f);
+    }
+    if (params->rotDown) {
+        params->rotX -= 10 * params->dt;
+        params->rotX = glm::clamp(params->rotX, -10.f, 10.f);
+    }
+
+    if (params->voltageUp) {
+        params->voltage += 2 * params->dt;
+        params->voltage = glm::clamp(params->voltage, 0.f, 10.f);
+    }
+    if (params->voltageDown) {
+        params->voltage -= 2 * params->dt;
+        params->voltage = glm::clamp(params->voltage, 0.f, 10.f);
+    }
+
+    if (!params->isCharged) {
+        if (params->chargeTime >= 4) {
+            params->isCharged = true;
+            params->chargeTime = 0;
+        }
+        else
+        {
+            params->chargeTime += params->dt;
+            params->afterFire += params->dt;
+        }
+        
+    }
+
+    if (params->afterFire > 0.1) {
+        if (params->afterFire >= 6) {
+            params->afterFire = 0;
+        }
+        else
+        {
+            params->afterFire += params->dt;
+        }
+    }
+
+    if (params->firedThisFrame) {
+        params->firedThisFrame = false;
     }
 }
 
@@ -261,6 +345,109 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
     if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_RELEASE)
     {
         params->shiftDown = false;
+    }
+
+    //Tank
+    if (key == GLFW_KEY_LEFT) {
+        if (action == GLFW_PRESS) {
+            params->rotLeft = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->rotLeft = false;
+        }
+    }
+    if (key == GLFW_KEY_RIGHT) {
+        if (action == GLFW_PRESS) {
+            params->rotRight = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->rotRight = false;
+        }
+    }
+    if (key == GLFW_KEY_UP) {
+        if (action == GLFW_PRESS) {
+            params->rotUp = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->rotUp = false;
+        }
+    }
+    if (key == GLFW_KEY_DOWN) {
+        if (action == GLFW_PRESS) {
+            params->rotDown = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->rotDown = false;
+        }
+    }
+
+    if (key == GLFW_KEY_KP_ADD) {
+        if (action == GLFW_PRESS) {
+            params->voltageUp = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->voltageUp = false;
+        }
+    }
+
+    if (key == GLFW_KEY_KP_SUBTRACT) {
+        if (action == GLFW_PRESS) {
+            params->voltageDown = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->voltageDown = false;
+        }
+    }
+
+    if (key == GLFW_KEY_V) {
+        if (action == GLFW_PRESS) {
+            params->isScope = true;
+        }
+    }
+    if (key == GLFW_KEY_V) {
+        if (action == GLFW_PRESS) {
+            params->isScope = false;
+        }
+    }
+
+    if (key == GLFW_KEY_F) {
+        if (action == GLFW_PRESS) {
+            params->isLightOn = !params->isLightOn;
+        }
+    }
+
+    if (key == GLFW_KEY_G) {
+        if (action == GLFW_PRESS) {
+            params->nightVision = !params->nightVision;
+        }
+    }
+
+    if (key == GLFW_KEY_L) {
+        if (action == GLFW_PRESS) {
+            //Nesto nesto?
+            if (params->isCharged && params->ammo > 0) {
+                params->ammo -= 1;
+                params->isCharged = false;
+                params->firedThisFrame = true;
+            }
+        }
+    }
+
+    if (key == GLFW_KEY_1) {
+        if (action == GLFW_PRESS) {
+            params->zoom = 90;
+            cout << "lol" << endl;
+        }
+    }
+    if (key == GLFW_KEY_2) {
+        if (action == GLFW_PRESS) {
+            params->zoom = 60;
+        }
+    }
+    if (key == GLFW_KEY_3) {
+        if (action == GLFW_PRESS) {
+            params->zoom = 30;
+        }
     }
 }
 
@@ -427,6 +614,10 @@ int main()
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        if (params.firedThisFrame) {
+            cout << "puc";
+        }
+
         //Loop
         phongShader.use();
         HandleInput(&params);
@@ -439,51 +630,106 @@ int main()
 
         //SCENE
         //------------------------------------------------------------------------------------------------------------
+        
+        
+        //Ground
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 0.0));
         //m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(100.0, 1.0, 100.0));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, 1, 0.5, 1);
 
+        //Tank Base
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.5+0.6, 0.0));
         m = glm::scale(m, glm::vec3(5.0, 1.2, 7.0));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, 0, 1, 0);
 
-        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.5 + 0.6+0.7, 0.0));
-        m = glm::scale(m, glm::vec3(2.5, 2.0, 3.5));
-        phongShader.setMat4("uModel", m);
-        //simpleCube->Render(&phongShader, 0, 1, 0);
+        //Kupola1
+        m = glm::rotate(glm::mat4(1.0), glm::radians(params.rotY), glm::vec3(0.0, 1.0, 0.0));
 
-        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.5 + 1.2 + 0.7, -3.5/2));
+        m = glm::translate(m, glm::vec3(0.0, 0.5 + 1.2 + 0.7, -3.5/2));
         m = glm::scale(m, glm::vec3(2.5, 1.4, 0.05));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, 0, 0, 1);
 
-        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.5 + 1.2 + 0.7, 3.5 / 2));
+        //Kupola2
+        m = glm::rotate(glm::mat4(1.0), glm::radians(params.rotY), glm::vec3(0.0, 1.0, 0.0));
+
+        m = glm::translate(m, glm::vec3(0.0, 0.5 + 1.2 + 0.7, 3.5 / 2));
         m = glm::scale(m, glm::vec3(2.5, 1.4, 0.05));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, 0, 0, 1);
 
-        m = glm::translate(glm::mat4(1.0), glm::vec3(2.5/2, 0.5 + 1.2 + 0.7, 0.0));
+        //Kupola3
+        m = glm::rotate(glm::mat4(1.0), glm::radians(params.rotY), glm::vec3(0.0, 1.0, 0.0));
+
+        m = glm::translate(m, glm::vec3(2.5/2, 0.5 + 1.2 + 0.7, 0.0));
         m = glm::scale(m, glm::vec3(0.05, 1.4, 3.5));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, 0, 0, 1);
 
-        m = glm::translate(glm::mat4(1.0), glm::vec3(-2.5 / 2, 0.5 + 1.2 + 0.7, 0.0));
+        //Kupola4
+        m = glm::rotate(glm::mat4(1.0), glm::radians(params.rotY), glm::vec3(0.0, 1.0, 0.0));
+
+        m = glm::translate(m, glm::vec3(-2.5 / 2, 0.5 + 1.2 + 0.7, 0.0));
         m = glm::scale(m, glm::vec3(0.05, 1.4, 3.5));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, 0, 0, 1);
 
-        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.5 + 1.2 + 0.7+0.7, 0.0));
+        //Kupola5
+        m = glm::rotate(glm::mat4(1.0), glm::radians(params.rotY), glm::vec3(0.0, 1.0, 0.0));
+
+        m = glm::translate(m, glm::vec3(0.0, 0.5 + 1.2 + 0.7+0.7, 0.0));
         m = glm::scale(m, glm::vec3(2.5, 0.05, 3.5));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, 1, 0, 0);
 
-        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.5 + 1.2 + 0.7, 7.0/2+3.5/2));
-        m = glm::scale(m, glm::vec3(0.4, 0.4, 7.0));
+        //Kupola6 (top)
+        glm::vec3 turretCenter = glm::vec3(0.0, 0.5 + 1.2 + 0.7, 0.0);
+
+        m = glm::translate(glm::mat4(1.0), turretCenter);
+        m = glm::rotate(m, glm::radians(params.rotY), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, -turretCenter);
+
+        m = glm::translate(m, glm::vec3(0.0, 0.5 + 1.2 + 0.7, 7.0/2+3.5/2));
+        m = glm::scale(m, glm::vec3(0.4, 0.4, 7.5));
+
+        glm::vec3 forward = glm::vec3(m[2]);
+        forward = glm::normalize(forward);
+
+        glm::vec3 right = glm::cross(forward, glm::vec3(0, 1, 0));
+        right = glm::normalize(right);
+
+        glm::vec3 objPos = glm::vec3(m[3]);
+        objPos -= forward * 7.5f/2.f;
+
+        
+
+        m = glm::translate(glm::mat4(1.0), objPos);
+        m = glm::rotate(m, glm::radians(params.rotX), right);
+        m = glm::translate(m, -objPos);
+
+        m = glm::translate(m, turretCenter);
+        m = glm::rotate(m, glm::radians(params.rotY), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, -turretCenter);
+        
+        m = glm::translate(m, glm::vec3(0.0, 0.5 + 1.2 + 0.7, 7.0 / 2 + 3.5 / 2));
+        m = glm::scale(m, glm::vec3(0.4, 0.4, 7.5));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, 1, 0, 0);
+
+        forward = glm::vec3(m[2]);
+        forward = glm::normalize(forward);
+
+        objPos = glm::vec3(m[3]);
+        objPos += forward * 7.5f / 2.f;
+
+        m = glm::translate(glm::mat4(1.0), objPos);
+        m = glm::scale(m, glm::vec3(0.6));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 0, 1, 1);
+
         //------------------------------------------------------------------------------------------------------------
 
         //HUD
