@@ -193,7 +193,7 @@ static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
     params->cameraFront = glm::normalize(front);
 }
 
-static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode) {
+static void KeyCallback2(GLFWwindow* window, int key, int scancode, int action, int mode) {
     Params* params = (Params*)glfwGetWindowUserPointer(window);
     if (key == GLFW_KEY_E && action == GLFW_PRESS)
     {
@@ -258,6 +258,13 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
     {
         params->shiftDown = false;
     }
+
+    if (key == GLFW_KEY_LEFT_SHIFT) {
+        if (action == GLFW_PRESS) {
+            //params->shiftDown = true;
+            //Nesto sto se desi jednom
+        }
+    }
 }
 
 int main()
@@ -286,7 +293,7 @@ int main()
     glfwSetWindowPos(window, 300, 120);
     glfwMakeContextCurrent(window);
     glfwMakeContextCurrent(window);
-    glfwSetKeyCallback(window, KeyCallback);
+    glfwSetKeyCallback(window, KeyCallback2);
     glfwSetCursorPosCallback(window, CursosPosCallback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -352,13 +359,12 @@ int main()
     phongShader.use();
 
     glm::mat4 view;
-    glm::mat4 projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
-    phongShader.setMat4("uProjection", projectionP);
+    glm::mat4 projectionP;
 
-    phongShader.setVec3("uDirLight.Position", 0.0, 5, 0.0);
-    phongShader.setVec3("uDirLight.Direction", 0.1, -5, 0.1);
-    phongShader.setVec3("uDirLight.Ka", glm::vec3(255.0 / 255 / 10, 238.0 / 255 / 10, 204.0 / 255 / 10));
-    phongShader.setVec3("uDirLight.Kd", glm::vec3(255.0 / 255 / 10, 238.0 / 255 / 10, 204.0 / 255 / 10));
+    phongShader.setVec3("uDirLight.Position", glm::vec3(0.0, 5.0f, 0.0f));
+    phongShader.setVec3("uDirLight.Direction", 0.0, -1, 0.0);
+    phongShader.setVec3("uDirLight.Ka", glm::vec3(0.3));
+    phongShader.setVec3("uDirLight.Kd", glm::vec3(0.6));
     phongShader.setVec3("uDirLight.Ks", glm::vec3(1.0, 1.0, 1.0));
 
     phongShader.setVec3("uSpotlights[0].Position", 0.0, 10.0, 0.0);
@@ -399,7 +405,6 @@ int main()
     phongShader.setInt("uMaterial.Ks", 1);
     phongShader.setFloat("uMaterial.Shininess", 0.5 * 128);
 
-    glm::mat4 model2 = glm::mat4(1.0f);
     glm::mat4 m(1.0f);
     float currentRot = 0;
     float FrameStartTime = 0;
@@ -412,6 +417,9 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
     while (!glfwWindowShouldClose(window))
     {
         FrameStartTime = glfwGetTime();
@@ -425,18 +433,27 @@ int main()
         HandleInput(&params);
 
         //Camera
-        view = glm::lookAt(params.position,params.position + params.cameraFront,params.cameraUp);
+        view = glm::lookAt(params.position, params.position + params.cameraFront, params.cameraUp);
+        projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
 
         phongShader.setMat4("uView", view);
+        phongShader.setMat4("uProjection", projectionP);
         phongShader.setVec3("uViewPos", params.position);
 
         //SCENE
         //------------------------------------------------------------------------------------------------------------
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 0.0));
-        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
-        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+        m = glm::rotate(m, glm::radians(0.f), glm::vec3(1.0, 0.0, 0.0));
+        m = glm::scale(m, glm::vec3(5.f));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 1, 1);
+        simpleCube->Render(&phongShader, kockaDif, kockaSpec);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, -1.0, 0.0));
+        m = glm::rotate(m, glm::radians(0.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(10.0, 1.0, 10.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 0, 0);
+
         //------------------------------------------------------------------------------------------------------------
 
         //HUD
