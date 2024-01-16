@@ -26,12 +26,20 @@
 #include <stdlib.h>     /* srand, rand */
 #include <time.h> 
 
+#define TARGET_NUMBER 10
+
 const unsigned int wWidth = 1920;
 const unsigned int wHeight = 1080;
 
 bool firstMouse = true;
 double lastX;
 double lastY;
+
+struct Target {
+    glm::vec3 targetPosition;
+    int targetId;
+    bool alive;
+};
 
 struct Params {
     float dt = 0;
@@ -90,6 +98,60 @@ struct Params {
 
     bool isLightOn = false;
 };
+
+Target targets[TARGET_NUMBER];
+
+float targetScale = 3;
+
+//float randomInnacuracy = static_cast<float>(rand()) / static_cast<float>(RAND_MAX / params.voltage) - params.voltage/2;
+static void GenerateTargetPositions() {
+    for (int i = 0; i < TARGET_NUMBER; i++) {
+    gas:
+        float randomX = static_cast<float>(rand()) / static_cast<float>(RAND_MAX / 100.0) - 50.0;
+        float randomZ = static_cast<float>(rand()) / static_cast<float>(RAND_MAX / 100.0) - 50.0;
+        float Y = targetScale/2+0.5;
+
+        if (glm::distance(glm::vec3(randomX, Y, randomZ), glm::vec3(0)) < 20) {
+            goto gas;
+        }
+
+        targets[i].targetPosition = glm::vec3(randomX, Y, randomZ);
+        targets[i].targetId = i;
+        targets[i].alive = true;
+
+        cout << randomX << " " << randomZ << endl;
+    }
+}
+
+static void RenderAliveTargets(Shader& shader, GameObject* targetObj) {
+    for (int i = 0; i < TARGET_NUMBER; i++) {
+        if (targets[i].alive) {
+            glm::mat4 m;
+            m = glm::translate(glm::mat4(1.0), targets[i].targetPosition);
+            //m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+            m = glm::scale(m, glm::vec3(1.0, targetScale, 1.0));
+            shader.setMat4("uModel", m);
+            targetObj->Render(&shader, 1, 0, 0);
+        }
+    }
+}
+
+static void CheckIfTargetHit(Params* params) {
+    for (int i = 0; i < TARGET_NUMBER; i++) {
+        if (targets[i].alive) {
+            glm::vec3 targetPos = targets[i].targetPosition;
+            glm::vec3 direction = targetPos - params->muzzlePos;
+            float dotProduct = glm::dot(glm::normalize(direction), params->turretForward);
+            dotProduct = glm::clamp(dotProduct, -1.f, 1.f);
+            float angleRadians = std::acos(dotProduct);
+            float angleDegrees = glm::degrees(angleRadians);
+            //cout << targets[i].targetId << " " << angleDegrees << endl;
+            if (angleDegrees <= 4) {
+                targets[i].alive = false;
+            }
+        }
+    }
+}
 
 static void DrawHud(Shader& hudShader, unsigned hudTex) {
     //hud
@@ -639,6 +701,9 @@ int main()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
+
+    GenerateTargetPositions();
+
     while (!glfwWindowShouldClose(window))
     {
         FrameStartTime = glfwGetTime();
@@ -659,12 +724,13 @@ int main()
         phongShader.setMat4("uView", view);
         phongShader.setVec3("uViewPos", params.position);
 
-        if (params.afterFire != 0) {
-            cout << params.afterFire  << " " << params.chargeTime << endl;
-        }
-
         //SCENE
         //------------------------------------------------------------------------------------------------------------
+        RenderAliveTargets(phongShader, simpleCube);
+        if (params.firedThisFrame) {
+            CheckIfTargetHit(&params);
+        }
+
         if (params.nightVision && params.isScope) {
             phongShader.setVec3("uDirLight.Position", 0.0, 30, 0.0);
             phongShader.setVec3("uDirLight.Direction", 0.2, -1, 0.2);
@@ -829,11 +895,12 @@ int main()
             cout << "hit" << endl;
         }
 
+        //Muzzle flash
         glm::vec3 muzzleLightInt = glm::vec3(0);
         glm::vec3 muzzleLightIntS = glm::vec3(0);
 
         if (params.afterFire != 0) {
-            float intCoef = 0.15 - params.afterFire;
+            float intCoef = 0.1 - params.afterFire;
             if (intCoef < 0) {
                 intCoef = 0;
             }
