@@ -223,10 +223,10 @@ static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
     lastX = xPos;
     lastY = yPos;
 
-    float sensitivity = 0.3f;
+    float sensitivity = 200.f;
 
-    xoffset *= sensitivity;
-    yoffset *= sensitivity;
+    xoffset *= sensitivity * params->dt;
+    yoffset *= sensitivity * params->dt;
 
     params->camYaw += xoffset;
     params->camPitch += yoffset;
@@ -532,12 +532,9 @@ int main()
 
     phongShader.setVec3("uDirLight.Position", 0.0, 5, 0.0);
     phongShader.setVec3("uDirLight.Direction", 0.1, -5, 0.1);
-    phongShader.setVec3("uDirLight.Ka", glm::vec3(0.2));
-    phongShader.setVec3("uDirLight.Kd", glm::vec3(0.5));
-    phongShader.setVec3("uDirLight.Ks", glm::vec3(1.0, 1.0, 1.0));
-
     phongShader.setVec3("uDirLight.Ka", glm::vec3(0));
     phongShader.setVec3("uDirLight.Kd", glm::vec3(0));
+    phongShader.setVec3("uDirLight.Ks", glm::vec3(1.0, 1.0, 1.0));
 
     unsigned hudTex = Model::textureFromFile("res/hudTex.png");
     unsigned woodDif = Model::textureFromFile("res/WoodFloor043_2K-PNG_Color.png");
@@ -651,7 +648,7 @@ int main()
                 glm::vec3 statueForward = glm::vec3(m[1]);
                 statueForward = glm::normalize(-statueForward);
                 float angleBetween;
-                float dotProduct = glm::clamp(glm::dot(statueForward, direction), -1.0f, 1.0f);
+                float dotProduct = glm::dot(statueForward, direction);
 
                 dotProduct = glm::clamp(dotProduct, -1.0f, 1.0f);
                 angleBetween = std::acos(dotProduct);
@@ -662,7 +659,6 @@ int main()
                     statueAngle -= M_PI * 2;
                 }
             }
-            
         }
 
         //Room1
