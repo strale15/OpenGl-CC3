@@ -347,6 +347,18 @@ int main()
     };
     GameObject* simpleCube = new GameObject(cubeVertices);
 
+    std::vector<float> vertices = {
+        // Positions      // UVs
+        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,  // Vertex 1
+        0.5f, -0.5f, 0.0f, 1.0f, 1.0f,  // Vertex 2
+        0.5f, 0.5f, 0.0f, 1.0f, 0.0f,  // Vertex 3
+
+        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,  // Vertex 1 (Repeated)
+        0.5f, 0.5f, 0.0f, 1.0f, 0.0f,  // Vertex 3 (Repeated)
+        -0.5f, 0.5f, 0.0f, 0.0f, 0.0f   // Vertex 4
+    };
+    GameObject* rectangle = new GameObject(vertices, true);
+
     Model lija("res/low-poly-fox.obj");
 
     Shader phongShader("phong.vert", "phong.frag");
@@ -359,13 +371,13 @@ int main()
     glm::mat4 projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
     phongShader.setMat4("uProjection", projectionP);
 
-    phongShader.setVec3("uDirLight.Position", 0.0, 5, 0.0);
-    phongShader.setVec3("uDirLight.Direction", 0.1, -5, 0.1);
-    phongShader.setVec3("uDirLight.Ka", glm::vec3(255.0 / 255 / 10, 238.0 / 255 / 10, 204.0 / 255 / 10));
-    phongShader.setVec3("uDirLight.Kd", glm::vec3(255.0 / 255 / 10, 238.0 / 255 / 10, 204.0 / 255 / 10));
+    phongShader.setVec3("uDirLight.Position", 0.0, 30, 0.0);
+    phongShader.setVec3("uDirLight.Direction", 0.2, -1, 0.2);
+    phongShader.setVec3("uDirLight.Ka", glm::vec3(0.2));
+    phongShader.setVec3("uDirLight.Kd", glm::vec3(0.6));
     phongShader.setVec3("uDirLight.Ks", glm::vec3(1.0, 1.0, 1.0));
 
-    phongShader.setVec3("uSpotlights[0].Position", 0.0, 10.0, 0.0);
+    phongShader.setVec3("uSpotlights[0].Position", glm::vec3(-999999));
     phongShader.setVec3("uSpotlights[0].Direction", 0.0, -1.0, 0.0);
     phongShader.setVec3("uSpotlights[0].Ka", 0.0, 0.0, 0.0);
     phongShader.setVec3("uSpotlights[0].Kd", glm::vec3(3.0f, 3.0f, 3.0f));
@@ -376,18 +388,7 @@ int main()
     phongShader.setFloat("uSpotlights[0].Kl", 0.092f);
     phongShader.setFloat("uSpotlights[0].Kq", 0.032f);
 
-    phongShader.setVec3("uSpotlights[1].Position", 0.0, 0.0, 6.0);
-    phongShader.setVec3("uSpotlights[1].Direction", 0.0, 0.0, -1.0);
-    phongShader.setVec3("uSpotlights[1].Ka", 0.0, 0.0, 0.0);
-    phongShader.setVec3("uSpotlights[1].Kd", glm::vec3(1.0f, 1.0f, 1.0f));
-    phongShader.setVec3("uSpotlights[1].Ks", glm::vec3(1.0));
-    phongShader.setFloat("uSpotlights[1].InnerCutOff", glm::cos(glm::radians(15.0f)));
-    phongShader.setFloat("uSpotlights[1].OuterCutOff", glm::cos(glm::radians(20.0f)));
-    phongShader.setFloat("uSpotlights[1].Kc", 1.0);
-    phongShader.setFloat("uSpotlights[1].Kl", 0.092f);
-    phongShader.setFloat("uSpotlights[1].Kq", 0.032f);
-
-    phongShader.setVec3("uPointLights[0].Position", glm::vec3(0.0, -2.0, 0.0));
+    phongShader.setVec3("uPointLights[0].Position", glm::vec3(-99999));
     phongShader.setVec3("uPointLights[0].Ka", glm::vec3(230.0 / 255 / 0.1, 92.0 / 255 / 0.1, 0.0f));
     phongShader.setVec3("uPointLights[0].Kd", glm::vec3(230.0 / 255 / 50, 92.0 / 255 / 50, 0.0f));
     phongShader.setVec3("uPointLights[0].Ks", glm::vec3(1.0f));
@@ -416,6 +417,8 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
     while (!glfwWindowShouldClose(window))
     {
         FrameStartTime = glfwGetTime();
@@ -437,10 +440,50 @@ int main()
         //SCENE
         //------------------------------------------------------------------------------------------------------------
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 0.0));
-        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
-        m = glm::scale(m, glm::vec3(1.0, 1.0, 1.0));
+        //m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(100.0, 1.0, 100.0));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 1, 1);
+        simpleCube->Render(&phongShader, 1, 0.5, 1);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.5+0.6, 0.0));
+        m = glm::scale(m, glm::vec3(5.0, 1.2, 7.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 0, 1, 0);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.5 + 0.6+0.7, 0.0));
+        m = glm::scale(m, glm::vec3(2.5, 2.0, 3.5));
+        phongShader.setMat4("uModel", m);
+        //simpleCube->Render(&phongShader, 0, 1, 0);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.5 + 1.2 + 0.7, -3.5/2));
+        m = glm::scale(m, glm::vec3(2.5, 1.4, 0.05));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 0, 0, 1);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.5 + 1.2 + 0.7, 3.5 / 2));
+        m = glm::scale(m, glm::vec3(2.5, 1.4, 0.05));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 0, 0, 1);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(2.5/2, 0.5 + 1.2 + 0.7, 0.0));
+        m = glm::scale(m, glm::vec3(0.05, 1.4, 3.5));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 0, 0, 1);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(-2.5 / 2, 0.5 + 1.2 + 0.7, 0.0));
+        m = glm::scale(m, glm::vec3(0.05, 1.4, 3.5));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 0, 0, 1);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.5 + 1.2 + 0.7+0.7, 0.0));
+        m = glm::scale(m, glm::vec3(2.5, 0.05, 3.5));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 0, 0);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.5 + 1.2 + 0.7, 7.0/2+3.5/2));
+        m = glm::scale(m, glm::vec3(0.4, 0.4, 7.0));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 0, 0);
         //------------------------------------------------------------------------------------------------------------
 
         //HUD
