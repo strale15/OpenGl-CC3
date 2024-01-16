@@ -82,14 +82,14 @@ struct Params {
 
     float chargeTime = 0;
     bool isCharged = true;
-    int ammo = 10;
+    int ammo = 6;
     bool firedThisFrame = false;
 
     bool isScope = false;
 
     bool voltageUp = false;
     bool voltageDown = false;
-    float voltage = 10;
+    float voltage = 5;
 
     bool nightVision = false;
     float zoom = 90;
@@ -103,7 +103,6 @@ Target targets[TARGET_NUMBER];
 
 float targetScale = 3;
 
-//float randomInnacuracy = static_cast<float>(rand()) / static_cast<float>(RAND_MAX / params.voltage) - params.voltage/2;
 static void GenerateTargetPositions() {
     for (int i = 0; i < TARGET_NUMBER; i++) {
     gas:
@@ -111,15 +110,13 @@ static void GenerateTargetPositions() {
         float randomZ = static_cast<float>(rand()) / static_cast<float>(RAND_MAX / 100.0) - 50.0;
         float Y = targetScale/2+0.5;
 
-        if (glm::distance(glm::vec3(randomX, Y, randomZ), glm::vec3(0)) < 20) {
+        if (glm::distance(glm::vec3(randomX, Y, randomZ), glm::vec3(0)) < 15) {
             goto gas;
         }
 
         targets[i].targetPosition = glm::vec3(randomX, Y, randomZ);
         targets[i].targetId = i;
         targets[i].alive = true;
-
-        cout << randomX << " " << randomZ << endl;
     }
 }
 
@@ -260,10 +257,18 @@ static void HandleInput(Params* params) {
 
     //Tank
     if (params->rotLeft) {
-        params->rotY += 8 * params->voltage * params->dt;
+        float koef = params->voltage+2;
+        if (koef == 2) {
+            koef = 0.4;
+        }
+        params->rotY += 3 * koef * params->dt;
     }
     if (params->rotRight) {
-        params->rotY -= 8 * params->voltage * params->dt;
+        float koef = params->voltage+2;
+        if (koef == 2) {
+            koef = 0.4;
+        }
+        params->rotY -= 3 * koef * params->dt;
     }
     if (params->rotUp) {
         params->rotX += 10 * params->dt;
@@ -646,6 +651,53 @@ int main()
     };
     GameObject* simpleCube = new GameObject(cubeVertices);
 
+    float tiling = 10;
+    std::vector<float> cubeVertices2 = {
+        // X     Y     Z     NX    NY    NZ    U     V    FRONT SIDE
+        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, // L D
+        0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // R D
+        -0.5f,  0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // L U
+        0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // R D
+        0.5f,  0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, // R U
+        -0.5f,  0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // L U
+        // LEFT SIDE
+        -0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // L D
+        -0.5f, -0.5f,  0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, // R D
+        -0.5f,  0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, // L U
+        -0.5f, -0.5f,  0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, // R D
+        -0.5f,  0.5f,  0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f, // R U
+        -0.5f,  0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, // L U
+        // RIGHT SIDE
+        0.5f, -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // L D
+        0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, // R D
+        0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, // L U
+        0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, // R D
+        0.5f,  0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, // R U
+        0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, // L U
+        // BOTTOM SIDE
+        -0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, // L D
+         0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, // R D
+        -0.5f, -0.5f,  0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, // L U
+         0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, // R D
+         0.5f, -0.5f,  0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 1.0f, // R U
+        -0.5f, -0.5f,  0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, // L U
+        // TOP SIDE
+        -0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, // L D
+         0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 1.0f* tiling, 0.0f, // R D
+        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f* tiling, // L U
+         0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 1.0f* tiling, 0.0f, // R D
+         0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f* tiling, 1.0f* tiling, // R U
+        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f* tiling, // L U
+        // BACK SIDE
+        0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, // L D
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f, // R D
+         0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, // L U
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f, // R D
+        -0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f, // R U
+         0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, // L U
+    };
+    GameObject* simpleCube2 = new GameObject(cubeVertices2);
+
     std::vector<float> vertices = {
         // Positions      // UVs
         -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,  // Vertex 1
@@ -660,8 +712,6 @@ int main()
 
     std::vector<float> circleVert = generateHalfCircleVertices(1, 64);
     GameObject* halfCircle = new GameObject(circleVert, true);
-
-    Model lija("res/low-poly-fox.obj");
 
     Shader phongShader("phong.vert", "phong.frag");
     Shader hudShader("hud.vert", "hud.frag");
@@ -679,8 +729,9 @@ int main()
     phongShader.setVec3("uDirLight.Ks", glm::vec3(1.0, 1.0, 1.0));
 
     unsigned hudTex = Model::textureFromFile("res/hudTex.png");
-    unsigned kockaDif = Model::textureFromFile("res/container_diffuse.png");
-    unsigned kockaSpec = Model::textureFromFile("res/container_specular.png");
+    unsigned podTex = Model::textureFromFile("res/pod.png");
+    unsigned podsTex = Model::textureFromFile("res/podS.png");
+    unsigned camoTex = Model::textureFromFile("res/camo.png");
 
     phongShader.setInt("uMaterial.Kd", 0);
     phongShader.setInt("uMaterial.Ks", 1);
@@ -752,13 +803,13 @@ int main()
         //m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(100.0, 1.0, 100.0));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 1, 0.5, 1);
+        simpleCube2->Render(&phongShader, podTex, podsTex);
 
         //Tank Base
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.5+0.6, 0.0));
         m = glm::scale(m, glm::vec3(5.0, 1.2, 7.0));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 1, 0);
+        simpleCube->Render(&phongShader, camoTex);
 
         //Kupola1
         m = glm::rotate(glm::mat4(1.0), glm::radians(params.rotY), glm::vec3(0.0, 1.0, 0.0));
@@ -766,7 +817,7 @@ int main()
         m = glm::translate(m, glm::vec3(0.0, 0.5 + 1.2 + 0.7, -3.5/2));
         m = glm::scale(m, glm::vec3(2.5, 1.4, 0.05));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 0, 1);
+        simpleCube->Render(&phongShader, camoTex);
 
         //Kupola2
         m = glm::rotate(glm::mat4(1.0), glm::radians(params.rotY), glm::vec3(0.0, 1.0, 0.0));
@@ -774,7 +825,7 @@ int main()
         m = glm::translate(m, glm::vec3(0.0, 0.5 + 1.2 + 0.7, 3.5 / 2));
         m = glm::scale(m, glm::vec3(2.5, 1.4, 0.05));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 0, 1);
+        simpleCube->Render(&phongShader, camoTex);
 
         glm::vec3 spotPos = glm::vec3(m[3]);
         glm::vec3 spotDir = glm::normalize(glm::vec3(m[2]));
@@ -804,7 +855,7 @@ int main()
         m = glm::translate(m, glm::vec3(2.5/2, 0.5 + 1.2 + 0.7, 0.0));
         m = glm::scale(m, glm::vec3(0.05, 1.4, 3.5));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 0, 1);
+        simpleCube->Render(&phongShader, camoTex);
 
         //Kupola4
         m = glm::rotate(glm::mat4(1.0), glm::radians(params.rotY), glm::vec3(0.0, 1.0, 0.0));
@@ -812,7 +863,7 @@ int main()
         m = glm::translate(m, glm::vec3(-2.5 / 2, 0.5 + 1.2 + 0.7, 0.0));
         m = glm::scale(m, glm::vec3(0.05, 1.4, 3.5));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 0, 1);
+        simpleCube->Render(&phongShader, camoTex);
 
         //Kupola5
         m = glm::rotate(glm::mat4(1.0), glm::radians(params.rotY), glm::vec3(0.0, 1.0, 0.0));
@@ -820,7 +871,7 @@ int main()
         m = glm::translate(m, glm::vec3(0.0, 0.5 + 1.2 + 0.7+0.7, 0.0));
         m = glm::scale(m, glm::vec3(2.5, 0.05, 3.5));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 1, 0, 0);
+        simpleCube->Render(&phongShader, camoTex);
 
         //Kupola6 (top)
         glm::vec3 turretCenter = glm::vec3(0.0, 0.5 + 1.2 + 0.7, 0.0);
@@ -854,7 +905,7 @@ int main()
         m = glm::translate(m, glm::vec3(0.0, 0.5 + 1.2 + 0.7, 7.0 / 2 + 3.5 / 2));
         m = glm::scale(m, glm::vec3(0.4, 0.4, 7.5));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 1, 0, 0);
+        simpleCube->Render(&phongShader, 0.7, 0.7, 0.7);
 
         forward = glm::vec3(m[2]);
         forward = glm::normalize(forward);
@@ -866,34 +917,6 @@ int main()
         params.muzzlePos = objPos;
         params.turretUp = glm::vec3(0, 1, 0);
         params.turretRight = glm::cross(forward, params.turretUp);
-
-
-
-        m = glm::translate(glm::mat4(1.0), objPos);
-        m = glm::scale(m, glm::vec3(0.6));
-        phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 1, 1);
-
-        //Meta
-        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 1.5, 25.0));
-        m = glm::scale(m, glm::vec3(1,2,1));
-        phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 0, 1, 1);
-
-        //Formula za metu
-        glm::vec3 targetPos = glm::vec3(0.0, 1.5, 25.0);
-        glm::vec3 direction = targetPos - params.muzzlePos;
-        float dotProduct = glm::dot(glm::normalize(direction), params.turretForward);
-        dotProduct = glm::clamp(dotProduct, -1.f, 1.f);
-        float angleRadians = std::acos(dotProduct);
-        float angleDegrees = glm::degrees(angleRadians);
-
-        if (params.firedThisFrame) {
-            cout << "puc " << angleDegrees << " " << endl;
-        }
-        if (params.firedThisFrame && angleDegrees <= 5) {
-            cout << "hit" << endl;
-        }
 
         //Muzzle flash
         glm::vec3 muzzleLightInt = glm::vec3(0);
@@ -994,20 +1017,25 @@ int main()
         //Transparentne stvari
         if (params.afterFire != 0) {
             phongShader.use();
-            phongShader.setBool("uTransp", true);
-            phongShader.setFloat("uAlpha", 1-params.afterFire/10.f);
 
-            m = glm::translate(glm::mat4(1.0), params.muzzlePos + params.turretForward * 1.6f - params.turretRight + params.turretUp * 0.5f);
+            float alpha = 1.0f - (1.0f - std::exp(-params.afterFire / 2.0f));
+
+            phongShader.setBool("uTransp", true);
+            phongShader.setFloat("uAlpha", alpha);
+
+            float smokeDist = params.afterFire*2;
+
+            m = glm::translate(glm::mat4(1.0), params.muzzlePos + params.turretForward * 1.6f - params.turretRight* smokeDist + params.turretUp * 0.5f * smokeDist);
             m = glm::scale(m, glm::vec3(0.5));
             phongShader.setMat4("uModel", m);
             simpleCube->Render(&phongShader, 1, 1, 1);
 
-            m = glm::translate(glm::mat4(1.0), params.muzzlePos + params.turretForward*2.f + params.turretRight - params.turretUp * 0.5f);
+            m = glm::translate(glm::mat4(1.0), params.muzzlePos + params.turretForward*2.f + params.turretRight* smokeDist - params.turretUp * 0.5f * -smokeDist);
             m = glm::scale(m, glm::vec3(0.4));
             phongShader.setMat4("uModel", m);
             simpleCube->Render(&phongShader, 1, 1, 1);
 
-            m = glm::translate(glm::mat4(1.0), params.muzzlePos + params.turretForward + params.turretRight);
+            m = glm::translate(glm::mat4(1.0), params.muzzlePos + params.turretForward + params.turretRight* smokeDist + params.turretUp * 0.5f * smokeDist);
             m = glm::scale(m, glm::vec3(0.6));
             phongShader.setMat4("uModel", m);
             simpleCube->Render(&phongShader, 1, 1, 1);
