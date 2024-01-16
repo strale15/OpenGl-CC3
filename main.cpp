@@ -299,7 +299,6 @@ static void DrawScene(Shader& shader, Params &params) {
     shader.setFloat("uSpotlights[0].Kl", kl);
     shader.setFloat("uSpotlights[0].Kq", kq);
 
-
     shader.setVec3("uSpotlights[1].Position", light2Pos);
     shader.setVec3("uSpotlights[1].Direction", params.forward);
     shader.setVec3("uSpotlights[1].Ka", lightIntA);
