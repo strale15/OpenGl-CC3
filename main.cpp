@@ -47,10 +47,12 @@ Cloud clouds[NUMBER_OF_CLODS];
 
 struct Helicopter {
     glm::vec3 position = glm::vec3(0.0, -5.0, 0.0);
-    bool isAlive = true;
+    bool isAlive = false;
+    bool isSpawned = false;
     float speed = 0.15;
     bool isLowFlight = false;
     float angle = 0;
+    float spawnTime = 0;
 };
 
 Helicopter targets[NUMBER_OF_HELICOPTERS + NUMBER_OF_LOW_HELICOPTERS];
@@ -137,6 +139,7 @@ static void GenerateTargets() {
 
         float randomCoord = static_cast<float>(rand()) / static_cast<float>(RAND_MAX / 30.0) - 15.0;
         float randomCoorY = static_cast<float>(rand()) / static_cast<float>(RAND_MAX / 10.0) + 4;
+        float randomTime = static_cast<float>(rand()) / static_cast<float>(RAND_MAX / 10+13*i) + 2+7*i;
         int random = rand() % 2;
         if (random == 0) {
             targets[i].position.x = randomCoord;
@@ -144,16 +147,19 @@ static void GenerateTargets() {
             targets[i].position.y = randomCoorY;
         }
         else if (random == 1) {
-            targets[i].position.z = glm::abs(randomCoord);
+            targets[i].position.z = randomCoord;
             targets[i].position.x = 15;
             targets[i].position.y = randomCoorY;
         }
         else {
-            targets[i].position.z = glm::abs(randomCoord);
+            targets[i].position.z = randomCoord;
             targets[i].position.x = -15;
             targets[i].position.y = randomCoorY;
         }
 
+        targets[i].spawnTime = randomTime;
+
+        //Racunanje ugla da bi letelica bila okrenuta ka centru
         glm::vec3 cityCenter = glm::vec3(0, targets[i].position.y, 5);
         glm::vec3 forward = glm::vec3(-1, 0, 0);
         float dotProduct = glm::dot(glm::normalize(cityCenter- targets[i].position), forward);
@@ -165,14 +171,17 @@ static void GenerateTargets() {
         }
         targets[i].angle = angleDegrees;
 
-        cout << "Target " << i << " Pos " << targets[i].position.x << " " << targets[i].position.y << " " << targets[i].position.z << endl;
+        //cout << "Target " << i << " Pos " << targets[i].position.x << " " << targets[i].position.y << " " << targets[i].position.z << endl;
         
     }
 
+    //Sve ovo isto sto i gore ali za niske letelice
     for (int i = NUMBER_OF_HELICOPTERS; i < NUMBER_OF_LOW_HELICOPTERS+ NUMBER_OF_HELICOPTERS; i++) {
         targets[i].isLowFlight = true;
 
         float randomCoord = static_cast<float>(rand()) / static_cast<float>(RAND_MAX / 30.0) - 15.0;
+        float randomTime = static_cast<float>(rand()) / static_cast<float>(RAND_MAX / 10+4*i) + 8+3*i;
+
         int random = rand() % 3;
         if (random == 0) {
             targets[i].position.x = randomCoord;
@@ -180,16 +189,19 @@ static void GenerateTargets() {
             targets[i].position.y = 2.0;
         }
         else if(random == 1) {
-            targets[i].position.z = glm::abs(randomCoord);
+            targets[i].position.z = randomCoord;
             targets[i].position.x = 15;
             targets[i].position.y = 2.0;
         }
         else {
-            targets[i].position.z = glm::abs(randomCoord);
+            targets[i].position.z = randomCoord;
             targets[i].position.x = -15;
             targets[i].position.y = 2.0;
         }
 
+        targets[i].spawnTime = randomTime;
+
+        //Racunanje ugla da bi letelica bila okrenuta ka centru
         glm::vec3 cityCenter = glm::vec3(0, targets[i].position.y, 5);
         glm::vec3 forward = glm::vec3(-1, 0, 0);
         float dotProduct = glm::dot(glm::normalize(cityCenter - targets[i].position), glm::normalize(forward));
@@ -311,6 +323,17 @@ static void CheckIfDroneCrashed(Params* params) {
     }
 }
 
+static void SpawnTargets(Params* params) {
+    float elapsedTime = glfwGetTime();
+
+    for (int i = 0; i < NUMBER_OF_HELICOPTERS + NUMBER_OF_LOW_HELICOPTERS; i++) {
+        if (elapsedTime > targets[i].spawnTime && !targets[i].isSpawned && !targets[i].isAlive) {
+            targets[i].isAlive = true;
+            targets[i].isSpawned = true;
+        }
+    }
+}
+
 std::vector<float> generateCircleVertices(float radius, int numSegments) {
     std::vector<float> vertices;
 
@@ -349,7 +372,7 @@ std::vector<float> generateCircleVertices(float radius, int numSegments) {
 
 static void HandleInput(Params* params) {
     //Drone
-    float droneSpeed = targets[0].speed * 7;
+    float droneSpeed = targets[0].speed * 5;
     if (params->droneForward)
     {
         params->dronePosition.z += droneSpeed * params->dt;
@@ -374,6 +397,8 @@ static void HandleInput(Params* params) {
     {
         params->dronePosition.y -= droneSpeed * params->dt * 2;
     }
+
+
 }
 
 static void KeyCallback2(GLFWwindow* window, int key, int scancode, int action, int mode) {
@@ -603,6 +628,7 @@ int main()
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        SpawnTargets(&params);
         CheckIfDroneCrashed(&params);
         UpdateTargetsPos(params.dt);
 
@@ -833,8 +859,8 @@ int main()
         //3D Ostatak
         //LED Da je dron lansiran
         phongShader.use();
-        posOnMap.x = 0.25;
-        posOnMap.z = -0.25;
+        posOnMap.x = 0.26;
+        posOnMap.z = -0.26;
         float ledLightCoef = 0;
 
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, screenHeight + 0.01, -12.0));
