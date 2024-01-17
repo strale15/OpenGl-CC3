@@ -570,7 +570,7 @@ int main()
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 0.0));
         m = glm::scale(m, glm::vec3(10.0, 1.0, 10.0));
         currentShader.setMat4("uModel", m);
-        simpleCube->Render(&currentShader, grassD,grassS);
+        simpleCube->Render(&currentShader, grassD, grassS);
 
         //Sun   
         if (params.isDay) {
@@ -664,12 +664,12 @@ int main()
 
         glm::vec3 positionVector = glm::vec3(m[3]);
         // Extract forward vector from rotation submatrix
-        glm::vec3 forwardVector = -glm::vec3(m[2]);
+        glm::vec3 forwardVector = glm::vec3(m[2]);
         positionVector.y += 1;
         forwardVector.y += 0.03;
 
         currentShader.setVec3("uSpotlights[0].Position", positionVector);
-        currentShader.setVec3("uSpotlights[0].Direction", -forwardVector);
+        currentShader.setVec3("uSpotlights[0].Direction", forwardVector);
         currentShader.setVec3("uSpotlights[0].Ka", 0.0, 0.0, 0.0);
         currentShader.setVec3("uSpotlights[0].Kd", glm::vec3(2.0f, 2.0f, 2.0f));
         currentShader.setVec3("uSpotlights[0].Ks", glm::vec3(1.0));

@@ -48,11 +48,9 @@ void main() {
 	vec3 WorldSpaceNormal = normalize(mat3(transpose(inverse(uModel))) * aNormal);
 	vec3 ViewDirection = normalize(uViewPos - WorldSpaceVertex);
 
-	// NOTE(Jovan): Directional light
 	vec3 DirLightVector = normalize(-uDirLight.Direction);
 	float DirDiffuse = max(dot(WorldSpaceNormal, DirLightVector), 0.0f);
 	vec3 DirReflectDirection = reflect(-DirLightVector, WorldSpaceNormal);
-	// NOTE(Jovan): 32 is the specular shininess factor. Hardcoded for now
 	float DirSpecular = pow(max(dot(ViewDirection, DirReflectDirection), 0.0f), 32.0f);
 
 	vec3 DirAmbientColor = uDirLight.Ka;
@@ -60,7 +58,6 @@ void main() {
 	vec3 DirSpecularColor = uDirLight.Ks * DirSpecular;
 	vec3 DirColor = DirAmbientColor + DirDiffuseColor + DirSpecularColor;
 
-	// NOTE(Jovan): Point light
 	vec3 PtColor;
 	bool first = true;
     for (int i = 0; i < NR_POINT_LIGHTS; i++) {
