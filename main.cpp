@@ -52,7 +52,7 @@ Cloud clouds[NUMBER_OF_CLODS];
 struct Helicopter {
     glm::vec3 position = glm::vec3(0.0, -5.0, 0.0);
     bool isAlive = true;
-    float speed = 0.6;
+    float speed = 0.15;
     bool isLowFlight = false;
     float angle = 0;
 };
@@ -89,9 +89,9 @@ struct Params {
     bool droneBackward = false;
 
     bool isMapActive = true;
-    bool numberOfDrones = 7;
+    int numberOfDrones = 7;
     bool isDroneAlive = true;
-    glm::vec3 dronePosition = glm::vec3(0.0, 1.0, -5.0);
+    glm::vec3 dronePosition = glm::vec3(0.0, 7.5, -10.0);
 };
 
 static void DrawHud(Shader& hudShader, unsigned hudTex) {
@@ -257,8 +257,8 @@ static void RenderAliveHelicopters(Shader& shader, Model targetModel) {
             glm::vec3 pos = targets[i].position;
             pos.y += 0.3;
             shader.setVec3(lightUniform + "Position", pos);
-            shader.setVec3(lightUniform + "Ka", glm::vec3(0.1f)* coef);
-            shader.setVec3(lightUniform + "Kd", glm::vec3(1.f,1.0f,0)* coef);
+            shader.setVec3(lightUniform + "Ka", glm::vec3(0.12f)* coef);
+            shader.setVec3(lightUniform + "Kd", glm::vec3(1.5f,1.50f,0)* coef);
             shader.setVec3(lightUniform + "Ks", glm::vec3(1.0f,1.0f,0)* coef);
             shader.setFloat(lightUniform + "Kc", 1.5f);
             shader.setFloat(lightUniform + "Kl", 3.0f);
@@ -322,7 +322,7 @@ static void CheckIfDroneCrashed(Params* params) {
 
     for (int i = 0; i < NUMBER_OF_HELICOPTERS + NUMBER_OF_LOW_HELICOPTERS; i++) {
         if (targets[i].isAlive) {
-            if (glm::distance(targets[i].position, params->dronePosition) <= 1.2) {
+            if (glm::distance(targets[i].position, params->dronePosition) <= 1) {
                 targets[i].isAlive = false;
                 params->isDroneAlive = false;
                 cout << "Skuco u " << i << endl;
@@ -416,7 +416,7 @@ static void HandleInput(Params* params) {
     }
 
     //Drone
-    float droneSpeed = targets[0].speed *2;
+    float droneSpeed = targets[0].speed *4;
     if (params->droneForward)
     {
         params->dronePosition.z += droneSpeed * params->dt;
@@ -435,11 +435,11 @@ static void HandleInput(Params* params) {
     }
     if (params->droneUp)
     {
-        params->dronePosition.y += droneSpeed * params->dt;
+        params->dronePosition.y += droneSpeed * params->dt * 2;
     }
     if (params->droneDown)
     {
-        params->dronePosition.y -= droneSpeed * params->dt;
+        params->dronePosition.y -= droneSpeed * params->dt * 2;
     }
 }
 
@@ -593,10 +593,16 @@ static void KeyCallback2(GLFWwindow* window, int key, int scancode, int action, 
     }
 
     if (key == GLFW_KEY_L) {
-        if (action == GLFW_PRESS && !params->isDroneAlive) {
-            params->dronePosition = glm::vec3(0.0, 1.0, -5.0);
+        if (action == GLFW_PRESS && !params->isDroneAlive && params->numberOfDrones > 0) {
+            params->dronePosition = glm::vec3(0.0, 7.5, -10.0);
             params->numberOfDrones -= 1;
             params->isDroneAlive = true;
+        }
+    }
+
+    if (key == GLFW_KEY_X) {
+        if (action == GLFW_PRESS && params->isDroneAlive) {
+            params->isDroneAlive = false;
         }
     }
 }
@@ -712,9 +718,9 @@ int main()
     glm::mat4 view;
     glm::mat4 projectionP;
 
-    phongShader.setVec3("uDirLight.Position", glm::vec3(0.0, 15.0f, 0.0f));
-    phongShader.setVec3("uDirLight.Direction", 0.1, -1, 0.1);
-    phongShader.setVec3("uDirLight.Ka", glm::vec3(0.11));
+    phongShader.setVec3("uDirLight.Position", glm::vec3(0.0, 50.0f, 0.0f));
+    phongShader.setVec3("uDirLight.Direction", 0.5, -1, 0.5);
+    phongShader.setVec3("uDirLight.Ka", glm::vec3(0.1));
     phongShader.setVec3("uDirLight.Kd", glm::vec3(0.2));
     phongShader.setVec3("uDirLight.Ks", glm::vec3(1.0, 1.0, 1.0));
 
@@ -733,6 +739,7 @@ int main()
     unsigned mapflipTex = Model::textureFromFile("res/map1Flip.png");
     unsigned mapSpecTex = Model::textureFromFile("res/map1Spec.png");
     unsigned modelSpec = Model::textureFromFile("res/Part2_Metallic.png");
+    unsigned sky = Model::textureFromFile("res/stars-night-textured-background.jpg");
 
     phongShader.setInt("uMaterial.Kd", 0);
     phongShader.setInt("uMaterial.Ks", 1);
@@ -746,7 +753,7 @@ int main()
     Params params;
     glfwSetWindowUserPointer(window, &params);
 
-    glClearColor(0, 0, 0, 1.0);
+    glClearColor(0, 0.02, 0.09, 1.0);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -773,7 +780,8 @@ int main()
 
         //Camera
         view = glm::lookAt(params.position, params.position + params.cameraFront, params.cameraUp);
-        projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
+        view = glm::lookAt(glm::vec3(0.0, 11, -12.2), glm::vec3(0.0, 0.0, 5), params.cameraUp);
+        projectionP = glm::perspective(glm::radians(80.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
 
         phongShader.setMat4("uView", view);
         phongShader.setMat4("uProjection", projectionP);
@@ -781,17 +789,38 @@ int main()
 
         //SCENE
         //------------------------------------------------------------------------------------------------------------
+        
+        
+        //Mapa velika
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 0.0));
         m = glm::rotate(m, glm::radians(0.f), glm::vec3(1.0, 0.0, 0.0));
         m = glm::scale(m, glm::vec3(30,1.0,30));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, mapTex, mapSpecTex);
 
+        //Centar grada
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 1.5, 5.0));
+        m = glm::rotate(m, glm::radians(0.f), glm::vec3(1.0, 0.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.5, 2.0, 0.5));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 0.07, 0.94, 0.92);
+
+        //Nebo(plafon)
+        phongShader.setVec3("uDirLight.Ka", glm::vec3(0.3));
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 20.0, 0.0));
+        m = glm::scale(m, glm::vec3(60, 1.0, 60));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, sky);
+        phongShader.setVec3("uDirLight.Ka", glm::vec3(0.1));
+
+        //PVO base
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 5.5, -13.5));
         m = glm::scale(m, glm::vec3(3, 10.0, 3));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 1,0,0);
+        simpleCube->Render(&phongShader, 0.04, 0.09, 0);
 
+        //Drone
+        float coef = 0;
         if (params.isDroneAlive) {
             m = glm::translate(glm::mat4(1.0), params.dronePosition);
             m = glm::scale(m, glm::vec3(0.2));
@@ -799,30 +828,41 @@ int main()
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, modelSpec);
             droneObj.Draw(phongShader);
+            coef = 1;
         }
 
-        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 20.0, 5));
-        m = glm::scale(m, glm::vec3(60, 1.0, 60));
-        phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 1, 1, 1);
+        std::string lightUniform = "uPointLights[";
+        lightUniform.append(to_string(NUMBER_OF_HELICOPTERS));
+        lightUniform.append("].");
+        glm::vec3 pos = params.dronePosition;
+        pos.y += 0.3;
+        phongShader.setVec3(lightUniform + "Position", pos);
+        phongShader.setVec3(lightUniform + "Ka", glm::vec3(0.1f) * coef);
+        phongShader.setVec3(lightUniform + "Kd", glm::vec3(0.0, 1.5f, 0) * coef);
+        phongShader.setVec3(lightUniform + "Ks", glm::vec3(0.0f, 1.0f, 0) * coef);
+        phongShader.setFloat(lightUniform + "Kc", 1.5f);
+        phongShader.setFloat(lightUniform + "Kl", 3.0f);
+        phongShader.setFloat(lightUniform + "Kq", 2.272f);
 
 
         float time = glfwGetTime() * 15.f;
-        glm::vec3 dir = glm::vec3(sin(glm::radians(time)), 1.0, cos(glm::radians(time)));
+        float radius = sin(glm::radians(time*2)) + 2;
+        glm::vec3 dir = glm::vec3(radius*sin(glm::radians(time)), 4.0, radius*cos(glm::radians(time)));
 
-        phongShader.setVec3("uSpotlights[0].Position", glm::vec3(0,1,5));
-        phongShader.setVec3("uSpotlights[0].Direction", dir);
+        phongShader.setVec3("uSpotlights[0].Position", glm::vec3(0,15,5));
+        phongShader.setVec3("uSpotlights[0].Direction", -dir);
         phongShader.setVec3("uSpotlights[0].Ka", 0.0, 0.0, 0.0);
-        phongShader.setVec3("uSpotlights[0].Kd", glm::vec3(2.f));
+        phongShader.setVec3("uSpotlights[0].Kd", glm::vec3(4.f));
         phongShader.setVec3("uSpotlights[0].Ks", glm::vec3(1.0));
-        phongShader.setFloat("uSpotlights[0].InnerCutOff", glm::cos(glm::radians(35.0f)));
-        phongShader.setFloat("uSpotlights[0].OuterCutOff", glm::cos(glm::radians(45.0f)));
+        phongShader.setFloat("uSpotlights[0].InnerCutOff", glm::cos(glm::radians(12.0f)));
+        phongShader.setFloat("uSpotlights[0].OuterCutOff", glm::cos(glm::radians(18.0f)));
         phongShader.setFloat("uSpotlights[0].Kc", 1.0);
         phongShader.setFloat("uSpotlights[0].Kl", 0.072f);
         phongShader.setFloat("uSpotlights[0].Kq", 0.012f);
 
         RenderAliveHelicopters(phongShader, copterObj);
 
+        //Oblaci
         for (int i = 0; i < NUMBER_OF_CLODS; i++) {
             m = glm::translate(glm::mat4(1.0), clouds[i].position);
             m = glm::rotate(m, glm::radians(clouds[i].rotation), glm::vec3(0.0, 1.0, 0.0));
@@ -842,27 +882,165 @@ int main()
         twoD.setMat4("uProjection", projectionP);
 
         float screenHeight = 11;
-        float screenRot = 75;
-        glm::vec3 mapOffset = glm::vec3(0);
+        float screenRot = 90;
+        glm::vec3 mapOffset = glm::vec3(0,-0.4,0.2);
         glm::vec3 posOnMap = glm::vec3(0);
 
-        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, screenHeight, -12.0));
-        m = glm::translate(m, mapOffset);
-        m = glm::rotate(m, glm::radians(screenRot), glm::vec3(1.0, 0.0, 0.0));
-        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
-        m = glm::scale(m, glm::vec3(0.5));
-        twoD.setMat4("uModel", m);
-        rectangle->Render(&twoD, mapflipTex);
+        //Base Map
+        if (params.isMapActive) {
+            m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, screenHeight, -12.0));
+            m = glm::translate(m, mapOffset);
+            m = glm::rotate(m, glm::radians(screenRot), glm::vec3(1.0, 0.0, 0.0));
+            m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+            m = glm::scale(m, glm::vec3(0.5));
+            twoD.setMat4("uModel", m);
+            rectangle->Render(&twoD, mapflipTex);
 
-        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, screenHeight+0.01, -12.0));
+            m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, screenHeight-0.01, -12.0));
+            m = glm::translate(m, mapOffset);
+            m = glm::rotate(m, glm::radians(screenRot), glm::vec3(1.0, 0.0, 0.0));
+            m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+            m = glm::scale(m, glm::vec3(0.6));
+            twoD.setMat4("uModel", m);
+            rectangle->Render(&twoD, 0.02, 0.13, 0.01);
+        }
+
+        //Tacke na mapi koje su mete
+        for (int i = 0; i < NUMBER_OF_HELICOPTERS + NUMBER_OF_LOW_HELICOPTERS; i++) {
+            if (!targets[i].isAlive) {
+                continue;
+            }
+            posOnMap.x = ((targets[i].position.x + 15.0f) / 30.0f) * 0.5f - 0.25f;
+            posOnMap.z = ((targets[i].position.z + 15.0f) / 30.0f) * 0.5f - 0.25f;
+            float scale = (targets[i].position.y / 15.0f) * 0.012f + 0.005f;
+            float offY = 0;
+            if (targets[i].isLowFlight) {
+                offY = 0.005;
+            }
+            m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, screenHeight+0.01-offY, -12.0));
+            m = glm::translate(m, mapOffset);
+            m = glm::translate(m, posOnMap);
+            m = glm::rotate(m, glm::radians(screenRot), glm::vec3(1.0, 0.0, 0.0));
+            m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+            m = glm::scale(m, glm::vec3(scale));
+            twoD.setMat4("uModel", m);
+            if (targets[i].isLowFlight) {
+                circle->Render(&twoD, 1,0,0);
+            }
+            else
+            {
+                circle->Render(&twoD, 1, 1, 0);
+            }
+        }
+
+        //Tacka na mapi koja je dron
+        if (params.isDroneAlive) {
+            posOnMap.x = ((params.dronePosition.x + 15.0f) / 30.0f) * 0.5f - 0.25f;
+            posOnMap.z = ((params.dronePosition.z + 15.0f) / 30.0f) * 0.5f - 0.25f;
+            float scale = (params.dronePosition.y / 15.0f) * 0.012f + 0.005f;
+
+            m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, screenHeight + 0.012, -12.0));
+            m = glm::translate(m, mapOffset);
+            m = glm::translate(m, posOnMap);
+            m = glm::rotate(m, glm::radians(screenRot), glm::vec3(1.0, 0.0, 0.0));
+            m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+            m = glm::scale(m, glm::vec3(scale));
+            twoD.setMat4("uModel", m);
+            circle->Render(&twoD, 0, 1, 0);
+        }
+
+        //PVO na mapi
+        posOnMap.x = ((0 + 15.0f) / 30.0f) * 0.5f - 0.25f;
+        posOnMap.z = ((-12 + 15.0f) / 30.0f) * 0.5f - 0.25f;
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, screenHeight + 0.013, -12.0));
         m = glm::translate(m, mapOffset);
         m = glm::translate(m, posOnMap);
         m = glm::rotate(m, glm::radians(screenRot), glm::vec3(1.0, 0.0, 0.0));
         m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
-        m = glm::scale(m, glm::vec3(0.01));
+        m = glm::scale(m, glm::vec3(0.016));
         twoD.setMat4("uModel", m);
-        circle->Render(&twoD, 1,0,0);
+        circle->Render(&twoD, 0, 0, 1);
 
+        //Centar grada na mapi
+        posOnMap.x = ((0 + 15.0f) / 30.0f) * 0.5f - 0.25f;
+        posOnMap.z = ((5 + 15.0f) / 30.0f) * 0.5f - 0.25f;
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, screenHeight + 0.007, -12.0));
+        m = glm::translate(m, mapOffset);
+        m = glm::translate(m, posOnMap);
+        m = glm::rotate(m, glm::radians(screenRot), glm::vec3(1.0, 0.0, 0.0));
+        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.016));
+        twoD.setMat4("uModel", m);
+        rectangle->Render(&twoD, 0.12, 0.87, 0.85);
+
+
+        //Preostalo dronova
+        for (int i = 0; i < params.numberOfDrones; i++) {
+            posOnMap.x = -0.25;
+            posOnMap.z = -0.25 + 0.015*i;
+            m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, screenHeight + 0.009, -12.0));
+            m = glm::translate(m, mapOffset);
+            m = glm::translate(m, posOnMap);
+            m = glm::rotate(m, glm::radians(screenRot), glm::vec3(1.0, 0.0, 0.0));
+            m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+            m = glm::scale(m, glm::vec3(0.025,0.01,1));
+            twoD.setMat4("uModel", m);
+            rectangle->Render(&twoD, 0.81, 0.66, 0.16);
+        }
+
+        //3D Ostatak
+        //LED Da je dron lansiran
+        phongShader.use();
+        posOnMap.x = 0.25;
+        posOnMap.z = -0.25;
+        float ledLightCoef = 0;
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, screenHeight + 0.01, -12.0));
+        m = glm::translate(m, mapOffset);
+        m = glm::translate(m, posOnMap);
+        m = glm::rotate(m, glm::radians(screenRot), glm::vec3(1.0, 0.0, 0.0));
+        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.02));
+        phongShader.setMat4("uModel", m);
+        if (params.isDroneAlive) {
+            simpleCube->Render(&phongShader, 0, 1, 0);
+            ledLightCoef = 1;
+        }
+        else
+        {
+            simpleCube->Render(&phongShader, 1, 1, 1);
+        }
+
+        glm::vec3 ledPos = glm::vec3(m[3]);
+
+        lightUniform = "uPointLights[";
+        lightUniform.append(to_string(NUMBER_OF_HELICOPTERS+1));
+        lightUniform.append("].");
+        pos = ledPos;
+        pos.y += 0.15;
+  
+        phongShader.setVec3(lightUniform + "Position", pos);
+        phongShader.setVec3(lightUniform + "Ka", glm::vec3(0,0.2f,0)* ledLightCoef);
+        phongShader.setVec3(lightUniform + "Kd", glm::vec3(0, 15, 0)* ledLightCoef);
+        phongShader.setVec3(lightUniform + "Ks", glm::vec3(0, 2.0, 0)* ledLightCoef);
+        phongShader.setFloat(lightUniform + "Kc", 1.5f);
+        phongShader.setFloat(lightUniform + "Kl", 5.0f);
+        phongShader.setFloat(lightUniform + "Kq", 8.272f);
+
+        //Staklo ekrana
+        phongShader.use();
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, screenHeight + 0.01, -12.0));
+        m = glm::translate(m, mapOffset);
+        m = glm::rotate(m, glm::radians(screenRot-90), glm::vec3(1.0, 0.0, 0.0));
+        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.55, 0.05, 0.55));
+        phongShader.setMat4("uModel", m);
+        phongShader.setBool("uTransp", true);
+        phongShader.setFloat("uAlpha", 0.3);
+        //simpleCube->Render(&phongShader, 0.04, 0.39, 0.03);
+        phongShader.setBool("uTransp", false);
 
 
         //HUD

@@ -1,5 +1,5 @@
 #version 330 core
-#define NR_POINT_LIGHTS 10
+#define NR_POINT_LIGHTS 12
 #define NR_SPOT_LIGHTS 1
 
 struct PointLight {
