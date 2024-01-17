@@ -141,14 +141,20 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="GameObject.cpp" />
+    <ClCompile Include="ObjectRender.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="shader.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="2dSahder.vert" />
+    <None Include="2dShader.frag" />
     <None Include="basic.frag" />
     <None Include="basic.vert" />
+    <None Include="signature.frag" />
+    <None Include="signature.vert" />
     <None Include="packages.config" />
+    <None Include="phong.frag" />
+    <None Include="phong.vert" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="mesh.hpp" />

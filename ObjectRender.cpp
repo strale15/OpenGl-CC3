@@ -3,16 +3,16 @@
 #include <GL/glew.h>
 #include "shader.hpp"
 
-class GameObject {
+class ObjectRender {
 private:
 	unsigned int VAO, VBO, EBO;
 	unsigned int vCount;
 public:
 	static int rCount;
-	GameObject() {
+	ObjectRender() {
 	}
 
-	GameObject(std::vector<float> vertices) {
+	ObjectRender(std::vector<float> vertices) {
 		vCount = vertices.size() / 8;
 
 		glGenVertexArrays(1, &VAO);
@@ -22,6 +22,7 @@ public:
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
 		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
@@ -33,7 +34,7 @@ public:
 		glBindVertexArray(0);
 	}
 
-	GameObject(std::vector<float> vertices, bool twoD) {
+	ObjectRender(std::vector<float> vertices, bool twoD) {
 		vCount = vertices.size() / 5;
 
 		glGenVertexArrays(1, &VAO);
@@ -43,6 +44,7 @@ public:
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
 		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
@@ -52,7 +54,7 @@ public:
 		glBindVertexArray(0);
 	}
 
-	~GameObject() {
+	~ObjectRender() {
 
 		glDeleteBuffers(1, &VBO);
 		glDeleteVertexArrays(1, &VAO);

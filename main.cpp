@@ -17,7 +17,7 @@
 #include "shader.hpp"
 #include "model.hpp"
 
-#include "GameObject.cpp"
+#include "ObjectRender.cpp"
 
 const unsigned int wWidth = 1920;
 const unsigned int wHeight = 1080;
@@ -27,7 +27,6 @@ double lastX;
 double lastY;
 
 struct Params {
-    float dt;
     bool test1 = false;
 
     bool isCurosIn;
@@ -71,6 +70,8 @@ struct Params {
     bool engineBroken = false;
     bool bateryBroken = false;
 
+
+    float dt;
     float velocity = 0;
     glm::vec3 carOffset = glm::vec3(0);
     glm::vec3 carForward = glm::vec3(0);
@@ -78,60 +79,7 @@ struct Params {
     float carRot = 0;
 };
 
-static void DrawHud(Shader& hudShader, unsigned hudTex) {
-    //hud
-        // Bind your HUD shader program
-    hudShader.use();
-
-    // Define the vertices of a rectangle
-    float vertices[] = {
-       -1.0f,  1.0f, 0.0f,     0.0f, 0.0f, // Top-left vertex
-       -1.0f, -1.0f, 0.0f,     0.0f, 1.0f, // Bottom-left vertex
-        1.0f, -1.0f, 0.0f,     1.0f, 1.0f, // Bottom-right vertex
-        1.0f,  1.0f, 0.0f,     1.0f, 0.0f  // Top-right vertex
-    };
-
-    // Create and bind a vertex array object (VAO)
-    GLuint VAO;
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-
-    // Create a vertex buffer object (VBO) and copy the vertices data to it
-    GLuint VBO;
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    // Position attribute (location = 0)
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    // Texture coordinate attribute (location = 1)
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    // Create an element buffer object (EBO)
-    GLuint EBO;
-    glGenBuffers(1, &EBO);
-
-    // Draw the quad
-    glBindVertexArray(VAO);
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, hudTex);
-    glUniform1i(glGetUniformLocation(hudShader.ID, "textureSampler"), 0);
-
-    // Draw the quad using GL_TRIANGLE_FAN since you have 4 vertices
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
-    // Unbind the VAO, VBO, EBO, and texture
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-}
-
-static void DrawBuildings(Shader& shader, GameObject* building, unsigned buildingTex, unsigned buildingSpec) {
+static void DrawBuildings(Shader& shader, ObjectRender* building, unsigned buildingTex, unsigned buildingSpec) {
     shader.use();
     int numberOfBuildings = 2000/20;
     glm::mat4 m = glm::mat4(1.f);
@@ -152,7 +100,7 @@ static void DrawBuildings(Shader& shader, GameObject* building, unsigned buildin
     }
 }
 
-static void HandleInput(Params* params) {
+static void KeyAction(Params* params) {
     if (params->wDown)
     {
         if (params->test1)
@@ -202,7 +150,6 @@ static void HandleInput(Params* params) {
 
     //Car
     params->velocity = glm::clamp(params->velocity, -20.f, 60.f);
-    //cout << params->velocity << endl;
 
     if (glm::abs(params->velocity) < 0.005) {
         params->velocity = 0;
@@ -252,116 +199,10 @@ static void HandleInput(Params* params) {
     params->carRot = glm::clamp(params->carRot, -720.f, 720.f);
 }
 
-static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
+static void KeyPressed(GLFWwindow* window, int key, int scancode, int action, int mode) {
     Params* params = (Params*)glfwGetWindowUserPointer(window);
 
-    if (params->isCurosIn) {
-        params->xPosC = xPos;
-        params->yPosC = yPos;
-    }
 
-    if (firstMouse) {
-        lastX = xPos;
-        lastY = yPos;
-        firstMouse = false;
-    }
-
-    double xoffset = xPos - lastX;
-    double yoffset = lastY - yPos;
-    lastX = xPos;
-    lastY = yPos;
-
-    float sensitivity = 0.3f;
-
-    xoffset *= sensitivity;
-    yoffset *= sensitivity;
-
-    params->camYaw += xoffset;
-    params->camPitch += yoffset;
-
-    if (params->camPitch > 89.0) {
-        params->camPitch = 89.0;
-    }
-    else if (params->camPitch < -89.0) {
-        params->camPitch = -89.0;
-    }
-
-    glm::vec3 front;
-    front.x = cos(glm::radians(params->camYaw)) * cos(glm::radians(params->camPitch));
-    front.y = sin(glm::radians(params->camPitch));
-    front.z = sin(glm::radians(params->camYaw)) * cos(glm::radians(params->camPitch));
-
-    params->cameraFront = glm::normalize(front);
-}
-
-static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode) {
-    Params* params = (Params*)glfwGetWindowUserPointer(window);
-    if (key == GLFW_KEY_O && action == GLFW_PRESS)
-    {
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        std::cout << "glm::vec3(" << params->objPos.x << "," << params->objPos.y << "," << params->objPos.z << ")" << std::endl;
-    }
-
-    if (key == GLFW_KEY_L && action == GLFW_PRESS)
-    {
-        params->test1 = !params->test1;
-    }
-
-    if (key == GLFW_KEY_W && action == GLFW_PRESS)
-    {
-        params->wDown = true;
-    }
-    if (key == GLFW_KEY_W && action == GLFW_RELEASE)
-    {
-        params->wDown = false;
-    }
-
-    if (key == GLFW_KEY_S && action == GLFW_PRESS)
-    {
-        params->sDown = true;
-    }
-    if (key == GLFW_KEY_S && action == GLFW_RELEASE)
-    {
-        params->sDown = false;
-    }
-
-    if (key == GLFW_KEY_A && action == GLFW_PRESS)
-    {
-        params->aDown = true;
-    }
-    if (key == GLFW_KEY_A && action == GLFW_RELEASE)
-    {
-        params->aDown = false;
-    }
-
-    if (key == GLFW_KEY_D && action == GLFW_PRESS)
-    {
-        params->dDown = true;
-    }
-    if (key == GLFW_KEY_D && action == GLFW_RELEASE)
-    {
-        params->dDown = false;
-    }
-
-    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
-    {
-        params->spaceDown = true;
-    }
-    if (key == GLFW_KEY_SPACE && action == GLFW_RELEASE)
-    {
-        params->spaceDown = false;
-    }
-
-    if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS)
-    {
-        params->shiftDown = true;
-    }
-    if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_RELEASE)
-    {
-        params->shiftDown = false;
-    }
-
-    //CAR
     if (key == GLFW_KEY_UP) {
         if (action == GLFW_PRESS) {
             params->forward = true;
@@ -417,26 +258,76 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
             params->nightVision = !params->nightVision;
         }
     }
+
     if (key == GLFW_KEY_F) {
         if (action == GLFW_PRESS) {
             params->headlights = !params->headlights;
         }
     }
+
     if (key == GLFW_KEY_C) {
         if (action == GLFW_PRESS) {
             params->engineBroken = !params->engineBroken;
         }
     }
+
     if (key == GLFW_KEY_B) {
         if (action == GLFW_PRESS) {
-            params->bateryBroken = !params->bateryBroken;
+            params->bateryBroken = !params-> bateryBroken;
         }
+  
     }
 
     bool IsDown = action == GLFW_PRESS || action == GLFW_REPEAT;
     switch (key) {
     case GLFW_KEY_ESCAPE: glfwSetWindowShouldClose(window, GLFW_TRUE); break;
     }
+}
+
+static void DrawHud(Shader& hudShader, unsigned hudTex) {
+    hudShader.use();
+
+    float vertices[] = {
+       -1.0f,  1.0f, 0.0f,     0.0f, 0.0f, // Top-left vertex
+       -1.0f, -1.0f, 0.0f,     0.0f, 1.0f, // Bottom-left vertex
+        1.0f, -1.0f, 0.0f,     1.0f, 1.0f, // Bottom-right vertex
+        1.0f,  1.0f, 0.0f,     1.0f, 0.0f  // Top-right vertex
+    };
+
+    GLuint VAO;
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+    GLuint VBO;
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    GLuint EBO;
+    glGenBuffers(1, &EBO);
+
+    glBindVertexArray(VAO);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, hudTex);
+    glUniform1i(glGetUniformLocation(hudShader.ID, "textureSampler"), 0);
+
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &EBO);
 }
 
 
@@ -465,8 +356,7 @@ int main()
         return -2;
     }
     glfwMakeContextCurrent(window);
-    glfwSetKeyCallback(window, KeyCallback);
-    glfwSetCursorPosCallback(window, CursosPosCallback);
+    glfwSetKeyCallback(window, KeyPressed);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     if (glewInit() !=GLEW_OK)
@@ -519,7 +409,7 @@ int main()
         -0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f, // R U
          0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, // L U
     };
-    GameObject* simpleCube = new GameObject(cubeVertices);
+    ObjectRender* simpleCube = new ObjectRender(cubeVertices);
 
     std::vector<float> cubeVertices2 = {
         // X     Y     Z     NX    NY    NZ    U     V    FRONT SIDE
@@ -565,7 +455,7 @@ int main()
         -0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 100.0f, 100.0f, // R U
          0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 100.0f, // L U
     };
-    GameObject* simpleCube2 = new GameObject(cubeVertices2);
+    ObjectRender* simpleCube2 = new ObjectRender(cubeVertices2);
 
     std::vector<float> vertices = {
         // Positions      // UVs
@@ -577,7 +467,7 @@ int main()
         0.5f, 0.5f, 0.0f, 1.0f, 0.0f,  // Vertex 3 (Repeated)
         -0.5f, 0.5f, 0.0f, 0.0f, 0.0f   // Vertex 4
     };
-    GameObject* rectangle = new GameObject(vertices, true);
+    ObjectRender* rectangle = new ObjectRender(vertices, true);
 
     Model steeringWheelModel("res/Isuzu NKR Steering Wheels.obj");
 
@@ -648,7 +538,7 @@ int main()
         phongShader.use();
 
         //Camera
-        HandleInput(&params);
+        KeyAction(&params);
 
         float radius = 1.0f;
         float angle = glm::radians(90-params.carRot);
@@ -673,19 +563,10 @@ int main()
         phongShader.setVec3("uViewPos", glm::vec3(cameraX, 2.3, cameraZ));
         phongShader.setMat4("uProjection", projectionP);
 
-        //FPS
-        /*view = glm::lookAt(params.position,
-            params.position + params.cameraFront,
-            params.cameraUp);
-
-        phongShader.setMat4("uView", view);
-        phongShader.setVec3("uViewPos", params.position);*/
-
         //2D Instruemtns
         dShader.use();
         dShader.setMat4("uView", view);
         dShader.setMat4("uProjection", projectionP);
-
         
 
         //TachmoIndicator
@@ -985,7 +866,7 @@ int main()
         glfwSwapBuffers(window);
         glUseProgram(0);
         FrameEndTime = glfwGetTime();
-        params.dt = FrameEndTime - FrameStartTime;
+        params.dt = FrameEndTime - FrameStartTime; //kolko vremena mu je trebalo info, glob primenj
     }
     glfwTerminate();
     return 0;

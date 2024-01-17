@@ -24,7 +24,7 @@
     <ClCompile Include="shader.hpp">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="GameObject.cpp">
+    <ClCompile Include="ObjectRender.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -36,6 +36,12 @@
     <None Include="basic.vert">
       <Filter>Source Files\Shader Files</Filter>
     </None>
+    <None Include="phong.frag" />
+    <None Include="phong.vert" />
+    <None Include="2dShader.frag" />
+    <None Include="2dSahder.vert" />
+    <None Include="signature.frag" />
+    <None Include="signature.vert" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="model.hpp">
