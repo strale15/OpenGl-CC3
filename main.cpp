@@ -27,16 +27,12 @@
 #include <string>
 #include <cmath>
 
-#define NUMBER_OF_HELICOPTERS 10
-#define NUMBER_OF_LOW_HELICOPTERS 5
-#define NUMBER_OF_CLODS 50
+#define NUMBER_OF_HELICOPTERS 5
+#define NUMBER_OF_LOW_HELICOPTERS 2
+#define NUMBER_OF_CLODS 55
 
 const unsigned int wWidth = 1920;
 const unsigned int wHeight = 1080;
-
-bool firstMouse = true;
-double lastX;
-double lastY;
 
 struct Cloud {
     float rotation = 0;
@@ -61,24 +57,7 @@ Helicopter targets[NUMBER_OF_HELICOPTERS + NUMBER_OF_LOW_HELICOPTERS];
 
 struct Params {
     float dt = 0;
-    bool isFps = true;
-
-    glm::vec3 cameraFront = glm::vec3(0.0, 0.0, 1.0);
     glm::vec3 cameraUp = glm::vec3(0.0, 1.0, 0.0);
-    glm::vec3 position = glm::vec3(0.0, 11.5, -13.5);
-
-    glm::vec3 objPos = glm::vec3(0.0, 0.0, 0.0);
-
-    double camYaw = 90;
-    double camPitch = 0;
-
-    bool wDown = false;
-    bool sDown = false;
-    bool aDown = false;
-    bool dDown = false;
-
-    bool spaceDown = false;
-    bool shiftDown = false;
 
     //Drone
     bool droneUp = false;
@@ -90,7 +69,7 @@ struct Params {
 
     bool isMapActive = true;
     int numberOfDrones = 7;
-    bool isDroneAlive = true;
+    bool isDroneAlive = false;
     glm::vec3 dronePosition = glm::vec3(0.0, 7.5, -10.0);
 };
 
@@ -234,7 +213,7 @@ static void RenderAliveHelicopters(Shader& shader, Model targetModel) {
         if (targets[i].isAlive) {
             m = glm::translate(glm::mat4(1.0), targets[i].position);
             m = glm::rotate(m, glm::radians(-targets[i].angle), glm::vec3(0, 1, 0));
-            m = glm::scale(m, glm::vec3(0.002));
+            m = glm::scale(m, glm::vec3(0.003));
             shader.setMat4("uModel", m);
             shader.setBool("isColor", true);
             if (targets[i].isLowFlight) {
@@ -322,7 +301,7 @@ static void CheckIfDroneCrashed(Params* params) {
 
     for (int i = 0; i < NUMBER_OF_HELICOPTERS + NUMBER_OF_LOW_HELICOPTERS; i++) {
         if (targets[i].isAlive) {
-            if (glm::distance(targets[i].position, params->dronePosition) <= 1) {
+            if (glm::distance(targets[i].position, params->dronePosition) < 0.9) {
                 targets[i].isAlive = false;
                 params->isDroneAlive = false;
                 cout << "Skuco u " << i << endl;
@@ -369,54 +348,8 @@ std::vector<float> generateCircleVertices(float radius, int numSegments) {
 }
 
 static void HandleInput(Params* params) {
-    if (params->wDown)
-    {
-        if (params->isFps)
-            params->position += 7.2f * params->cameraFront * params->dt;
-        else
-            params->objPos.z += 0.5f * params->dt;
-    }
-    if (params->sDown)
-    {
-        if (params->isFps)
-            params->position -= 7.2f * params->cameraFront * params->dt;
-        else
-            params->objPos.z -= 0.5f * params->dt;
-    }
-    if (params->aDown)
-    {
-
-        glm::vec3 strafe = glm::cross(params->cameraFront, params->cameraUp);
-        if (params->isFps)
-            params->position -= 7.2f * strafe * params->dt;
-        else
-            params->objPos.x += 0.5f * params->dt;
-    }
-    if (params->dDown)
-    {
-        glm::vec3 strafe = glm::cross(params->cameraFront, params->cameraUp);
-        if (params->isFps)
-            params->position += 7.2f * strafe * params->dt;
-        else
-            params->objPos.x -= 0.5f * params->dt;
-    }
-    if (params->spaceDown)
-    {
-        if (params->isFps)
-            params->position.y += 4.2 * params->dt;
-        else
-            params->objPos.y += 0.5f * params->dt;
-    }
-    if (params->shiftDown)
-    {
-        if (params->isFps)
-            params->position.y -= 4.1 * params->dt;
-        else
-            params->objPos.y -= 0.5f * params->dt;
-    }
-
     //Drone
-    float droneSpeed = targets[0].speed *4;
+    float droneSpeed = targets[0].speed * 7;
     if (params->droneForward)
     {
         params->dronePosition.z += droneSpeed * params->dt;
@@ -443,98 +376,8 @@ static void HandleInput(Params* params) {
     }
 }
 
-static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
-    Params* params = (Params*)glfwGetWindowUserPointer(window);
-
-    if (firstMouse) {
-        lastX = xPos;
-        lastY = yPos;
-        firstMouse = false;
-    }
-
-    double xoffset = xPos - lastX;
-    double yoffset = lastY - yPos;
-    lastX = xPos;
-    lastY = yPos;
-
-    float sensitivity = 0.3f;
-
-    xoffset *= sensitivity;
-    yoffset *= sensitivity;
-
-    params->camYaw += xoffset;
-    params->camPitch += yoffset;
-
-    if (params->camPitch > 89.0) {
-        params->camPitch = 89.0;
-    }
-    else if (params->camPitch < -89.0) {
-        params->camPitch = -89.0;
-    }
-
-    glm::vec3 front;
-    front.x = cos(glm::radians(params->camYaw)) * cos(glm::radians(params->camPitch));
-    front.y = sin(glm::radians(params->camPitch));
-    front.z = sin(glm::radians(params->camYaw)) * cos(glm::radians(params->camPitch));
-
-    params->cameraFront = glm::normalize(front);
-}
-
 static void KeyCallback2(GLFWwindow* window, int key, int scancode, int action, int mode) {
     Params* params = (Params*)glfwGetWindowUserPointer(window);
-    if (key == GLFW_KEY_W && action == GLFW_PRESS)
-    {
-        params->wDown = true;
-    }
-    if (key == GLFW_KEY_W && action == GLFW_RELEASE)
-    {
-        params->wDown = false;
-    }
-
-    if (key == GLFW_KEY_S && action == GLFW_PRESS)
-    {
-        params->sDown = true;
-    }
-    if (key == GLFW_KEY_S && action == GLFW_RELEASE)
-    {
-        params->sDown = false;
-    }
-
-    if (key == GLFW_KEY_A && action == GLFW_PRESS)
-    {
-        params->aDown = true;
-    }
-    if (key == GLFW_KEY_A && action == GLFW_RELEASE)
-    {
-        params->aDown = false;
-    }
-
-    if (key == GLFW_KEY_D && action == GLFW_PRESS)
-    {
-        params->dDown = true;
-    }
-    if (key == GLFW_KEY_D && action == GLFW_RELEASE)
-    {
-        params->dDown = false;
-    }
-
-    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
-    {
-        params->spaceDown = true;
-    }
-    if (key == GLFW_KEY_SPACE && action == GLFW_RELEASE)
-    {
-        params->spaceDown = false;
-    }
-
-    if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS)
-    {
-        params->shiftDown = true;
-    }
-    if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_RELEASE)
-    {
-        params->shiftDown = false;
-    }
 
     if (key == GLFW_KEY_UP) {
         if (action == GLFW_PRESS) {
@@ -592,7 +435,7 @@ static void KeyCallback2(GLFWwindow* window, int key, int scancode, int action, 
         }
     }
 
-    if (key == GLFW_KEY_L) {
+    if (key == GLFW_KEY_SPACE) {
         if (action == GLFW_PRESS && !params->isDroneAlive && params->numberOfDrones > 0) {
             params->dronePosition = glm::vec3(0.0, 7.5, -10.0);
             params->numberOfDrones -= 1;
@@ -631,11 +474,10 @@ int main()
         return -2;
     }
 
-    glfwSetWindowPos(window, 300, 120);
+    glfwSetWindowPos(window, 0, 40);
     glfwMakeContextCurrent(window);
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, KeyCallback2);
-    glfwSetCursorPosCallback(window, CursosPosCallback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     if (glewInit() !=GLEW_OK)
@@ -719,22 +561,12 @@ int main()
     glm::mat4 projectionP;
 
     phongShader.setVec3("uDirLight.Position", glm::vec3(0.0, 50.0f, 0.0f));
-    phongShader.setVec3("uDirLight.Direction", 0.5, -1, 0.5);
-    phongShader.setVec3("uDirLight.Ka", glm::vec3(0.1));
-    phongShader.setVec3("uDirLight.Kd", glm::vec3(0.2));
-    phongShader.setVec3("uDirLight.Ks", glm::vec3(1.0, 1.0, 1.0));
-
-    phongShader.setVec3("uPointLights[0].Position", glm::vec3(-99999));
-    phongShader.setVec3("uPointLights[0].Ka", glm::vec3(0.2f));
-    phongShader.setVec3("uPointLights[0].Kd", glm::vec3(0.6f));
-    phongShader.setVec3("uPointLights[0].Ks", glm::vec3(1.0f));
-    phongShader.setFloat("uPointLights[0].Kc", 1.5f);
-    phongShader.setFloat("uPointLights[0].Kl", 1.0f);
-    phongShader.setFloat("uPointLights[0].Kq", 0.272f);
+    phongShader.setVec3("uDirLight.Direction", 0.3, -0.2, 0.6);
+    phongShader.setVec3("uDirLight.Ka", glm::vec3(0.15));
+    phongShader.setVec3("uDirLight.Kd", glm::vec3(0.18));
+    phongShader.setVec3("uDirLight.Ks", glm::vec3(2.0));
 
     unsigned hudTex = Model::textureFromFile("res/hudTex.png");
-    unsigned kockaDif = Model::textureFromFile("res/container_diffuse.png");
-    unsigned kockaSpec = Model::textureFromFile("res/container_specular.png");
     unsigned mapTex = Model::textureFromFile("res/map1.png");
     unsigned mapflipTex = Model::textureFromFile("res/map1Flip.png");
     unsigned mapSpecTex = Model::textureFromFile("res/map1Spec.png");
@@ -743,7 +575,7 @@ int main()
 
     phongShader.setInt("uMaterial.Kd", 0);
     phongShader.setInt("uMaterial.Ks", 1);
-    phongShader.setFloat("uMaterial.Shininess", 0.5 * 128);
+    phongShader.setFloat("uMaterial.Shininess", 0.25 * 128);
 
     glm::mat4 m(1.0f);
     float currentRot = 0;
@@ -753,7 +585,7 @@ int main()
     Params params;
     glfwSetWindowUserPointer(window, &params);
 
-    glClearColor(0, 0.02, 0.09, 1.0);
+    glClearColor(0.13, 0.17, 0.21, 1.0);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -779,13 +611,12 @@ int main()
         HandleInput(&params);
 
         //Camera
-        view = glm::lookAt(params.position, params.position + params.cameraFront, params.cameraUp);
-        view = glm::lookAt(glm::vec3(0.0, 11, -12.2), glm::vec3(0.0, 0.0, 5), params.cameraUp);
-        projectionP = glm::perspective(glm::radians(80.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
+        view = glm::lookAt(glm::vec3(0.0, 11, -12.2), glm::vec3(0.0, 2.2, 5), params.cameraUp);
+        projectionP = glm::perspective(glm::radians(92.0f), (float)wWidth / (float)wHeight, 0.1f, 300.0f);
 
         phongShader.setMat4("uView", view);
         phongShader.setMat4("uProjection", projectionP);
-        phongShader.setVec3("uViewPos", params.position);
+        phongShader.setVec3("uViewPos", glm::vec3(0.0, 11, -12.2));
 
         //SCENE
         //------------------------------------------------------------------------------------------------------------
@@ -797,6 +628,13 @@ int main()
         m = glm::scale(m, glm::vec3(30,1.0,30));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, mapTex, mapSpecTex);
+
+        //Fejk pod ispod mape
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, -0.01, 0.0));
+        m = glm::rotate(m, glm::radians(0.f), glm::vec3(1.0, 0.0, 0.0));
+        m = glm::scale(m, glm::vec3(300, 1.0, 300));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 0.14, 0.29, 0.22);
 
         //Centar grada
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 1.5, 5.0));
@@ -811,7 +649,7 @@ int main()
         m = glm::scale(m, glm::vec3(60, 1.0, 60));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, sky);
-        phongShader.setVec3("uDirLight.Ka", glm::vec3(0.1));
+        phongShader.setVec3("uDirLight.Ka", glm::vec3(0.15));
 
         //PVO base
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 5.5, -13.5));
@@ -845,6 +683,7 @@ int main()
         phongShader.setFloat(lightUniform + "Kq", 2.272f);
 
 
+        //Svetionik grada
         float time = glfwGetTime() * 15.f;
         float radius = sin(glm::radians(time*2)) + 2;
         glm::vec3 dir = glm::vec3(radius*sin(glm::radians(time)), 4.0, radius*cos(glm::radians(time)));
@@ -853,13 +692,14 @@ int main()
         phongShader.setVec3("uSpotlights[0].Direction", -dir);
         phongShader.setVec3("uSpotlights[0].Ka", 0.0, 0.0, 0.0);
         phongShader.setVec3("uSpotlights[0].Kd", glm::vec3(4.f));
-        phongShader.setVec3("uSpotlights[0].Ks", glm::vec3(1.0));
+        phongShader.setVec3("uSpotlights[0].Ks", glm::vec3(2.0));
         phongShader.setFloat("uSpotlights[0].InnerCutOff", glm::cos(glm::radians(12.0f)));
         phongShader.setFloat("uSpotlights[0].OuterCutOff", glm::cos(glm::radians(18.0f)));
         phongShader.setFloat("uSpotlights[0].Kc", 1.0);
         phongShader.setFloat("uSpotlights[0].Kl", 0.072f);
         phongShader.setFloat("uSpotlights[0].Kq", 0.012f);
 
+        //Render meta
         RenderAliveHelicopters(phongShader, copterObj);
 
         //Oblaci
@@ -1023,9 +863,9 @@ int main()
   
         phongShader.setVec3(lightUniform + "Position", pos);
         phongShader.setVec3(lightUniform + "Ka", glm::vec3(0,0.2f,0)* ledLightCoef);
-        phongShader.setVec3(lightUniform + "Kd", glm::vec3(0, 15, 0)* ledLightCoef);
+        phongShader.setVec3(lightUniform + "Kd", glm::vec3(0, 5, 0)* ledLightCoef);
         phongShader.setVec3(lightUniform + "Ks", glm::vec3(0, 2.0, 0)* ledLightCoef);
-        phongShader.setFloat(lightUniform + "Kc", 1.5f);
+        phongShader.setFloat(lightUniform + "Kc", 5.5f);
         phongShader.setFloat(lightUniform + "Kl", 5.0f);
         phongShader.setFloat(lightUniform + "Kq", 8.272f);
 
@@ -1038,8 +878,14 @@ int main()
         m = glm::scale(m, glm::vec3(0.55, 0.05, 0.55));
         phongShader.setMat4("uModel", m);
         phongShader.setBool("uTransp", true);
-        phongShader.setFloat("uAlpha", 0.3);
-        //simpleCube->Render(&phongShader, 0.04, 0.39, 0.03);
+        if (params.isMapActive) {
+            phongShader.setFloat("uAlpha", 0.3);
+        }
+        else
+        {
+            phongShader.setFloat("uAlpha", 0.05);
+        }
+        simpleCube->Render(&phongShader, 0.04, 0.39, 0.03);
         phongShader.setBool("uTransp", false);
 
 
