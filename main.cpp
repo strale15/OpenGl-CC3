@@ -282,7 +282,7 @@ static void UpdateTargetsPos(float dt) {
             continue;
         }
         glm::vec3 cityCenter = glm::vec3(0, targets[i].position.y, 5);
-        if (glm::distance(targets[i].position, cityCenter) <= 0.5) {
+        if (glm::distance(targets[i].position, cityCenter) <= 0.1) {
             continue;
         }
 
@@ -313,7 +313,7 @@ static void CheckIfDroneCrashed(Params* params) {
 
     for (int i = 0; i < NUMBER_OF_HELICOPTERS + NUMBER_OF_LOW_HELICOPTERS; i++) {
         if (targets[i].isAlive) {
-            if (glm::distance(targets[i].position, params->dronePosition) < 0.9) {
+            if (glm::distance(targets[i].position, params->dronePosition) < 0.5) {
                 targets[i].isAlive = false;
                 params->isDroneAlive = false;
                 cout << "Skuco u " << i << endl;
@@ -771,6 +771,25 @@ int main()
             rectangle->Render(&twoD, 0.02, 0.13, 0.01);
         }
 
+        //Skener
+        float scannerTime = glfwGetTime() * 90.f;
+        float scannerScale = 0.255;
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, screenHeight + 0.006, -12.0));
+        m = glm::translate(m, mapOffset);
+        m = glm::rotate(m, glm::radians(scannerTime), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, -glm::vec3(0.0, screenHeight + 0.006, -12.0));
+        m = glm::translate(m, -mapOffset);
+
+
+        m = glm::translate(m, glm::vec3(0.0, screenHeight+0.006, -12.0+ scannerScale /2));
+        m = glm::translate(m, mapOffset);
+        m = glm::rotate(m, glm::radians(screenRot), glm::vec3(1.0, 0.0, 0.0));
+        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.004, scannerScale,1));
+        twoD.setMat4("uModel", m);
+        rectangle->Render(&twoD, 0.05, 0.51, 0.01);
+
         //Tacke na mapi koje su mete
         for (int i = 0; i < NUMBER_OF_HELICOPTERS + NUMBER_OF_LOW_HELICOPTERS; i++) {
             if (!targets[i].isAlive) {
@@ -837,9 +856,9 @@ int main()
         m = glm::translate(m, posOnMap);
         m = glm::rotate(m, glm::radians(screenRot), glm::vec3(1.0, 0.0, 0.0));
         m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
-        m = glm::scale(m, glm::vec3(0.016));
+        m = glm::scale(m, glm::vec3(0.02));
         twoD.setMat4("uModel", m);
-        rectangle->Render(&twoD, 0.12, 0.87, 0.85);
+        rectangle->Render(&twoD, 0, 1, 0.98);
 
 
         //Preostalo dronova
