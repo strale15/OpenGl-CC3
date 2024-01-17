@@ -1,5 +1,5 @@
 #version 330 core
-#define NR_POINT_LIGHTS 1
+#define NR_POINT_LIGHTS 10
 #define NR_SPOT_LIGHTS 1
 
 struct PointLight {
@@ -40,6 +40,7 @@ uniform vec3 uViewPos;
 uniform bool isColor;
 uniform vec3 uColor;
 uniform bool uTransp;
+uniform float uAlpha;
 
 in vec2 UV;
 in vec3 vWorldSpaceFragment;
@@ -114,10 +115,11 @@ void main() {
         }
     }
 
+    //
     vec3 FinalColor = DirColor + PtLightsColor + SptLightsColor;
     float alpha = 1.0f;
     if(uTransp) {
-        alpha = 0.4f;
+        alpha = uAlpha;
     }
     FragColor = vec4(FinalColor, alpha);
 }

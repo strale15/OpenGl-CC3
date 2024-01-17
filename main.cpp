@@ -2,6 +2,7 @@
 //Preuzeto sa learnOpenGL
 
 #define _CRT_SECURE_NO_WARNINGS
+#define _USE_MATH_DEFINES
 
 #include <iostream>
 #include <fstream>
@@ -23,9 +24,12 @@
 
 #include <stdlib.h>
 #include <time.h> 
+#include <string>
+#include <cmath>
 
 #define NUMBER_OF_HELICOPTERS 10
 #define NUMBER_OF_LOW_HELICOPTERS 5
+#define NUMBER_OF_CLODS 50
 
 const unsigned int wWidth = 1920;
 const unsigned int wHeight = 1080;
@@ -33,6 +37,17 @@ const unsigned int wHeight = 1080;
 bool firstMouse = true;
 double lastX;
 double lastY;
+
+struct Cloud {
+    float rotation = 0;
+    glm::vec3 position = glm::vec3(0.0, 3.0, 0.0);
+    float scaleX = 1;
+    float scaleZ = 1;
+    float alpha = 0.5;
+
+};
+
+Cloud clouds[NUMBER_OF_CLODS];
 
 struct Helicopter {
     glm::vec3 position = glm::vec3(0.0, -5.0, 0.0);
@@ -50,7 +65,7 @@ struct Params {
 
     glm::vec3 cameraFront = glm::vec3(0.0, 0.0, 1.0);
     glm::vec3 cameraUp = glm::vec3(0.0, 1.0, 0.0);
-    glm::vec3 position = glm::vec3(0.0, 0.0, -1.0);
+    glm::vec3 position = glm::vec3(0.0, 11.5, -13.5);
 
     glm::vec3 objPos = glm::vec3(0.0, 0.0, 0.0);
 
@@ -215,6 +230,7 @@ static void GenerateTargets() {
 static void RenderAliveHelicopters(Shader& shader, Model targetModel) {
     glm::mat4 m = glm::mat4(1.0);
     for (int i = 0; i < NUMBER_OF_HELICOPTERS + NUMBER_OF_LOW_HELICOPTERS; i++) {
+        float coef = 0;
         if (targets[i].isAlive) {
             m = glm::translate(glm::mat4(1.0), targets[i].position);
             m = glm::rotate(m, glm::radians(-targets[i].angle), glm::vec3(0, 1, 0));
@@ -229,7 +245,43 @@ static void RenderAliveHelicopters(Shader& shader, Model targetModel) {
             }
             targetModel.Draw(shader);
             shader.setBool("isColor", false);
+
+            if(!targets[i].isLowFlight)
+                coef = 1;
+
         }
+        if (i < NUMBER_OF_HELICOPTERS) {
+            std::string lightUniform = "uPointLights[";
+            lightUniform.append(to_string(i));
+            lightUniform.append("].");
+            glm::vec3 pos = targets[i].position;
+            pos.y += 0.3;
+            shader.setVec3(lightUniform + "Position", pos);
+            shader.setVec3(lightUniform + "Ka", glm::vec3(0.1f)* coef);
+            shader.setVec3(lightUniform + "Kd", glm::vec3(1.f,1.0f,0)* coef);
+            shader.setVec3(lightUniform + "Ks", glm::vec3(1.0f,1.0f,0)* coef);
+            shader.setFloat(lightUniform + "Kc", 1.5f);
+            shader.setFloat(lightUniform + "Kl", 3.0f);
+            shader.setFloat(lightUniform + "Kq", 2.272f);
+        }
+    }
+}
+
+static void GenerateCloudPositions() {
+    for (int i = 0; i < NUMBER_OF_CLODS; i++) {
+        float randomCoordX = static_cast<float>(rand()) / static_cast<float>(RAND_MAX / 30.0) - 15.0;
+        float randomCoordZ = static_cast<float>(rand()) / static_cast<float>(RAND_MAX / 30.0) - 15.0;
+        float randomCoordY = static_cast<float>(rand()) / static_cast<float>(RAND_MAX / 2.0) + 3;
+        float randomRot = static_cast<float>(rand()) / static_cast<float>(RAND_MAX / 80.0) - 40;
+        float randomScaleX = static_cast<float>(rand()) / static_cast<float>(RAND_MAX / 1.4) + 0.2;
+        float randomScaleZ = static_cast<float>(rand()) / static_cast<float>(RAND_MAX / 1.4) + 0.2;
+        float randomAlpha = static_cast<float>(rand()) / static_cast<float>(RAND_MAX / 0.3) + 0.4;
+
+        clouds[i].position = glm::vec3(randomCoordX, randomCoordY, randomCoordZ);
+        clouds[i].rotation = randomRot;
+        clouds[i].scaleX = randomScaleX;
+        clouds[i].scaleZ = randomScaleZ;
+        clouds[i].alpha = randomAlpha;
     }
 }
 
@@ -257,7 +309,7 @@ static void CheckIfDroneCrashed(Params* params) {
         return;
     }
 
-    if (params->dronePosition.y < 0.5 || params->dronePosition.y > 15) {
+    if (params->dronePosition.y < 0.5 || params->dronePosition.y > 20) {
         cout << "Previsoko/Prenisko" << endl;
         params->isDroneAlive = false;
         return;
@@ -278,6 +330,42 @@ static void CheckIfDroneCrashed(Params* params) {
             }
         }
     }
+}
+
+std::vector<float> generateCircleVertices(float radius, int numSegments) {
+    std::vector<float> vertices;
+
+    for (int i = 0; i < numSegments; ++i) {
+        float theta1 = 2.0f * M_PI * i / numSegments;
+        float theta2 = 2.0f * M_PI * (i + 1) / numSegments;
+
+        // Calculate the vertices for the current triangle
+        float x1 = radius * std::cos(theta1);
+        float y1 = radius * std::sin(theta1);
+        float x2 = radius * std::cos(theta2);
+        float y2 = radius * std::sin(theta2);
+
+        // Add the vertices to the vector
+        vertices.push_back(0.0f);  // Center vertex
+        vertices.push_back(0.0f);
+        vertices.push_back(0.0f);
+        vertices.push_back(0.5f);  // Center vertex UV
+        vertices.push_back(0.5f);
+
+        vertices.push_back(x1);
+        vertices.push_back(y1);
+        vertices.push_back(0.0f);
+        vertices.push_back(0.5f * (x1 / radius) + 0.5f);
+        vertices.push_back(0.5f * (y1 / radius) + 0.5f);
+
+        vertices.push_back(x2);
+        vertices.push_back(y2);
+        vertices.push_back(0.0f);
+        vertices.push_back(0.5f * (x2 / radius) + 0.5f);
+        vertices.push_back(0.5f * (y2 / radius) + 0.5f);
+    }
+
+    return vertices;
 }
 
 static void HandleInput(Params* params) {
@@ -609,6 +697,9 @@ int main()
     };
     GameObject* rectangle = new GameObject(vertices, true);
 
+    std::vector<float> circleVert = generateCircleVertices(1, 64);
+    GameObject* circle = new GameObject(circleVert, true);
+
     Model droneObj("res/Drone_LP.obj");
     Model copterObj("res/Copter_2.obj");
 
@@ -621,22 +712,11 @@ int main()
     glm::mat4 view;
     glm::mat4 projectionP;
 
-    phongShader.setVec3("uDirLight.Position", glm::vec3(0.0, 50.0f, 0.0f));
-    phongShader.setVec3("uDirLight.Direction", 0.0, -1, 0.0);
-    phongShader.setVec3("uDirLight.Ka", glm::vec3(0.3));
-    phongShader.setVec3("uDirLight.Kd", glm::vec3(0.6));
+    phongShader.setVec3("uDirLight.Position", glm::vec3(0.0, 15.0f, 0.0f));
+    phongShader.setVec3("uDirLight.Direction", 0.1, -1, 0.1);
+    phongShader.setVec3("uDirLight.Ka", glm::vec3(0.11));
+    phongShader.setVec3("uDirLight.Kd", glm::vec3(0.2));
     phongShader.setVec3("uDirLight.Ks", glm::vec3(1.0, 1.0, 1.0));
-
-    phongShader.setVec3("uSpotlights[0].Position", glm::vec3(-99999));
-    phongShader.setVec3("uSpotlights[0].Direction", 0.0, -1.0, 0.0);
-    phongShader.setVec3("uSpotlights[0].Ka", 0.0, 0.0, 0.0);
-    phongShader.setVec3("uSpotlights[0].Kd", glm::vec3(3.0f, 3.0f, 3.0f));
-    phongShader.setVec3("uSpotlights[0].Ks", glm::vec3(1.0));
-    phongShader.setFloat("uSpotlights[0].InnerCutOff", glm::cos(glm::radians(10.0f)));
-    phongShader.setFloat("uSpotlights[0].OuterCutOff", glm::cos(glm::radians(15.0f)));
-    phongShader.setFloat("uSpotlights[0].Kc", 1.0);
-    phongShader.setFloat("uSpotlights[0].Kl", 0.092f);
-    phongShader.setFloat("uSpotlights[0].Kq", 0.032f);
 
     phongShader.setVec3("uPointLights[0].Position", glm::vec3(-99999));
     phongShader.setVec3("uPointLights[0].Ka", glm::vec3(0.2f));
@@ -666,7 +746,7 @@ int main()
     Params params;
     glfwSetWindowUserPointer(window, &params);
 
-    glClearColor(0.2, 0.2, 0.6, 1.0);
+    glClearColor(0, 0, 0, 1.0);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -675,6 +755,7 @@ int main()
     glCullFace(GL_BACK);
 
     GenerateTargets();
+    GenerateCloudPositions();
     while (!glfwWindowShouldClose(window))
     {
         FrameStartTime = glfwGetTime();
@@ -720,7 +801,38 @@ int main()
             droneObj.Draw(phongShader);
         }
 
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 20.0, 5));
+        m = glm::scale(m, glm::vec3(60, 1.0, 60));
+        phongShader.setMat4("uModel", m);
+        simpleCube->Render(&phongShader, 1, 1, 1);
+
+
+        float time = glfwGetTime() * 15.f;
+        glm::vec3 dir = glm::vec3(sin(glm::radians(time)), 1.0, cos(glm::radians(time)));
+
+        phongShader.setVec3("uSpotlights[0].Position", glm::vec3(0,1,5));
+        phongShader.setVec3("uSpotlights[0].Direction", dir);
+        phongShader.setVec3("uSpotlights[0].Ka", 0.0, 0.0, 0.0);
+        phongShader.setVec3("uSpotlights[0].Kd", glm::vec3(2.f));
+        phongShader.setVec3("uSpotlights[0].Ks", glm::vec3(1.0));
+        phongShader.setFloat("uSpotlights[0].InnerCutOff", glm::cos(glm::radians(35.0f)));
+        phongShader.setFloat("uSpotlights[0].OuterCutOff", glm::cos(glm::radians(45.0f)));
+        phongShader.setFloat("uSpotlights[0].Kc", 1.0);
+        phongShader.setFloat("uSpotlights[0].Kl", 0.072f);
+        phongShader.setFloat("uSpotlights[0].Kq", 0.012f);
+
         RenderAliveHelicopters(phongShader, copterObj);
+
+        for (int i = 0; i < NUMBER_OF_CLODS; i++) {
+            m = glm::translate(glm::mat4(1.0), clouds[i].position);
+            m = glm::rotate(m, glm::radians(clouds[i].rotation), glm::vec3(0.0, 1.0, 0.0));
+            m = glm::scale(m, glm::vec3(clouds[i].scaleX, 0.2, clouds[i].scaleZ));
+            phongShader.setMat4("uModel", m);
+            phongShader.setBool("uTransp", true);
+            phongShader.setFloat("uAlpha", clouds[i].alpha);
+            simpleCube->Render(&phongShader, 1, 1, 1);
+            phongShader.setBool("uTransp", false);
+        }
 
         //------------------------------------------------------------------------------------------------------------
 
@@ -731,12 +843,25 @@ int main()
 
         float screenHeight = 11;
         float screenRot = 75;
+        glm::vec3 mapOffset = glm::vec3(0);
+        glm::vec3 posOnMap = glm::vec3(0);
+
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, screenHeight, -12.0));
+        m = glm::translate(m, mapOffset);
         m = glm::rotate(m, glm::radians(screenRot), glm::vec3(1.0, 0.0, 0.0));
         m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(0.5));
         twoD.setMat4("uModel", m);
         rectangle->Render(&twoD, mapflipTex);
+
+        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, screenHeight+0.01, -12.0));
+        m = glm::translate(m, mapOffset);
+        m = glm::translate(m, posOnMap);
+        m = glm::rotate(m, glm::radians(screenRot), glm::vec3(1.0, 0.0, 0.0));
+        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(0.01));
+        twoD.setMat4("uModel", m);
+        circle->Render(&twoD, 1,0,0);
 
 
 
