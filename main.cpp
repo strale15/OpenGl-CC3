@@ -26,9 +26,6 @@
 const unsigned int wWidth = 1920;
 const unsigned int wHeight = 1080;
 
-bool firstMouse = true;
-double lastX;
-double lastY;
 float narutoAspect = 1.469;
 float madaraAspect = 1.064;
 float tvLength = 0.3 * 16.f;
@@ -226,12 +223,10 @@ static void HandleInput(Params* params) {
     float charSpeed = 2;
     if (params->left1Down) {
         params->xoffset1 += charSpeed * params->dt;
-        params->xoffset1 = glm::clamp(params->xoffset1, -10.f, 10.f);
         params->xoffset1 = glm::clamp(params->xoffset1, -((tvLength * 0.9f / 4.f) - 0.33f*narutoAspect), tvLength * 0.9f / 4.f - 0.33f * narutoAspect);
     }
     if (params->right1Down) {
         params->xoffset1 -= charSpeed * params->dt;
-        params->xoffset1 = glm::clamp(params->xoffset1, -10.f, 10.f);
         params->xoffset1 = glm::clamp(params->xoffset1, -((tvLength * 0.9f / 4.f) - 0.33f * narutoAspect), tvLength * 0.9f / 4.f - 0.33f * narutoAspect);
     }
     if (params->left2Down) {
@@ -645,9 +640,9 @@ int main()
 
     glClearColor(0.88, 0.88, 0.7, 1.0);
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
+    glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glPointSize(3.0);
     glfwWindowHint(GLFW_SAMPLES, 16);
