@@ -21,6 +21,12 @@
 
 #include <Windows.h>
 
+#include <stdlib.h>
+#include <time.h> 
+
+#define NUMBER_OF_HELICOPTERS 10
+#define NUMBER_OF_LOW_HELICOPTERS 5
+
 const unsigned int wWidth = 1920;
 const unsigned int wHeight = 1080;
 
@@ -28,8 +34,18 @@ bool firstMouse = true;
 double lastX;
 double lastY;
 
+struct Helicopter {
+    glm::vec3 position = glm::vec3(0.0, -5.0, 0.0);
+    bool isAlive = true;
+    float speed = 0.6;
+    bool isLowFlight = false;
+    float angle = 0;
+};
+
+Helicopter targets[NUMBER_OF_HELICOPTERS + NUMBER_OF_LOW_HELICOPTERS];
+
 struct Params {
-    float dt;
+    float dt = 0;
     bool isFps = true;
 
     glm::vec3 cameraFront = glm::vec3(0.0, 0.0, 1.0);
@@ -48,6 +64,19 @@ struct Params {
 
     bool spaceDown = false;
     bool shiftDown = false;
+
+    //Drone
+    bool droneUp = false;
+    bool droneDown = false;
+    bool droneLeft = false;
+    bool droneRight = false;
+    bool droneForward = false;
+    bool droneBackward = false;
+
+    bool isMapActive = true;
+    bool numberOfDrones = 7;
+    bool isDroneAlive = true;
+    glm::vec3 dronePosition = glm::vec3(0.0, 1.0, -5.0);
 };
 
 static void DrawHud(Shader& hudShader, unsigned hudTex) {
@@ -108,6 +137,149 @@ static void DrawHud(Shader& hudShader, unsigned hudTex) {
     glDeleteBuffers(1, &EBO);
 }
 
+static void GenerateTargets() {
+    for (int i = 0; i < NUMBER_OF_HELICOPTERS; i++) {
+        targets[i].isLowFlight = false;
+
+        float randomCoord = static_cast<float>(rand()) / static_cast<float>(RAND_MAX / 30.0) - 15.0;
+        float randomCoorY = static_cast<float>(rand()) / static_cast<float>(RAND_MAX / 10.0) + 4;
+        int random = rand() % 2;
+        if (random == 0) {
+            targets[i].position.x = randomCoord;
+            targets[i].position.z = 15;
+            targets[i].position.y = randomCoorY;
+        }
+        else if (random == 1) {
+            targets[i].position.z = glm::abs(randomCoord);
+            targets[i].position.x = 15;
+            targets[i].position.y = randomCoorY;
+        }
+        else {
+            targets[i].position.z = glm::abs(randomCoord);
+            targets[i].position.x = -15;
+            targets[i].position.y = randomCoorY;
+        }
+
+        glm::vec3 cityCenter = glm::vec3(0, targets[i].position.y, 5);
+        glm::vec3 forward = glm::vec3(-1, 0, 0);
+        float dotProduct = glm::dot(glm::normalize(cityCenter- targets[i].position), forward);
+        dotProduct = glm::clamp(dotProduct, -1.f, 1.f);
+        float angleRadians = std::acos(dotProduct);
+        float angleDegrees = glm::degrees(angleRadians);
+        if (targets[i].position.z < 5) {
+            angleDegrees *= -1;
+        }
+        targets[i].angle = angleDegrees;
+
+        cout << "Target " << i << " Pos " << targets[i].position.x << " " << targets[i].position.y << " " << targets[i].position.z << endl;
+        
+    }
+
+    for (int i = NUMBER_OF_HELICOPTERS; i < NUMBER_OF_LOW_HELICOPTERS+ NUMBER_OF_HELICOPTERS; i++) {
+        targets[i].isLowFlight = true;
+
+        float randomCoord = static_cast<float>(rand()) / static_cast<float>(RAND_MAX / 30.0) - 15.0;
+        int random = rand() % 3;
+        if (random == 0) {
+            targets[i].position.x = randomCoord;
+            targets[i].position.z = 15;
+            targets[i].position.y = 2.0;
+        }
+        else if(random == 1) {
+            targets[i].position.z = glm::abs(randomCoord);
+            targets[i].position.x = 15;
+            targets[i].position.y = 2.0;
+        }
+        else {
+            targets[i].position.z = glm::abs(randomCoord);
+            targets[i].position.x = -15;
+            targets[i].position.y = 2.0;
+        }
+
+        glm::vec3 cityCenter = glm::vec3(0, targets[i].position.y, 5);
+        glm::vec3 forward = glm::vec3(-1, 0, 0);
+        float dotProduct = glm::dot(glm::normalize(cityCenter - targets[i].position), glm::normalize(forward));
+        dotProduct = glm::clamp(dotProduct, -1.f, 1.f);
+        float angleRadians = std::acos(dotProduct);
+        float angleDegrees = glm::degrees(angleRadians);
+        if (targets[i].position.z < 5) {
+            angleDegrees *= -1;
+        }
+        targets[i].angle = angleDegrees;
+
+        cout << "TargetLow " << i << " Pos " << targets[i].position.x << " " << targets[i].position.y << " " << targets[i].position.z << endl;
+
+    }
+}
+
+static void RenderAliveHelicopters(Shader& shader, Model targetModel) {
+    glm::mat4 m = glm::mat4(1.0);
+    for (int i = 0; i < NUMBER_OF_HELICOPTERS + NUMBER_OF_LOW_HELICOPTERS; i++) {
+        if (targets[i].isAlive) {
+            m = glm::translate(glm::mat4(1.0), targets[i].position);
+            m = glm::rotate(m, glm::radians(-targets[i].angle), glm::vec3(0, 1, 0));
+            m = glm::scale(m, glm::vec3(0.002));
+            shader.setMat4("uModel", m);
+            shader.setBool("isColor", true);
+            if (targets[i].isLowFlight) {
+                shader.setVec3("uColor", glm::vec3(1, 0, 0));
+            }
+            else {
+                shader.setVec3("uColor", glm::vec3(0.8, 0.8, 0));
+            }
+            targetModel.Draw(shader);
+            shader.setBool("isColor", false);
+        }
+    }
+}
+
+static void UpdateTargetsPos(float dt) {
+    for (int i = 0; i < NUMBER_OF_HELICOPTERS + NUMBER_OF_LOW_HELICOPTERS; i++) {
+        if (!targets[i].isAlive) {
+            continue;
+        }
+        glm::vec3 cityCenter = glm::vec3(0, targets[i].position.y, 5);
+        if (glm::distance(targets[i].position, cityCenter) <= 0.5) {
+            continue;
+        }
+
+        glm::vec3 direction = cityCenter - targets[i].position;
+        float lowT = 1;
+        if (targets[i].isLowFlight) {
+            lowT = 0.33;
+        }
+        targets[i].position += glm::normalize(direction) * dt * targets[i].speed * lowT;
+    }
+}
+
+static void CheckIfDroneCrashed(Params* params) {
+    if (!params->isDroneAlive) {
+        return;
+    }
+
+    if (params->dronePosition.y < 0.5 || params->dronePosition.y > 15) {
+        cout << "Previsoko/Prenisko" << endl;
+        params->isDroneAlive = false;
+        return;
+    }
+    if (glm::abs(params->dronePosition.x) > 15 || glm::abs(params->dronePosition.z) > 15) {
+        cout << "Izleteo" << endl;
+        params->isDroneAlive = false;
+        return;
+    }
+
+    for (int i = 0; i < NUMBER_OF_HELICOPTERS + NUMBER_OF_LOW_HELICOPTERS; i++) {
+        if (targets[i].isAlive) {
+            if (glm::distance(targets[i].position, params->dronePosition) <= 1.2) {
+                targets[i].isAlive = false;
+                params->isDroneAlive = false;
+                cout << "Skuco u " << i << endl;
+                return;
+            }
+        }
+    }
+}
+
 static void HandleInput(Params* params) {
     if (params->wDown)
     {
@@ -154,6 +326,33 @@ static void HandleInput(Params* params) {
         else
             params->objPos.y -= 0.5f * params->dt;
     }
+
+    //Drone
+    float droneSpeed = targets[0].speed *2;
+    if (params->droneForward)
+    {
+        params->dronePosition.z += droneSpeed * params->dt;
+    }
+    if (params->droneBackward)
+    {
+        params->dronePosition.z -= droneSpeed * params->dt;
+    }
+    if (params->droneLeft)
+    {
+        params->dronePosition.x += droneSpeed * params->dt;
+    }
+    if (params->droneRight)
+    {
+        params->dronePosition.x -= droneSpeed * params->dt;
+    }
+    if (params->droneUp)
+    {
+        params->dronePosition.y += droneSpeed * params->dt;
+    }
+    if (params->droneDown)
+    {
+        params->dronePosition.y -= droneSpeed * params->dt;
+    }
 }
 
 static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
@@ -195,16 +394,6 @@ static void CursosPosCallback(GLFWwindow* window, double xPos, double yPos) {
 
 static void KeyCallback2(GLFWwindow* window, int key, int scancode, int action, int mode) {
     Params* params = (Params*)glfwGetWindowUserPointer(window);
-    if (key == GLFW_KEY_E && action == GLFW_PRESS)
-    {
-        std::cout << "glm::vec3(" << params->objPos.x << "," << params->objPos.y << "," << params->objPos.z << ")" << std::endl;
-    }
-
-    if (key == GLFW_KEY_R && action == GLFW_PRESS)
-    {
-        params->isFps = !params->isFps;
-    }
-
     if (key == GLFW_KEY_W && action == GLFW_PRESS)
     {
         params->wDown = true;
@@ -259,16 +448,74 @@ static void KeyCallback2(GLFWwindow* window, int key, int scancode, int action, 
         params->shiftDown = false;
     }
 
-    if (key == GLFW_KEY_LEFT_SHIFT) {
+    if (key == GLFW_KEY_UP) {
         if (action == GLFW_PRESS) {
-            //params->shiftDown = true;
-            //Nesto sto se desi jednom
+            params->droneForward = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->droneForward = false;
+        }
+    }
+    if (key == GLFW_KEY_DOWN) {
+        if (action == GLFW_PRESS) {
+            params->droneBackward = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->droneBackward = false;
+        }
+    }
+    if (key == GLFW_KEY_LEFT) {
+        if (action == GLFW_PRESS) {
+            params->droneLeft = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->droneLeft = false;
+        }
+    }
+    if (key == GLFW_KEY_RIGHT) {
+        if (action == GLFW_PRESS) {
+            params->droneRight = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->droneRight = false;
+        }
+    }
+    if (key == GLFW_KEY_Q) {
+        if (action == GLFW_PRESS) {
+            params->droneUp = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->droneUp = false;
+        }
+    }
+    if (key == GLFW_KEY_E) {
+        if (action == GLFW_PRESS) {
+            params->droneDown = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            params->droneDown = false;
+        }
+    }
+
+    //Map
+    if (key == GLFW_KEY_F) {
+        if (action == GLFW_PRESS) {
+            params->isMapActive = !params->isMapActive;
+        }
+    }
+
+    if (key == GLFW_KEY_L) {
+        if (action == GLFW_PRESS && !params->isDroneAlive) {
+            params->dronePosition = glm::vec3(0.0, 1.0, -5.0);
+            params->numberOfDrones -= 1;
+            params->isDroneAlive = true;
         }
     }
 }
 
 int main()
 {
+    srand(time(NULL));
     HWND console = GetConsoleWindow();
     SetWindowPos(console, 0, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 
@@ -362,7 +609,8 @@ int main()
     };
     GameObject* rectangle = new GameObject(vertices, true);
 
-    Model lija("res/low-poly-fox.obj");
+    Model droneObj("res/Drone_LP.obj");
+    Model copterObj("res/Copter_2.obj");
 
     Shader phongShader("phong.vert", "phong.frag");
     Shader hudShader("hud.vert", "hud.frag");
@@ -404,6 +652,7 @@ int main()
     unsigned mapTex = Model::textureFromFile("res/map1.png");
     unsigned mapflipTex = Model::textureFromFile("res/map1Flip.png");
     unsigned mapSpecTex = Model::textureFromFile("res/map1Spec.png");
+    unsigned modelSpec = Model::textureFromFile("res/Part2_Metallic.png");
 
     phongShader.setInt("uMaterial.Kd", 0);
     phongShader.setInt("uMaterial.Ks", 1);
@@ -424,6 +673,8 @@ int main()
 
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
+
+    GenerateTargets();
     while (!glfwWindowShouldClose(window))
     {
         FrameStartTime = glfwGetTime();
@@ -431,6 +682,9 @@ int main()
             glfwSetWindowShouldClose(window, true);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        CheckIfDroneCrashed(&params);
+        UpdateTargetsPos(params.dt);
 
         //Loop
         phongShader.use();
@@ -457,6 +711,16 @@ int main()
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, 1,0,0);
 
+        if (params.isDroneAlive) {
+            m = glm::translate(glm::mat4(1.0), params.dronePosition);
+            m = glm::scale(m, glm::vec3(0.2));
+            phongShader.setMat4("uModel", m);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, modelSpec);
+            droneObj.Draw(phongShader);
+        }
+
+        RenderAliveHelicopters(phongShader, copterObj);
 
         //------------------------------------------------------------------------------------------------------------
 
