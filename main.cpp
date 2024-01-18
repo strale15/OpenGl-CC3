@@ -40,7 +40,6 @@ struct Cloud {
     float scaleX = 1;
     float scaleZ = 1;
     float alpha = 0.5;
-
 };
 
 Cloud clouds[NUMBER_OF_CLODS];
@@ -54,6 +53,7 @@ struct Helicopter {
     bool isLowFlight = false;
     float angle = 0;
     float spawnTime = 0;
+    float alpha = 1;
 };
 
 Helicopter targets[NUMBER_OF_HELICOPTERS + NUMBER_OF_LOW_HELICOPTERS];
@@ -776,41 +776,6 @@ int main()
             rectangle->Render(&twoD, 0.02, 0.13, 0.01);
         }
 
-        //Tacke na mapi koje su mete
-        for (int i = 0; i < NUMBER_OF_HELICOPTERS + NUMBER_OF_LOW_HELICOPTERS; i++) {
-            if (!targets[i].isAlive) {
-                continue;
-            }
-            float angleScanner = glm::radians(scannerTime);
-            glm::vec3 vector = glm::normalize(targets[i].position);
-            if (glm::abs(vector.x - sin(angleScanner)) < 0.2 && glm::abs(vector.z - cos(angleScanner)) < 0.2) {
-                targets[i].lastKnowsPosition = targets[i].position;
-            }
-
-            posOnMap.x = ((targets[i].lastKnowsPosition.x + 15.0f) / 30.0f) * 0.5f - 0.25f;
-            posOnMap.z = ((targets[i].lastKnowsPosition.z + 15.0f) / 30.0f) * 0.5f - 0.25f;
-            float scale = (targets[i].lastKnowsPosition.y / 15.0f) * 0.015f + 0.004f;
-            float offY = 0;
-            if (targets[i].isLowFlight) {
-                offY = 0.005;
-            }
-            m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, screenHeight+0.01-offY, -12.0));
-            m = glm::translate(m, mapOffset);
-            m = glm::translate(m, posOnMap);
-            m = glm::rotate(m, glm::radians(screenRot), glm::vec3(1.0, 0.0, 0.0));
-            m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
-            m = glm::scale(m, glm::vec3(scale));
-            twoD.setMat4("uModel", m);
-            if (targets[i].isLowFlight) {
-                circle->Render(&twoD, 1,0,0);
-            }
-            else
-            {
-                circle->Render(&twoD, 1, 1, 0);
-            }
-           
-        }
-
         //Tacka na mapi koja je dron
         if (params.isDroneAlive) {
             posOnMap.x = ((params.dronePosition.x + 15.0f) / 30.0f) * 0.5f - 0.25f;
@@ -868,6 +833,7 @@ int main()
             rectangle->Render(&twoD, 0.81, 0.66, 0.16);
         }
 
+        //2D Transparentne stvari
         //Skener
         float scannerScale = 0.255;
         int repetitions = 100;
@@ -891,6 +857,45 @@ int main()
             twoD.setFloat("uA", alpha);
             twoD.setMat4("uModel", m);
             rectangle->Render(&twoD, 0.05, 0.51, 0.01);
+        } 
+
+        //Tacke na mapi koje su mete
+        for (int i = 0; i < NUMBER_OF_HELICOPTERS + NUMBER_OF_LOW_HELICOPTERS; i++) {
+            if (!targets[i].isAlive) {
+                continue;
+            }
+            targets[i].alpha -= 0.18 * params.dt;
+
+            float angleScanner = glm::radians(scannerTime);
+            glm::vec3 vector = glm::normalize(targets[i].position);
+            if (glm::abs(vector.x - sin(angleScanner)) < 0.2 && glm::abs(vector.z - cos(angleScanner)) < 0.2) {
+                targets[i].lastKnowsPosition = targets[i].position;
+                targets[i].alpha = 1;
+            }
+
+            twoD.setFloat("uA", targets[i].alpha);
+            posOnMap.x = ((targets[i].lastKnowsPosition.x + 15.0f) / 30.0f) * 0.5f - 0.25f;
+            posOnMap.z = ((targets[i].lastKnowsPosition.z + 15.0f) / 30.0f) * 0.5f - 0.25f;
+            float scale = (targets[i].lastKnowsPosition.y / 15.0f) * 0.015f + 0.004f;
+            float offY = 0;
+            if (targets[i].isLowFlight) {
+                offY = 0.005;
+            }
+            m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, screenHeight + 0.01 - offY, -12.0));
+            m = glm::translate(m, mapOffset);
+            m = glm::translate(m, posOnMap);
+            m = glm::rotate(m, glm::radians(screenRot), glm::vec3(1.0, 0.0, 0.0));
+            m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+            m = glm::scale(m, glm::vec3(scale));
+            twoD.setMat4("uModel", m);
+            if (targets[i].isLowFlight) {
+                circle->Render(&twoD, 1, 0, 0);
+            }
+            else
+            {
+                circle->Render(&twoD, 1, 1, 0);
+            }
+
         }
         twoD.setBool("uT", false);
 
