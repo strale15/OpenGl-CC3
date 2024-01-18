@@ -29,7 +29,7 @@
 
 #define NUMBER_OF_HELICOPTERS 5
 #define NUMBER_OF_LOW_HELICOPTERS 2
-#define NUMBER_OF_CLODS 55
+#define NUMBER_OF_CLODS 60
 
 const unsigned int wWidth = 1920;
 const unsigned int wHeight = 1080;
@@ -500,7 +500,7 @@ int main()
         return -2;
     }
 
-    glfwSetWindowPos(window, 300, 40);
+    glfwSetWindowPos(window, 0, 40);
     glfwMakeContextCurrent(window);
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, KeyCallback2);
@@ -674,14 +674,6 @@ int main()
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, 0.07, 0.94, 0.92);
 
-        //Nebo(plafon)
-        phongShader.setVec3("uDirLight.Ka", glm::vec3(0.3));
-        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 20.0, 0.0));
-        m = glm::scale(m, glm::vec3(60, 1.0, 60));
-        phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, sky);
-        phongShader.setVec3("uDirLight.Ka", glm::vec3(0.15));
-
         //PVO base
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 5.5, -13.5));
         m = glm::scale(m, glm::vec3(3, 10.0, 3));
@@ -805,7 +797,7 @@ int main()
         twoD.setMat4("uModel", m);
         circle->Render(&twoD, 0, 0, 1);
 
-        //Centar grada na mapi
+        //Centar na mapi
         posOnMap.x = ((0 + 15.0f) / 30.0f) * 0.5f - 0.25f;
         posOnMap.z = ((5 + 15.0f) / 30.0f) * 0.5f - 0.25f;
 
@@ -864,11 +856,18 @@ int main()
             if (!targets[i].isAlive) {
                 continue;
             }
-            targets[i].alpha -= 0.18 * params.dt;
+
+            if (targets[i].isLowFlight) {
+                targets[i].alpha -= 0.3 * params.dt;
+            }
+            else
+            {
+                targets[i].alpha -= 0.19 * params.dt;
+            }
 
             float angleScanner = glm::radians(scannerTime);
             glm::vec3 vector = glm::normalize(targets[i].position);
-            if (glm::abs(vector.x - sin(angleScanner)) < 0.2 && glm::abs(vector.z - cos(angleScanner)) < 0.2) {
+            if (glm::abs(vector.x - sin(angleScanner)) < 0.18 && glm::abs(vector.z - cos(angleScanner)) < 0.18) {
                 targets[i].lastKnowsPosition = targets[i].position;
                 targets[i].alpha = 1;
             }
@@ -879,9 +878,9 @@ int main()
             float scale = (targets[i].lastKnowsPosition.y / 15.0f) * 0.015f + 0.004f;
             float offY = 0;
             if (targets[i].isLowFlight) {
-                offY = 0.005;
+                offY = 0.001;
             }
-            m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, screenHeight + 0.01 - offY, -12.0));
+            m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, screenHeight + 0.011 - offY, -12.0));
             m = glm::translate(m, mapOffset);
             m = glm::translate(m, posOnMap);
             m = glm::rotate(m, glm::radians(screenRot), glm::vec3(1.0, 0.0, 0.0));
