@@ -588,8 +588,8 @@ int main()
 
     phongShader.setVec3("uDirLight.Position", glm::vec3(0.0, 50.0f, 0.0f));
     phongShader.setVec3("uDirLight.Direction", 0.3, -0.2, 0.6);
-    phongShader.setVec3("uDirLight.Ka", glm::vec3(0.15));
-    phongShader.setVec3("uDirLight.Kd", glm::vec3(0.18));
+    phongShader.setVec3("uDirLight.Ka", glm::vec3(0.17));
+    phongShader.setVec3("uDirLight.Kd", glm::vec3(0.2));
     phongShader.setVec3("uDirLight.Ks", glm::vec3(2.0));
 
     unsigned hudTex = Model::textureFromFile("res/hudTex.png");
@@ -857,19 +857,24 @@ int main()
                 continue;
             }
 
-            if (targets[i].isLowFlight) {
-                targets[i].alpha -= 0.3 * params.dt;
+            float angleScanner = glm::radians(scannerTime-25);
+            glm::vec3 vector = targets[i].position;
+            vector.y = 0;
+            vector = glm::normalize(vector);
+            if (glm::abs(vector.x - sin(angleScanner)) < 0.25 && glm::abs(vector.z - cos(angleScanner)) < 0.25) {
+                cout << glm::abs(vector.x - sin(angleScanner)) << " " << abs(vector.z - cos(angleScanner)) << endl;
+                targets[i].lastKnowsPosition = targets[i].position;
+                targets[i].alpha = 1;
             }
             else
             {
-                targets[i].alpha -= 0.19 * params.dt;
-            }
-
-            float angleScanner = glm::radians(scannerTime);
-            glm::vec3 vector = glm::normalize(targets[i].position);
-            if (glm::abs(vector.x - sin(angleScanner)) < 0.18 && glm::abs(vector.z - cos(angleScanner)) < 0.18) {
-                targets[i].lastKnowsPosition = targets[i].position;
-                targets[i].alpha = 1;
+                if (targets[i].isLowFlight) {
+                    targets[i].alpha -= 0.3 * params.dt;
+                }
+                else
+                {
+                    targets[i].alpha -= 0.155 * params.dt;
+                }
             }
 
             twoD.setFloat("uA", targets[i].alpha);
