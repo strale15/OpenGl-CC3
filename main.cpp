@@ -47,6 +47,7 @@ Cloud clouds[NUMBER_OF_CLODS];
 
 struct Helicopter {
     glm::vec3 position = glm::vec3(0.0, -5.0, 0.0);
+    glm::vec3 lastKnowsPosition = glm::vec3(0.0, -5.0, 0.0);
     bool isAlive = false;
     bool isSpawned = false;
     float speed = 0.15;
@@ -499,7 +500,7 @@ int main()
         return -2;
     }
 
-    glfwSetWindowPos(window, 0, 40);
+    glfwSetWindowPos(window, 300, 40);
     glfwMakeContextCurrent(window);
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, KeyCallback2);
@@ -780,9 +781,15 @@ int main()
             if (!targets[i].isAlive) {
                 continue;
             }
-            posOnMap.x = ((targets[i].position.x + 15.0f) / 30.0f) * 0.5f - 0.25f;
-            posOnMap.z = ((targets[i].position.z + 15.0f) / 30.0f) * 0.5f - 0.25f;
-            float scale = (targets[i].position.y / 15.0f) * 0.015f + 0.004f;
+            float angleScanner = glm::radians(scannerTime);
+            glm::vec3 vector = glm::normalize(targets[i].position);
+            if (glm::abs(vector.x - sin(angleScanner)) < 0.2 && glm::abs(vector.z - cos(angleScanner)) < 0.2) {
+                targets[i].lastKnowsPosition = targets[i].position;
+            }
+
+            posOnMap.x = ((targets[i].lastKnowsPosition.x + 15.0f) / 30.0f) * 0.5f - 0.25f;
+            posOnMap.z = ((targets[i].lastKnowsPosition.z + 15.0f) / 30.0f) * 0.5f - 0.25f;
+            float scale = (targets[i].lastKnowsPosition.y / 15.0f) * 0.015f + 0.004f;
             float offY = 0;
             if (targets[i].isLowFlight) {
                 offY = 0.005;
@@ -801,6 +808,7 @@ int main()
             {
                 circle->Render(&twoD, 1, 1, 0);
             }
+           
         }
 
         //Tacka na mapi koja je dron
@@ -861,7 +869,6 @@ int main()
         }
 
         //Skener
-        cout << scannerTime << endl;
         float scannerScale = 0.255;
         int repetitions = 100;
 
