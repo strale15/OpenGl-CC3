@@ -606,11 +606,15 @@ int main()
     float currentRot = 0;
     float FrameStartTime = 0;
     float FrameEndTime = 0;
+    float scannerTime = 0;
 
     Params params;
     glfwSetWindowUserPointer(window, &params);
 
     glClearColor(0.13, 0.17, 0.21, 1.0);
+    glfwWindowHint(GLFW_SAMPLES, 16);
+    glEnable(GL_MULTISAMPLE);
+
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -771,25 +775,6 @@ int main()
             rectangle->Render(&twoD, 0.02, 0.13, 0.01);
         }
 
-        //Skener
-        float scannerTime = glfwGetTime() * 90.f;
-        float scannerScale = 0.255;
-
-        m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, screenHeight + 0.006, -12.0));
-        m = glm::translate(m, mapOffset);
-        m = glm::rotate(m, glm::radians(scannerTime), glm::vec3(0.0, 1.0, 0.0));
-        m = glm::translate(m, -glm::vec3(0.0, screenHeight + 0.006, -12.0));
-        m = glm::translate(m, -mapOffset);
-
-
-        m = glm::translate(m, glm::vec3(0.0, screenHeight+0.006, -12.0+ scannerScale /2));
-        m = glm::translate(m, mapOffset);
-        m = glm::rotate(m, glm::radians(screenRot), glm::vec3(1.0, 0.0, 0.0));
-        m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
-        m = glm::scale(m, glm::vec3(0.004, scannerScale,1));
-        twoD.setMat4("uModel", m);
-        rectangle->Render(&twoD, 0.05, 0.51, 0.01);
-
         //Tacke na mapi koje su mete
         for (int i = 0; i < NUMBER_OF_HELICOPTERS + NUMBER_OF_LOW_HELICOPTERS; i++) {
             if (!targets[i].isAlive) {
@@ -797,7 +782,7 @@ int main()
             }
             posOnMap.x = ((targets[i].position.x + 15.0f) / 30.0f) * 0.5f - 0.25f;
             posOnMap.z = ((targets[i].position.z + 15.0f) / 30.0f) * 0.5f - 0.25f;
-            float scale = (targets[i].position.y / 15.0f) * 0.012f + 0.005f;
+            float scale = (targets[i].position.y / 15.0f) * 0.015f + 0.004f;
             float offY = 0;
             if (targets[i].isLowFlight) {
                 offY = 0.005;
@@ -822,7 +807,7 @@ int main()
         if (params.isDroneAlive) {
             posOnMap.x = ((params.dronePosition.x + 15.0f) / 30.0f) * 0.5f - 0.25f;
             posOnMap.z = ((params.dronePosition.z + 15.0f) / 30.0f) * 0.5f - 0.25f;
-            float scale = (params.dronePosition.y / 15.0f) * 0.012f + 0.005f;
+            float scale = (params.dronePosition.y / 15.0f) * 0.015f + 0.004f;
 
             m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, screenHeight + 0.012, -12.0));
             m = glm::translate(m, mapOffset);
@@ -843,7 +828,7 @@ int main()
         m = glm::translate(m, posOnMap);
         m = glm::rotate(m, glm::radians(screenRot), glm::vec3(1.0, 0.0, 0.0));
         m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
-        m = glm::scale(m, glm::vec3(0.016));
+        m = glm::scale(m, glm::vec3(0.018));
         twoD.setMat4("uModel", m);
         circle->Render(&twoD, 0, 0, 1);
 
@@ -861,7 +846,7 @@ int main()
         rectangle->Render(&twoD, 0, 1, 0.98);
 
 
-        //Preostalo dronova
+        //Koliko je ostalo dronova
         for (int i = 0; i < params.numberOfDrones; i++) {
             posOnMap.x = -0.25;
             posOnMap.z = -0.25 + 0.015*i;
@@ -874,6 +859,35 @@ int main()
             twoD.setMat4("uModel", m);
             rectangle->Render(&twoD, 0.81, 0.66, 0.16);
         }
+
+        //Skener
+        cout << scannerTime << endl;
+        float scannerScale = 0.255;
+        int repetitions = 100;
+
+        twoD.setBool("uT", true);
+        for (int i = 0; i < repetitions; i++) {
+            m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, screenHeight + 0.0069 - 0.00001 * i, -12.0));
+            m = glm::translate(m, mapOffset);
+            m = glm::rotate(m, glm::radians(scannerTime - ((45.f / repetitions) * i)), glm::vec3(0.0, 1.0, 0.0));
+            m = glm::translate(m, -glm::vec3(0.0, screenHeight + 0.0069 - 0.00001 * i, -12.0));
+            m = glm::translate(m, -mapOffset);
+
+
+            m = glm::translate(m, glm::vec3(0.0, screenHeight + 0.0069 - 0.00001*i, -12.0 + scannerScale / 2));
+            m = glm::translate(m, mapOffset);
+            m = glm::rotate(m, glm::radians(screenRot), glm::vec3(1.0, 0.0, 0.0));
+            m = glm::rotate(m, glm::radians(180.f), glm::vec3(0.0, 1.0, 0.0));
+            m = glm::scale(m, glm::vec3(0.003, scannerScale, 1));
+
+            double alpha = 1.f + (0.001f - 1.f) * ((double)i / repetitions);
+            twoD.setFloat("uA", alpha);
+            twoD.setMat4("uModel", m);
+            rectangle->Render(&twoD, 0.05, 0.51, 0.01);
+        }
+        twoD.setBool("uT", false);
+
+        scannerTime += params.dt * 80;
 
         //3D Ostatak
         //LED Da je dron lansiran
