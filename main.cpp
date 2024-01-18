@@ -259,10 +259,13 @@ static void KeyCallback2(GLFWwindow* window, int key, int scancode, int action, 
         params->shiftDown = false;
     }
 
-    if (key == GLFW_KEY_LEFT_SHIFT) {
+    if (key == GLFW_KEY_K) {
         if (action == GLFW_PRESS) {
             //params->shiftDown = true;
             //Nesto sto se desi jednom
+        }
+        else if (action == GLFW_RELEASE) {
+
         }
     }
 }
@@ -443,8 +446,8 @@ int main()
         //SCENE
         //------------------------------------------------------------------------------------------------------------
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 0.0));
-        m = glm::rotate(m, glm::radians(0.f), glm::vec3(1.0, 0.0, 0.0));
-        m = glm::scale(m, glm::vec3(5.f));
+        m = glm::rotate(m, glm::radians(30.f), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::scale(m, glm::vec3(5,1,1));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, kockaDif, kockaSpec);
 
@@ -452,7 +455,7 @@ int main()
         m = glm::rotate(m, glm::radians(0.f), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(10.0, 1.0, 10.0));
         phongShader.setMat4("uModel", m);
-        simpleCube->Render(&phongShader, 1, 0, 0);
+        simpleCube->Render(&phongShader, 0, 1, 1);
 
         //------------------------------------------------------------------------------------------------------------
 
