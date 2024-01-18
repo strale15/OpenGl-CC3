@@ -111,6 +111,15 @@ public:
 	}
 
 	void Render(Shader* shader, float r, float g, float b) {
+		if (r == 0) {
+			r == 0.001;
+		}
+		if (g == 0) {
+			g == 0.001;
+		}
+		if (b == 0) {
+			b == 0.001;
+		}
 		shader->setBool("isColor", true);
 		shader->setVec3("uColor", glm::vec3(r, g, b));
 

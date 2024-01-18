@@ -1,6 +1,6 @@
 #version 330 core
-#define NR_POINT_LIGHTS 2
-#define NR_SPOT_LIGHTS 1
+#define NR_POINT_LIGHTS 3
+#define NR_SPOT_LIGHTS 2
 
 struct PointLight {
     vec3 Position;
@@ -51,7 +51,7 @@ out vec4 FragColor;
 
 void main() {
     vec3 MaterialColor = isColor ? uColor : vec3(texture(uMaterial.Kd, UV));
-    vec3 MaterialSpecualr = isColor ? vec3(0.4,0.4,0.4) : vec3(texture(uMaterial.Ks, UV));
+    vec3 MaterialSpecualr = isColor ? vec3(0.4) : vec3(texture(uMaterial.Ks, UV));
 
     vec3 ViewDirection = normalize(uViewPos - vWorldSpaceFragment);
     vec3 DirLightVector = normalize(-uDirLight.Direction);
