@@ -171,8 +171,6 @@ static void GenerateTargets() {
             angleDegrees *= -1;
         }
         targets[i].angle = angleDegrees;
-
-        //cout << "Target " << i << " Pos " << targets[i].position.x << " " << targets[i].position.y << " " << targets[i].position.z << endl;
         
     }
 
@@ -187,17 +185,17 @@ static void GenerateTargets() {
         if (random == 0) {
             targets[i].position.x = randomCoord;
             targets[i].position.z = 15;
-            targets[i].position.y = 2.0;
+            targets[i].position.y = 1.5;
         }
         else if(random == 1) {
             targets[i].position.z = randomCoord;
             targets[i].position.x = 15;
-            targets[i].position.y = 2.0;
+            targets[i].position.y = 1.5;
         }
         else {
             targets[i].position.z = randomCoord;
             targets[i].position.x = -15;
-            targets[i].position.y = 2.0;
+            targets[i].position.y = 1.5;
         }
 
         targets[i].spawnTime = randomTime;
@@ -613,7 +611,7 @@ int main()
     glfwSetWindowUserPointer(window, &params);
 
     glClearColor(0.13, 0.17, 0.21, 1.0);
-    glfwWindowHint(GLFW_SAMPLES, 16);
+    glfwWindowHint(GLFW_SAMPLES, 8);
     glEnable(GL_MULTISAMPLE);
 
     glEnable(GL_DEPTH_TEST);
@@ -862,7 +860,6 @@ int main()
             vector.y = 0;
             vector = glm::normalize(vector);
             if (glm::abs(vector.x - sin(angleScanner)) < 0.25 && glm::abs(vector.z - cos(angleScanner)) < 0.25) {
-                cout << glm::abs(vector.x - sin(angleScanner)) << " " << abs(vector.z - cos(angleScanner)) << endl;
                 targets[i].lastKnowsPosition = targets[i].position;
                 targets[i].alpha = 1;
             }
