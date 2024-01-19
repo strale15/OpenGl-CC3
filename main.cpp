@@ -367,13 +367,17 @@ static void HandleInput(Params* params) {
     }
 
     if (params->knobTurningLeft) {
-        params->knobRot -= 100 * params->dt;
-        params->frequency += 0.5 * params->dt;
+        if (params->frequency < 3.59) {
+            params->knobRot -= 50 * params->dt;
+            params->frequency += 0.5 * params->dt;
+        }
         params->frequency = glm::clamp(params->frequency, 0.0f, 3.6f);
     }
-    else if (params->knobTurningRight) {
-        params->knobRot += 100 * params->dt;
-        params->frequency -= 0.5 * params->dt;
+    if (params->knobTurningRight) {
+        if (params->frequency > 0) {
+            params->knobRot += 50 * params->dt;
+            params->frequency -= 0.5 * params->dt;
+        }
         params->frequency = glm::clamp(params->frequency, 0.0f, 3.6f);
     }
 
@@ -767,11 +771,14 @@ int main()
         float translationAdjustmentY = (1.0f - params.antennaScaleF) / 2.0f;
 
         m = glm::translate(glm::mat4(1.0), glm::vec3(3.40001, 2.5, 0));
+        m = glm::rotate(m, glm::radians(params.antennaSpin), glm::vec3(0.0, 1.0, 0.0));
+        m = glm::translate(m, -glm::vec3(3.40001, 2.5, 0));
+
+        m = glm::translate(m, glm::vec3(3.40001, 2.5, 0));
         m = glm::rotate(m, glm::radians(params.antenaRot), glm::vec3(0.0, 0.0, 1.0));
         m = glm::translate(m, -glm::vec3(3.40001, 2.5, 0));
 
         m = glm::translate(m, glm::vec3(3.40001, 2.8 - translationAdjustmentY, 0));
-        m = glm::rotate(m, glm::radians(params.antennaSpin), glm::vec3(0.0, 1.0, 0.0));
         m = glm::scale(m, glm::vec3(0.4, params.antennaScaleF, 0.4));
         phongShader.setMat4("uModel", m);
         simpleCube->Render(&phongShader, 0.6, 0.6, 0.6);
