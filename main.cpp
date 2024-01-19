@@ -39,24 +39,6 @@ struct Params {
     glm::vec3 cameraFront = glm::vec3(0.0, -0.5, 0.866025);
     glm::vec3 cameraUp = glm::vec3(0.0, 1.0, 0.0);
 
-    glm::vec3 position = glm::vec3(0.0, 0.0, 3.0);
-    glm::vec3 objPos = glm::vec3(0.0, 1.0, 0.0);
-
-    double camYaw = 90;
-    double camPitch = -30;
-
-    float camX;
-    float camY;
-    float camZ;
-
-    bool wDown = false;
-    bool sDown = false;
-    bool aDown = false;
-    bool dDown = false;
-
-    bool spaceDown = false;
-    bool shiftDown = false;
-
     bool nightVision = false;
     bool headlights = false;
 
@@ -78,6 +60,7 @@ struct Params {
     float carXOffset = 0;
     float carRot = 0;
 };
+
 
 static void DrawBuildings(Shader& shader, ObjectRender* building, unsigned buildingTex, unsigned buildingSpec) {
     shader.use();
@@ -101,54 +84,6 @@ static void DrawBuildings(Shader& shader, ObjectRender* building, unsigned build
 }
 
 static void KeyAction(Params* params) {
-    if (params->wDown)
-    {
-        if (params->test1)
-            params->position += 7.2f * params->cameraFront * params->dt;
-        else
-            params->objPos.z += 0.5f * params->dt;
-    }
-    if (params->sDown)
-    {
-        if (params->test1)
-            params->position -= 7.2f * params->cameraFront * params->dt;
-        else
-            params->objPos.z -= 0.5f * params->dt;
-    }
-    if (params->aDown)
-    {
-
-        glm::vec3 strafe = glm::cross(params->cameraFront, params->cameraUp);
-        if (params->test1)
-            params->position -= 7.2f * strafe * params->dt;
-        else
-            params->objPos.x += 0.5f * params->dt;
-    }
-    if (params->dDown)
-    {
-        glm::vec3 strafe = glm::cross(params->cameraFront, params->cameraUp);
-        if (params->test1)
-            params->position += 7.2f * strafe * params->dt;
-        else
-            params->objPos.x -= 0.5f * params->dt;
-    }
-    if (params->spaceDown)
-    {
-        if (params->test1)
-            params->position.y += 4.2 * params->dt;
-        else
-            params->objPos.y += 0.5f * params->dt;
-    }
-    if (params->shiftDown)
-    {
-        if (params->test1)
-            params->position.y -= 4.1 * params->dt;
-        else
-            params->objPos.y -= 0.5f * params->dt;
-    }
-
-
-    //Car
     params->velocity = glm::clamp(params->velocity, -20.f, 60.f);
 
     if (glm::abs(params->velocity) < 0.005) {
@@ -201,7 +136,6 @@ static void KeyAction(Params* params) {
 
 static void KeyPressed(GLFWwindow* window, int key, int scancode, int action, int mode) {
     Params* params = (Params*)glfwGetWindowUserPointer(window);
-
 
     if (key == GLFW_KEY_UP) {
         if (action == GLFW_PRESS) {
@@ -481,24 +415,15 @@ int main()
     phongShader.setMat4("uModel", model);
 
     glm::mat4 view = glm::mat4(1.0f);
-    view = glm::lookAt(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    phongShader.setMat4("uView", view);
 
     glm::mat4 projectionP = glm::perspective(glm::radians(90.0f), (float)wWidth / (float)wHeight, 0.1f, 500.0f);
     phongShader.setMat4("uProjection", projectionP);
-
-    phongShader.setVec3("uViewPos", 0.0, 0.0, 5.0);
-
-    phongShader.setVec3("uDirLight.Position", 0.0, 200, 0.0);
-    phongShader.setVec3("uDirLight.Direction", 0.0, -1.0, 0.0);
-    phongShader.setVec3("uDirLight.Ka", glm::vec3(0.2));
-    phongShader.setVec3("uDirLight.Kd", glm::vec3(0.2));
-    phongShader.setVec3("uDirLight.Ks", glm::vec3(10.f));
 
     unsigned hudTex = Model::textureFromFile("res/hudTex.png");
     unsigned buildingDif = Model::textureFromFile("res/zgrada.png");
     unsigned buildingSpec = Model::textureFromFile("res/zgrada_spec.png");
     unsigned asphalt = Model::textureFromFile("res/cracked-asphalt-texture.jpg");
+    unsigned asfaltSpec = Model::textureFromFile("res/asfaltSpec.jpg");
     unsigned tachometer = Model::textureFromFile("res/speedometer.png");
     unsigned batSignal = Model::textureFromFile("res/batSignal.png");
 
@@ -518,7 +443,7 @@ int main()
     float FrameStartTime = 0;
     float FrameEndTime = 0;
 
-    glClearColor(0.2, 0.2, 0.6, 1.0);
+    glClearColor(0.08, 0.03, 0.33, 1.0);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
@@ -680,13 +605,13 @@ int main()
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, -1.0, 0.0));
         m = glm::scale(m, glm::vec3(70.0, 1.0, 2000));
         phongShader.setMat4("uModel", m);
-        simpleCube2->Render(&phongShader, asphalt, asphalt);
+        simpleCube2->Render(&phongShader, asphalt, asfaltSpec);
 
         //Ground
         m = glm::translate(glm::mat4(1.0), glm::vec3(0.0, -1.1, 120.0));
         m = glm::scale(m, glm::vec3(300.0, 1.0, 2300.));
         phongShader.setMat4("uModel", m);
-        simpleCube2->Render(&phongShader, 0,1,0);
+        simpleCube2->Render(&phongShader, 0,0,0);
 
         //CarBase
         m = glm::translate(glm::mat4(1.0), params.carOffset);
@@ -714,7 +639,7 @@ int main()
         if (params.headlights) {
             lightInt = glm::vec3(3.0f, 3.0f, 3.0f);
             lightIntA = glm::vec3(0.5);
-            lightIntS = glm::vec3(60.0f);
+            lightIntS = glm::vec3(10.0f);
         }
 
         phongShader.setVec3("uSpotlights[0].Position", headlight1Pos);
@@ -722,7 +647,7 @@ int main()
         phongShader.setVec3("uSpotlights[0].Ka", lightIntA);
         phongShader.setVec3("uSpotlights[0].Kd", lightInt);
         phongShader.setVec3("uSpotlights[0].Ks", lightIntS);
-        phongShader.setFloat("uSpotlights[0].InnerCutOff", glm::cos(glm::radians(15.0f)));
+        phongShader.setFloat("uSpotlights[0].InnerCutOff", glm::cos(glm::radians(20.0f)));
         phongShader.setFloat("uSpotlights[0].OuterCutOff", glm::cos(glm::radians(25.0f)));
         phongShader.setFloat("uSpotlights[0].Kc", 1.0);
         phongShader.setFloat("uSpotlights[0].Kl", 0.09);
@@ -733,7 +658,7 @@ int main()
         phongShader.setVec3("uSpotlights[1].Ka", lightIntA);
         phongShader.setVec3("uSpotlights[1].Kd", lightInt);
         phongShader.setVec3("uSpotlights[1].Ks", lightIntS);
-        phongShader.setFloat("uSpotlights[1].InnerCutOff", glm::cos(glm::radians(15.0f)));
+        phongShader.setFloat("uSpotlights[1].InnerCutOff", glm::cos(glm::radians(20.0f)));
         phongShader.setFloat("uSpotlights[1].OuterCutOff", glm::cos(glm::radians(25.0f)));
         phongShader.setFloat("uSpotlights[1].Kc", 1.0);
         phongShader.setFloat("uSpotlights[1].Kl", 0.09f);
@@ -810,7 +735,7 @@ int main()
         phongShader.setMat4("uModel", m);
         steeringWheelModel.Draw(phongShader);
 
-        //Building
+        //Buildings
         DrawBuildings(phongShader, simpleCube, buildingDif, buildingSpec);
 
         //BatSignal
@@ -859,7 +784,7 @@ int main()
         dShader.setMat4("uModel", m);
         rectangle->Render(&dShader, tachometer);
 
-        //hud
+        //Hud
         DrawHud(hudShader, hudTex);
 
         //end
